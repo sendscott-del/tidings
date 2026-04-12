@@ -5,16 +5,12 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Stake from './pages/Stake'
-
-// Placeholder pages — will be built in later phases
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold text-slate-900 mb-4">{title}</h1>
-      <p className="text-slate-500">Coming soon.</p>
-    </div>
-  )
-}
+import Lists from './pages/Lists'
+import Compose from './pages/Compose'
+import Inbox from './pages/Inbox'
+import Community from './pages/Community'
+import History from './pages/History'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -31,12 +27,12 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="stake" element={<Stake />} />
-            <Route path="community" element={<Placeholder title="Community Database" />} />
-            <Route path="lists" element={<Placeholder title="Lists" />} />
-            <Route path="compose" element={<Placeholder title="Compose Message" />} />
-            <Route path="inbox" element={<Placeholder title="Inbox" />} />
-            <Route path="history" element={<Placeholder title="Message History" />} />
-            <Route path="admin" element={<Placeholder title="Admin" />} />
+            <Route path="community" element={<Community />} />
+            <Route path="lists" element={<Lists />} />
+            <Route path="compose" element={<Compose />} />
+            <Route path="inbox" element={<Inbox />} />
+            <Route path="history" element={<History />} />
+            <Route path="admin" element={<Admin />} />
           </Route>
         </Routes>
       </AuthProvider>
