@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, fetchAll } from '../lib/supabase'
 
 interface ListOption {
   id: string
@@ -35,12 +35,12 @@ export default function Compose() {
       .order('name')
 
     if (listsData) {
-      const { data: counts } = await supabase
-        .from('list_members')
-        .select('list_id')
+      const counts = await fetchAll<{ list_id: string }>(() =>
+        supabase.from('list_members').select('list_id')
+      )
 
       const countMap: Record<string, number> = {}
-      for (const row of counts || []) {
+      for (const row of counts) {
         countMap[row.list_id] = (countMap[row.list_id] || 0) + 1
       }
 
@@ -56,12 +56,14 @@ export default function Compose() {
       return
     }
 
-    const { data: memberLinks } = await supabase
-      .from('list_members')
-      .select('contact_id')
-      .in('list_id', listIds)
+    const memberLinks = await fetchAll<{ contact_id: string }>(() =>
+      supabase
+        .from('list_members')
+        .select('contact_id')
+        .in('list_id', listIds)
+    )
 
-    const uniqueIds = new Set((memberLinks || []).map((m) => m.contact_id))
+    const uniqueIds = new Set(memberLinks.map((m) => m.contact_id))
     setRecipientCount(uniqueIds.size)
   }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase, fetchAll } from '../../lib/supabase'
 
 interface Contact {
   id: string
@@ -26,12 +26,14 @@ export default function StakeBrowse() {
 
   async function loadContacts() {
     setLoading(true)
-    const { data } = await supabase
-      .from('contacts')
-      .select('id, first_name, last_name, phone, email, unit_name, age_group, opted_out')
-      .order('last_name')
-    setContacts(data || [])
-    const uniqueWards = [...new Set((data || []).map((c) => c.unit_name).filter(Boolean))]
+    const data = await fetchAll<Contact>(() =>
+      supabase
+        .from('contacts')
+        .select('id, first_name, last_name, phone, email, unit_name, age_group, opted_out')
+        .order('last_name')
+    )
+    setContacts(data)
+    const uniqueWards = [...new Set(data.map((c) => c.unit_name).filter(Boolean))]
     setWards(uniqueWards.sort())
     setLoading(false)
   }

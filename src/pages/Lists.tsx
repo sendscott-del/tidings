@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, fetchAll } from '../lib/supabase'
 
 interface List {
   id: string
@@ -31,13 +31,13 @@ export default function Lists() {
       .order('name')
 
     if (listsData) {
-      // Get member counts
-      const { data: counts } = await supabase
-        .from('list_members')
-        .select('list_id')
+      // Get member counts (paginated — list_members can exceed 1000)
+      const counts = await fetchAll<{ list_id: string }>(() =>
+        supabase.from('list_members').select('list_id')
+      )
 
       const countMap: Record<string, number> = {}
-      for (const row of counts || []) {
+      for (const row of counts) {
         countMap[row.list_id] = (countMap[row.list_id] || 0) + 1
       }
 
@@ -55,12 +55,14 @@ export default function Lists() {
     setSelectedList(list)
     setMembersLoading(true)
 
-    const { data: memberLinks } = await supabase
-      .from('list_members')
-      .select('contact_id, contact_type')
-      .eq('list_id', list.id)
+    const memberLinks = await fetchAll<{ contact_id: string; contact_type: string }>(() =>
+      supabase
+        .from('list_members')
+        .select('contact_id, contact_type')
+        .eq('list_id', list.id)
+    )
 
-    if (!memberLinks || memberLinks.length === 0) {
+    if (memberLinks.length === 0) {
       setMembers([])
       setMembersLoading(false)
       return
@@ -72,21 +74,32 @@ export default function Lists() {
     const results: any[] = []
 
     if (stakeIds.length > 0) {
-      const { data } = await supabase
-        .from('contacts')
-        .select('id, first_name, last_name, phone, unit_name, opted_out')
-        .in('id', stakeIds)
-        .order('last_name')
-      if (data) results.push(...data.map((c) => ({ ...c, type: 'stake' })))
+      // Batch .in() into chunks of 500 to avoid URL-length limits
+      for (let i = 0; i < stakeIds.length; i += 500) {
+        const chunk = stakeIds.slice(i, i + 500)
+        const data = await fetchAll<any>(() =>
+          supabase
+            .from('contacts')
+            .select('id, first_name, last_name, phone, unit_name, opted_out')
+            .in('id', chunk)
+            .order('last_name')
+        )
+        results.push(...data.map((c) => ({ ...c, type: 'stake' })))
+      }
     }
 
     if (communityIds.length > 0) {
-      const { data } = await supabase
-        .from('community_contacts')
-        .select('id, first_name, last_name, phone, opted_out')
-        .in('id', communityIds)
-        .order('last_name')
-      if (data) results.push(...data.map((c) => ({ ...c, type: 'community' })))
+      for (let i = 0; i < communityIds.length; i += 500) {
+        const chunk = communityIds.slice(i, i + 500)
+        const data = await fetchAll<any>(() =>
+          supabase
+            .from('community_contacts')
+            .select('id, first_name, last_name, phone, opted_out')
+            .in('id', chunk)
+            .order('last_name')
+        )
+        results.push(...data.map((c) => ({ ...c, type: 'community' })))
+      }
     }
 
     setMembers(results)

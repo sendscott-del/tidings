@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { parseCSV, type ParseResult } from '../../lib/csv-parser'
-import { supabase } from '../../lib/supabase'
+import { supabase, fetchAll } from '../../lib/supabase'
 
 interface Props {
   onComplete: () => void
@@ -26,10 +26,12 @@ export default function StakeImport({ onComplete }: Props) {
       const result = await parseCSV(file)
       setParseResult(result)
 
-      // Get existing contact count and phones for preview stats
+      // Get existing contact count and phones for preview stats (paginated — can exceed 1000)
       const { count } = await supabase.from('contacts').select('*', { count: 'exact', head: true })
-      const { data: existingPhones } = await supabase.from('contacts').select('phone')
-      const existingSet = new Set((existingPhones || []).map((c) => c.phone))
+      const existingPhones = await fetchAll<{ phone: string }>(() =>
+        supabase.from('contacts').select('phone')
+      )
+      const existingSet = new Set(existingPhones.map((c) => c.phone))
       const incomingSet = new Set(result.contacts.map((c) => c.phone))
 
       const toAdd = result.contacts.filter((c) => !existingSet.has(c.phone)).length
