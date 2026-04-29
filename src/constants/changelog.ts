@@ -15,6 +15,27 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
+    version: '0.2.3',
+    date: '2026-04-29',
+    changes: [
+      'Spanish UI support — toggle EN / ES from the header. The chrome (sidebar nav, mobile bottom tabs, sign-out button) and the entire login page are translated; preference persists in localStorage and auto-detects from the browser on first load. Per-recipient outgoing-message language is a separate concern not included here.',
+    ],
+  },
+  {
+    version: '0.2.2',
+    date: '2026-04-29',
+    changes: [
+      'Primary action buttons (Send, Save, Sign In, Continue) and chrome surfaces (header, modals, secondary buttons) now route through the Tidings tokens — bg-tidings-primary instead of bg-amber-500, bg-tidings-chrome instead of bg-slate-800. Same color, same hover, but the codebase now expresses brand intent so the design system can shift the accent in one place',
+    ],
+  },
+  {
+    version: '0.2.1',
+    date: '2026-04-29',
+    changes: [
+      'Adopted the shared Stake Suite design tokens — Tailwind v4 now generates utilities for tidings-primary (amber CTAs), tidings-chrome, brand-primary, stage-*, plus the canonical type scale, spacing, radii, and shadow shared across Magnify, Steward, and Tidings',
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-04-22',
     changes: [

@@ -136,7 +136,7 @@ export default function Compose() {
           </div>
           <button
             onClick={() => { setResult(null); setStep('database'); setBody(''); setSelectedListIds([]); setScheduledAt('') }}
-            className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700"
+            className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700"
           >
             Compose Another
           </button>
@@ -158,7 +158,7 @@ export default function Compose() {
         {(['database', 'recipients', 'message', 'confirm'] as const).map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
-              step === s ? 'bg-amber-500 text-white' :
+              step === s ? 'bg-tidings-primary text-white' :
               (['database', 'recipients', 'message', 'confirm'].indexOf(step) > i) ? 'bg-green-500 text-white' :
               'bg-slate-200 text-slate-500'
             }`}>
@@ -233,7 +233,7 @@ export default function Compose() {
             <button
               onClick={() => setStep('message')}
               disabled={selectedListIds.length === 0}
-              className="px-5 py-2.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -304,7 +304,7 @@ export default function Compose() {
             <button
               onClick={() => setStep('confirm')}
               disabled={!body.trim()}
-              className="px-5 py-2.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Review
             </button>
@@ -355,7 +355,7 @@ export default function Compose() {
             <button
               onClick={handleSend}
               disabled={sending}
-              className="px-5 py-2.5 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-tidings-primary text-white text-sm font-medium rounded-lg hover:bg-tidings-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {sending ? 'Sending…' : `Send ${recipientCount} ${recipientCount === 1 ? 'message' : 'messages'}`}
             </button>

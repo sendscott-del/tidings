@@ -131,7 +131,7 @@ export default function Admin() {
             setEditingUser(null)
             setForm({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false })
             setShowForm(true)
-          }} className="mb-4 px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700">
+          }} className="mb-4 px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700">
             Create User
           </button>
 
@@ -172,7 +172,7 @@ export default function Admin() {
               </div>
               <div className="flex gap-2">
                 <button onClick={saveUser} disabled={saving || (!editingUser && (!form.email || !form.password))}
-                  className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50">
+                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50">
                   {saving ? 'Saving...' : editingUser ? 'Update' : 'Create'}
                 </button>
                 <button onClick={() => { setShowForm(false); setEditingUser(null); setError('') }}
