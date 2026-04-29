@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Magnify — UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  html, body { margin:0; padding:0; background: #E8E4DA; min-height:100vh; font-family: var(--font-sans); }
+  .stage { min-height: 100vh; display:flex; align-items:flex-start; justify-content:center; padding: 32px 16px 64px; }
+  .phone { width: 390px; height: 780px; border-radius: 38px; background: var(--bg-2); box-shadow: 0 20px 60px rgba(0,0,0,0.18); overflow: hidden; position: relative; border: 8px solid #111; }
+  .status-bar { position:absolute; top:0; left:0; right:0; height: 36px; display:flex; justify-content:space-between; align-items:center; padding: 0 22px; font-size: 13px; font-weight: 700; color: var(--fg-1); z-index: 10; }
+  .status-bar.dark { color: white !important; }
+  .notch { position:absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 110px; height: 24px; background: #111; border-radius: 14px; z-index: 11; }
+
+  /* tab bar */
+  .tabbar { position:absolute; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--gray-100); display: flex; padding: 6px 0 16px; }
+  .tab { flex: 1; display:flex; flex-direction:column; align-items:center; gap: 2px; cursor:pointer; padding: 6px 0; color: var(--gray-500); }
+  .tab.active { color: var(--brand-primary); }
+  .tab .ico { font-size: 20px; line-height: 1; }
+  .tab .lbl { font-size: 10px; font-weight: 600; }
+
+  /* generic screen */
+  .screen { position:absolute; inset:0; background: var(--bg-2); padding-bottom: 76px; overflow-y: auto; display: none; }
+  .screen.active { display: block; }
+  .screen-pad { padding-top: 36px; }
+
+  .header { background: white; padding: 12px 16px; border-bottom: 1px solid var(--gray-100); display:flex; align-items:center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .header h1 { margin: 0; font-size: 17px; font-weight: 700; flex: 1; text-align: center; color: var(--fg-1); }
+  .header .back, .header .right { width: 36px; }
+  .back { font-size: 22px; color: var(--gray-800); cursor:pointer; }
+
+  /* login */
+  .login-hero { background: var(--brand-primary-dark); padding: 56px 24px 80px; color: white; }
+  .login-hero h1, .login-hero h2, .login-hero p, .login-hero div { color: white; }
+  .login-hero h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  .login-hero p { margin: 6px 0 0; font-size: 14px; color: rgba(255,255,255,0.85); }
+  .login-card { margin: -56px 16px 0; background: white; border-radius: 16px; padding: 22px 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .field-label { font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; }
+  .field { background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: 10px; display: flex; align-items: center; padding: 0 14px; margin-bottom: 14px; }
+  .field input { flex:1; border:0; background: transparent; outline: 0; padding: 10px 0; font-size: 15px; font-family: var(--font-sans); color: var(--fg-1); }
+  .field .ico { color: var(--gray-400); margin-right: 10px; font-size: 14px; }
+  .btn { width: 100%; background: var(--brand-primary); color: white; border: 0; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: var(--font-sans); }
+  .btn:active { opacity: 0.8; }
+  .btn.ghost { background: transparent; color: var(--brand-primary); }
+  .btn.outline { background: transparent; color: var(--brand-primary); border: 1.5px solid var(--brand-primary); }
+  .lang-row { display:flex; gap: 6px; margin-top: 14px; justify-content: center; font-size: 12px; }
+  .lang-row .seg { padding: 4px 10px; border-radius: 9999px; cursor:pointer; color: var(--gray-500); }
+  .lang-row .seg.on { background: var(--brand-primary-fade); color: var(--brand-primary); font-weight: 700; }
+
+  /* kanban */
+  .kanban-wrap { display: flex; overflow-x: auto; padding: 12px; gap: 12px; height: calc(100% - 56px); -webkit-overflow-scrolling: touch; }
+  .col { width: 240px; flex-shrink: 0; }
+  .col-head { display:flex; justify-content:space-between; align-items:center; border-top: 3px solid; padding-top: 8px; margin-bottom: 8px; }
+  .col-head .t { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+  .col-head .ct { background: var(--brand-primary); color: white; border-radius: 9999px; min-width: 22px; height: 22px; display:inline-flex; align-items:center; justify-content:center; padding: 0 6px; font-size: 11px; font-weight: 800; }
+  .ccard { background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--border-1); box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; }
+  .ccard.declined { border-color: var(--error); opacity: 0.7; }
+  .ccard .row1 { display:flex; align-items:center; gap: 8px; margin-bottom: 4px; }
+  .ccard img { width: 30px; height: 30px; border-radius: 7px; }
+  .ccard .name { font-size: 14px; font-weight: 700; color: var(--fg-1); flex: 1; }
+  .ccard .new { background: var(--error); color: white; border-radius: 9999px; padding: 2px 6px; font-size: 9px; font-weight: 800; letter-spacing: 0.05em; }
+  .ccard .calling { font-size: 12px; color: var(--fg-2); margin-bottom: 6px; }
+  .ccard .foot { display:flex; justify-content:space-between; align-items:center; }
+  .ccard .ward { font-size: 11px; color: var(--fg-3); font-weight: 600; }
+  .badge { border-radius: 9999px; border: 1px solid; padding: 2px 8px; font-size: 10px; font-weight: 700; }
+  .filter-row { padding: 0 12px 8px; display:flex; gap: 6px; }
+  .pill { padding: 6px 12px; border-radius: 9999px; font-size: 11px; font-weight: 600; background: white; border: 1px solid var(--border-1); color: var(--fg-2); cursor: pointer; }
+  .pill.on { background: var(--brand-primary); color: white; border-color: var(--brand-primary); }
+
+  /* new calling form */
+  .form { padding: 16px; }
+  .form .label { font-size: 13px; font-weight: 600; color: var(--gray-700); margin: 14px 0 6px; }
+  .form .label:first-child { margin-top: 0; }
+  .seg-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .seg-row .seg { padding: 10px; text-align:center; border-radius: 10px; background: white; border: 1.5px solid var(--gray-200); font-size: 13px; font-weight: 600; color: var(--fg-2); cursor: pointer; }
+  .seg-row .seg.on { background: var(--brand-primary-fade); border-color: var(--brand-primary); color: var(--brand-primary); }
+  textarea { width: 100%; box-sizing: border-box; min-height: 80px; padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--gray-200); background: var(--gray-50); font-family: var(--font-sans); font-size: 15px; resize: vertical; }
+  .check-row { display:flex; align-items:center; gap: 10px; padding: 10px 0; }
+  .checkbox { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--gray-300); background: white; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+  .checkbox.on { background: var(--brand-primary); border-color: var(--brand-primary); color: white; font-size: 14px; }
+
+  /* detail */
+  .detail-hdr { background: white; padding: 16px; border-bottom: 1px solid var(--gray-100); }
+  .detail-hdr .name { font-size: 22px; font-weight: 700; color: var(--fg-1); margin: 0; }
+  .detail-hdr .calling { font-size: 14px; color: var(--fg-2); margin-top: 4px; }
+  .detail-hdr .meta { display:flex; gap: 8px; align-items:center; margin-top: 10px; }
+  .section { background: white; margin: 12px 16px 0; border-radius: 12px; padding: 14px; border: 1px solid var(--border-1); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .section h3 { margin:0 0 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
+  .approval-row { display:flex; align-items:center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--gray-100); }
+  .approval-row:first-of-type { border-top: 0; }
+  .approval-row .nm { flex: 1; font-size: 14px; color: var(--fg-1); }
+  .approval-row .role { font-size: 11px; color: var(--fg-3); }
+  .ck { width: 22px; height: 22px; border-radius: 11px; border: 1.5px solid var(--gray-300); background: white; display:inline-flex; align-items:center; justify-content:center; }
+  .ck.on { background: var(--success); border-color: var(--success); color: white; font-size: 14px; }
+  .activity { font-size: 13px; color: var(--fg-2); padding: 6px 0; border-top: 1px dashed var(--gray-200); }
+  .activity:first-of-type { border-top: 0; }
+  .activity .when { color: var(--fg-3); font-size: 11px; margin-left: 6px; }
+
+  .floating-fab { position:absolute; right: 16px; bottom: 96px; width: 56px; height: 56px; border-radius: 28px; background: var(--brand-primary); color: white; display:inline-flex; align-items:center; justify-content:center; font-size: 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone">
+    <div class="notch"></div>
+
+    <!-- LOGIN -->
+    <div class="screen active" data-screen="login" data-screen-label="01 Login">
+      <div class="status-bar dark"><span>9:41</span><span>● ●●● 100%</span></div>
+      <div class="login-hero" style="padding-top: 64px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+          <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(201,168,76,0.35)">
+            <svg width="26" height="26" viewBox="0 0 64 64" fill="none">
+              <path d="M10 50 L10 18 L24 36" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M54 50 L54 18 L40 36" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="32" cy="36" r="9" stroke="#C9A84C" stroke-width="5" fill="none"/>
+              <line x1="38.5" y1="42.5" x2="44" y2="48" stroke="#C9A84C" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:white">Magnify</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.85);letter-spacing:0.01em">Stake Callings Workflow</div>
+          </div>
+        </div>
+        <h1 data-i18n="welcomeBack">Welcome back</h1>
+        <p style="opacity:1;color:rgba(255,255,255,0.85)" data-i18n="signInToContinue">Sign in to continue.</p>
+      </div>
+      <div class="login-card">
+        <div class="field-label" data-i18n="email">Email</div>
+        <div class="field"><span class="ico">✉</span><input value="emma@example.com"></div>
+        <div class="field-label" data-i18n="password">Password</div>
+        <div class="field"><span class="ico">🔒</span><input type="password" value="••••••••"><span class="ico">👁</span></div>
+        <button class="btn" onclick="go('sp')" data-i18n="signIn">Sign In</button>
+        <div style="text-align:center;margin-top:14px"><a class="btn ghost" data-i18n="forgot">Forgot password?</a></div>
+        <div class="lang-row">
+          <span class="seg on" onclick="setLang('en', this)">English</span>
+          <span class="seg" onclick="setLang('es', this)">Español</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SP BOARD -->
+    <div class="screen" data-screen="sp" data-screen-label="02 SP Board">
+      <div class="status-bar"><span>9:41</span><span>● ●●● 100%</span></div>
+      <div class="screen-pad"></div>
+      <div class="header">
+        <span class="back"></span>
+        <h1 data-i18n="spTitle">Stake Presidency</h1>
+        <span class="right"></span>
+      </div>
+      <div class="filter-row" style="padding-top: 10px">
+        <span class="pill on" data-i18n="filterAll">All</span>
+        <span class="pill" data-i18n="filterWard">Ward</span>
+        <span class="pill" data-i18n="filterStake">Stake</span>
+        <span class="pill" data-i18n="filterMP">MP</span>
+      </div>
+      <div class="kanban-wrap">
+        <div class="col">
+          <div class="col-head" style="border-top-color:#6B7280"><span class="t" data-i18n="stage_ideas">Ideas</span><span class="ct" style="background:#6B7280">3</span></div>
+          <div class="ccard" onclick="go('detail')">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Brother Anderson</div><div class="new">NEW</div></div>
+            <div class="calling">Elders Quorum President</div>
+            <div class="foot"><span class="ward">HP1</span><span class="badge" style="background:#6B728022;border-color:#6B7280;color:#6B7280" data-i18n="stage_ideas">Ideas</span></div>
+          </div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_stake.png"><div class="name">Sister Hernandez</div></div>
+            <div class="calling">Stake Young Women President</div>
+            <div class="foot"><span class="ward">WC2</span><span class="badge" style="background:#6B728022;border-color:#6B7280;color:#6B7280" data-i18n="stage_ideas">Ideas</span></div>
+          </div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Brother Lee</div></div>
+            <div class="calling">Ward Clerk</div>
+            <div class="foot"><span class="ward">MV</span><span class="badge" style="background:#6B728022;border-color:#6B7280;color:#6B7280" data-i18n="stage_ideas">Ideas</span></div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="col-head" style="border-top-color:#F59E0B"><span class="t" data-i18n="stage_for_approval">For Approval</span><span class="ct" style="background:#F59E0B">2</span></div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Brother Choi</div></div>
+            <div class="calling">First Counselor in Bishopric</div>
+            <div class="foot"><span class="ward">CH2</span><span class="badge" style="background:#F59E0B22;border-color:#F59E0B;color:#F59E0B" data-i18n="stage_for_approval">For Approval</span></div>
+          </div>
+          <div class="ccard declined">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Sister Patel</div></div>
+            <div class="calling">Ward Executive Secretary</div>
+            <div class="foot"><span class="ward">BI</span><span class="badge" style="background:#EF444422;border-color:#EF4444;color:#EF4444" data-i18n="declined">Declined</span></div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="col-head" style="border-top-color:#3B82F6"><span class="t" data-i18n="stage_stake_approved">Stake Approved</span><span class="ct" style="background:#3B82F6">1</span></div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_stake.png"><div class="name">Brother Reyes</div></div>
+            <div class="calling">High Councilor</div>
+            <div class="foot"><span class="ward">HP3</span><span class="badge" style="background:#3B82F622;border-color:#3B82F6;color:#3B82F6" data-i18n="stage_stake_approved">Stake Approved</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="floating-fab" onclick="go('new')">+</div>
+    </div>
+
+    <!-- HC BOARD -->
+    <div class="screen" data-screen="hc" data-screen-label="03 HC Board">
+      <div class="status-bar"><span>9:41</span><span>● ●●● 100%</span></div>
+      <div class="screen-pad"></div>
+      <div class="header">
+        <span class="back"></span>
+        <h1 data-i18n="hcTitle">High Council</h1>
+        <span class="right"></span>
+      </div>
+      <div class="filter-row" style="padding-top:10px">
+        <span class="pill on" data-i18n="filterAll">All</span>
+        <span class="pill" data-i18n="filterByWard">Filter by Ward</span>
+        <span class="pill" data-i18n="filterByAssignee">Assignee</span>
+      </div>
+      <div class="kanban-wrap">
+        <div class="col">
+          <div class="col-head" style="border-top-color:#8B5CF6"><span class="t" data-i18n="stage_hc_approval">HC Approval</span><span class="ct" style="background:#8B5CF6">2</span></div>
+          <div class="ccard" onclick="go('detail')">
+            <div class="row1"><img src="../../assets/icon_mp.png"><div class="name">Brother Gomez</div><div class="new">NEW</div></div>
+            <div class="calling">MP Ordination — Elder</div>
+            <div class="foot"><span class="ward">WC1</span><span class="badge" style="background:#8B5CF622;border-color:#8B5CF6;color:#8B5CF6" data-i18n="stage_hc_approval">HC Approval</span></div>
+          </div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Brother Choi</div></div>
+            <div class="calling">First Counselor in Bishopric</div>
+            <div class="foot"><span class="ward">CH2</span><span class="badge" style="background:#8B5CF622;border-color:#8B5CF6;color:#8B5CF6" data-i18n="stage_hc_approval">HC Approval</span></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-head" style="border-top-color:#EC4899"><span class="t" data-i18n="stage_extend">Extend</span><span class="ct" style="background:#EC4899">1</span></div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Sister Park</div></div>
+            <div class="calling">Elders Quorum 1st Counselor</div>
+            <div class="foot"><span class="ward">HP2</span><span class="badge" style="background:#EC489922;border-color:#EC4899;color:#EC4899" data-i18n="stage_extend">Extend</span></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-head" style="border-top-color:#14B8A6"><span class="t" data-i18n="stage_sustain">Sustain</span><span class="ct" style="background:#14B8A6">2</span></div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_stake.png"><div class="name">Brother Reyes</div></div>
+            <div class="calling">High Councilor</div>
+            <div class="foot"><span class="ward">HP3</span><span class="badge" style="background:#14B8A622;border-color:#14B8A6;color:#14B8A6" data-i18n="stage_sustain">Sustain</span></div>
+          </div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Brother Smith</div></div>
+            <div class="calling">Ward Clerk</div>
+            <div class="foot"><span class="ward">BI</span><span class="badge" style="background:#14B8A622;border-color:#14B8A6;color:#14B8A6" data-i18n="stage_sustain">Sustain</span></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-head" style="border-top-color:#22C55E"><span class="t" data-i18n="stage_set_apart">Set Apart</span><span class="ct" style="background:#22C55E">1</span></div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Sister Diaz</div></div>
+            <div class="calling">Primary President</div>
+            <div class="foot"><span class="ward">MV</span><span class="badge" style="background:#22C55E22;border-color:#22C55E;color:#22C55E" data-i18n="stage_set_apart">Set Apart</span></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-head" style="border-top-color:#F97316"><span class="t" data-i18n="stage_record">Record</span><span class="ct" style="background:#F97316">1</span></div>
+          <div class="ccard">
+            <div class="row1"><img src="../../assets/icon_ward.png"><div class="name">Brother Tate</div></div>
+            <div class="calling">Ward Executive Secretary</div>
+            <div class="foot"><span class="ward">MW</span><span class="badge" style="background:#F9731622;border-color:#F97316;color:#F97316" data-i18n="stage_record">Record</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW CALLING -->
+    <div class="screen" data-screen="new" data-screen-label="04 New">
+      <div class="status-bar"><span>9:41</span><span>● ●●● 100%</span></div>
+      <div class="screen-pad"></div>
+      <div class="header">
+        <span class="back" onclick="go('sp')">‹</span>
+        <h1 data-i18n="newTitle">New Entry</h1>
+        <span class="right"></span>
+      </div>
+      <div class="form">
+        <div class="label" data-i18n="typeLabel">Type</div>
+        <div class="seg-row">
+          <div class="seg on" data-i18n="type_ward">Ward</div>
+          <div class="seg" data-i18n="type_stake">Stake</div>
+          <div class="seg" data-i18n="type_mp">MP</div>
+        </div>
+        <div class="label" data-i18n="memberName">Member Name</div>
+        <div class="field"><input placeholder="Full name"></div>
+        <div class="label" data-i18n="callingLabel">Calling</div>
+        <div class="field"><input placeholder="Select calling…" value="Elders Quorum President"></div>
+        <div class="label" data-i18n="ward">Ward</div>
+        <div class="field"><input placeholder="Select ward…" value="Hyde Park 1st"></div>
+        <div class="check-row">
+          <span class="checkbox on">✓</span>
+          <span style="font-size: 14px" data-i18n="bishopApproved">Bishop has approved this calling</span>
+        </div>
+        <div class="label" data-i18n="notesLabel">Notes (optional)</div>
+        <textarea placeholder="Any additional context…"></textarea>
+        <div style="height: 16px"></div>
+        <button class="btn" onclick="go('sp')" data-i18n="submitForApproval">Submit for Approval</button>
+        <div style="height: 8px"></div>
+        <button class="btn outline" onclick="go('sp')" data-i18n="addToIdeas">Add to Ideas</button>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="screen" data-screen="detail" data-screen-label="05 Calling Detail">
+      <div class="status-bar"><span>9:41</span><span>● ●●● 100%</span></div>
+      <div class="screen-pad"></div>
+      <div class="header">
+        <span class="back" onclick="go('sp')">‹</span>
+        <h1 data-i18n="detailTitle">Calling Detail</h1>
+        <span class="right" style="color:var(--brand-primary);font-size:13px;font-weight:600;cursor:pointer" data-i18n="edit">Edit</span>
+      </div>
+      <div class="detail-hdr">
+        <h2 class="name">Brother Anderson</h2>
+        <div class="calling">Elders Quorum President · Hyde Park 1st</div>
+        <div class="meta">
+          <span class="badge" style="background:#F59E0B22;border-color:#F59E0B;color:#F59E0B" data-i18n="stage_for_approval">For Approval</span>
+          <span style="font-size:11px;color:var(--fg-3);font-weight:600" data-i18n="ward_calling">Ward Calling</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 data-i18n="approvalsNeeded">Approvals Needed</h3>
+        <div style="font-size:12px;color:var(--fg-3);margin-bottom:8px" data-i18n="threeMustApprove">All three Stake Presidency members must approve before advancing.</div>
+        <div class="approval-row">
+          <span class="ck on">✓</span>
+          <div><div class="nm">Pres. Williams</div><div class="role" data-i18n="role_sp">Stake President</div></div>
+        </div>
+        <div class="approval-row">
+          <span class="ck on">✓</span>
+          <div><div class="nm">Bro. Hansen</div><div class="role" data-i18n="role_c1">First Counselor</div></div>
+        </div>
+        <div class="approval-row">
+          <span class="ck"></span>
+          <div><div class="nm">Bro. Larsen</div><div class="role" data-i18n="role_c2">Second Counselor</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 data-i18n="taskAssignments">Task Assignments</h3>
+        <div class="approval-row" style="border-top:0">
+          <div style="flex:1"><div class="nm" data-i18n="extend">Extend Calling</div><div class="role" style="color:var(--fg-3)" data-i18n="unassigned">— Unassigned —</div></div>
+          <span style="color:var(--brand-primary);font-size:13px;font-weight:600;cursor:pointer" data-i18n="assign">Assign…</span>
+        </div>
+        <div class="approval-row">
+          <div style="flex:1"><div class="nm" data-i18n="sustain">Sustain</div><div class="role" style="color:var(--fg-3)">Bro. Allred</div></div>
+          <span style="color:var(--brand-primary);font-size:13px;font-weight:600;cursor:pointer" data-i18n="change">Change</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3 data-i18n="activityLog">Activity Log</h3>
+        <div class="activity">Pres. Williams approved <span class="when">2h ago</span></div>
+        <div class="activity">Bro. Hansen approved <span class="when">3h ago</span></div>
+        <div class="activity">Submitted for approval <span class="when">yesterday</span></div>
+      </div>
+
+      <div style="padding: 16px">
+        <button class="btn" data-i18n="advance">Stake Presidency Approves</button>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tabbar" id="tabbar" style="display:none">
+      <div class="tab" onclick="go('new')"><div class="ico">＋</div><div class="lbl" data-i18n="tab_new">New</div></div>
+      <div class="tab active" onclick="go('sp')"><div class="ico">⊟</div><div class="lbl" data-i18n="tab_sp">SP Board</div></div>
+      <div class="tab" onclick="go('hc')"><div class="ico">⊞</div><div class="lbl" data-i18n="tab_hc">HC Board</div></div>
+      <div class="tab"><div class="ico">✓</div><div class="lbl" data-i18n="tab_done">Completed</div></div>
+      <div class="tab"><div class="ico">⚙</div><div class="lbl" data-i18n="tab_settings">Settings</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const I18N = {
+  en: {
+    welcomeBack: "Welcome back", signInToContinue: "Sign in to continue.", email: "Email", password: "Password",
+    signIn: "Sign In", forgot: "Forgot password?", spTitle: "Stake Presidency", hcTitle: "High Council",
+    filterAll: "All", filterWard: "Ward", filterStake: "Stake", filterMP: "MP",
+    filterByWard: "Filter by Ward", filterByAssignee: "Assignee",
+    stage_ideas: "Ideas", stage_for_approval: "For Approval", stage_stake_approved: "Stake Approved",
+    stage_hc_approval: "HC Approval", stage_extend: "Extend", stage_sustain: "Sustain", stage_set_apart: "Set Apart",
+    stage_record: "Record", declined: "DECLINED",
+    newTitle: "New Entry", typeLabel: "Type", memberName: "Member Name", callingLabel: "Calling",
+    type_ward: "Ward", type_stake: "Stake", type_mp: "MP", ward: "Ward",
+    bishopApproved: "Bishop has approved this calling", notesLabel: "Notes (optional)",
+    submitForApproval: "Submit for Approval", addToIdeas: "Add to Ideas",
+    detailTitle: "Calling Detail", edit: "Edit", approvalsNeeded: "Approvals Needed",
+    threeMustApprove: "All three Stake Presidency members must approve before advancing.",
+    role_sp: "Stake President", role_c1: "First Counselor", role_c2: "Second Counselor",
+    taskAssignments: "Task Assignments", extend: "Extend Calling", unassigned: "— Unassigned —",
+    sustain: "Sustain", assign: "Assign…", change: "Change", activityLog: "Activity Log",
+    advance: "Stake Presidency Approves", ward_calling: "Ward Calling",
+    tab_new: "New", tab_sp: "SP Board", tab_hc: "HC Board", tab_done: "Completed", tab_settings: "Settings",
+  },
+  es: {
+    welcomeBack: "Bienvenido de nuevo", signInToContinue: "Inicie sesión para continuar.",
+    email: "Correo electrónico", password: "Contraseña", signIn: "Iniciar Sesión",
+    forgot: "¿Olvidó su contraseña?", spTitle: "Presidencia de Estaca", hcTitle: "Alto Consejo",
+    filterAll: "Todo", filterWard: "Barrio", filterStake: "Estaca", filterMP: "SM",
+    filterByWard: "Filtrar por Barrio", filterByAssignee: "Asignado",
+    stage_ideas: "Ideas", stage_for_approval: "Para Aprobación", stage_stake_approved: "Aprobado por Estaca",
+    stage_hc_approval: "Aprobación del CH", stage_extend: "Extender", stage_sustain: "Sostener",
+    stage_set_apart: "Apartar", stage_record: "Registrar", declined: "RECHAZADO",
+    newTitle: "Nueva Entrada", typeLabel: "Tipo", memberName: "Nombre del Miembro", callingLabel: "Llamamiento",
+    type_ward: "Barrio", type_stake: "Estaca", type_mp: "SM", ward: "Barrio",
+    bishopApproved: "El Obispo ha aprobado este llamamiento", notesLabel: "Notas (opcional)",
+    submitForApproval: "Enviar para Aprobación", addToIdeas: "Agregar a Ideas",
+    detailTitle: "Detalle del Llamamiento", edit: "Editar", approvalsNeeded: "Aprobaciones Necesarias",
+    threeMustApprove: "Los tres miembros de la Presidencia de Estaca deben aprobar antes de avanzar.",
+    role_sp: "Presidente de Estaca", role_c1: "Primer Consejero", role_c2: "Segundo Consejero",
+    taskAssignments: "Asignaciones de Tareas", extend: "Extender Llamamiento", unassigned: "— Sin asignar —",
+    sustain: "Sostener", assign: "Asignar…", change: "Cambiar", activityLog: "Registro de Actividad",
+    advance: "Presidencia de Estaca Aprueba", ward_calling: "Llamamiento de Barrio",
+    tab_new: "Nuevo", tab_sp: "Tablero PE", tab_hc: "Tablero CH", tab_done: "Completados", tab_settings: "Configuración",
+  }
+};
+let lang = 'en';
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[lang][key]) el.textContent = I18N[lang][key];
+  });
+}
+function setLang(l, btn) {
+  lang = l;
+  document.querySelectorAll('.lang-row .seg').forEach(s => s.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  applyLang();
+}
+function go(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const s = document.querySelector('[data-screen="' + name + '"]');
+  if (s) s.classList.add('active');
+  const tabbar = document.getElementById('tabbar');
+  tabbar.style.display = (name === 'login') ? 'none' : 'flex';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const idx = { new: 0, sp: 1, hc: 2 }[name];
+  if (idx !== undefined) document.querySelectorAll('.tab')[idx].classList.add('active');
+}
+applyLang();
+</script>
+</body>
+</html>
