@@ -10,7 +10,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
-  const { t } = useLanguage()
+  const { t, lang, setLang } = useLanguage()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,21 +27,28 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 px-4">
-      <div className="w-full max-w-sm">
-        {/* Logo / App Name */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-tidings-primary/10 mb-4">
-            <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-            </svg>
+    <div className="min-h-screen bg-slate-50">
+      {/* Navy hero band */}
+      <div className="bg-tidings-chrome px-6 pt-14 pb-24 text-white">
+        <div className="max-w-sm mx-auto">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="inline-flex items-center justify-center w-11 h-11 rounded-md bg-white/10">
+              <svg className="w-7 h-7 text-tidings-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-lg font-semibold tracking-tight">Tidings</p>
+              <p className="text-xs text-white/70">Stake Communications</p>
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold text-white tracking-tight">Tidings</h1>
-          <p className="text-slate-400 text-sm mt-1">Stake Communications</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('auth.signInTitle')}</h1>
         </div>
+      </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xl p-6 space-y-4">
+      {/* Form card overlapping the hero */}
+      <div className="px-4 -mt-12 pb-10">
+        <form onSubmit={handleSubmit} className="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-4">
           {error && (
             <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">
               {error}
@@ -58,7 +65,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent"
               placeholder={t('auth.emailPlaceholder')}
             />
           </div>
@@ -73,7 +80,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent"
               placeholder={t('auth.passwordPlaceholder')}
             />
           </div>
@@ -85,10 +92,32 @@ export default function Login() {
           >
             {submitting ? t('auth.signingIn') : t('auth.signIn')}
           </button>
+
+          {/* Language toggle */}
+          <div className="flex justify-center gap-1 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setLang('en')}
+              className={`px-4 py-1 text-xs rounded-full font-semibold transition-colors ${
+                lang === 'en' ? 'bg-amber-50 text-tidings-primary-dark' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang('es')}
+              className={`px-4 py-1 text-xs rounded-full font-semibold transition-colors ${
+                lang === 'es' ? 'bg-amber-50 text-tidings-primary-dark' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              Español
+            </button>
+          </div>
         </form>
 
         <p className="text-center text-slate-500 text-xs mt-6">
-          "Glad tidings of great joy" — Luke 2:10
+          &ldquo;Glad tidings of great joy&rdquo; — Luke 2:10
         </p>
       </div>
     </div>
