@@ -1,0 +1,145 @@
+/* ============================================================
+   Stake Suite — Tailwind v4 Theme Tokens
+   ------------------------------------------------------------
+   For Steward (Next.js + Tailwind v4) and Tidings (Vite +
+   Tailwind v4). Drop this file next to your existing
+   globals.css / index.css, then:
+
+       @import "tailwindcss";
+       @import "./tokens.css";
+
+   Every token here is a 1:1 alias for a CSS variable in
+   ../colors_and_type.css. Tailwind v4 turns these into
+   utility classes automatically:
+
+       --color-brand-primary  →  bg-brand-primary, text-brand-primary, border-brand-primary
+       --font-sans            →  font-sans
+       --radius-md            →  rounded-md
+       --shadow-md            →  shadow-md
+
+   Use suite tokens (brand-primary, brand-accent, stage-*,
+   type-*) for anything that should feel like the Stake Suite.
+   App-specific accents (steward, tidings) override the
+   "primary action" channel so each app keeps its existing
+   visual identity.
+   ============================================================ */
+
+@theme {
+  /* ---- Brand (suite) ---- */
+  --color-brand-primary:        #1B3A6B;
+  --color-brand-primary-light:  #2A5298;
+  --color-brand-primary-dark:   #0F2347;
+  --color-brand-primary-fade:   #E8EEF8;
+  --color-brand-accent:         #C9A84C;
+  --color-brand-accent-light:   #FFF8E7;
+
+  /* ---- App accents ---- */
+  /* Magnify: brand-primary is the action color (already covered above) */
+  /* Steward: blue-600 for primary actions, navy chrome */
+  --color-steward-primary:      #2563EB;
+  --color-steward-primary-dark: #1D4ED8;
+  --color-steward-chrome:       #1E3A5F;
+  /* Tidings: amber-500 for primary actions, slate-800 chrome */
+  --color-tidings-primary:      #F59E0B;
+  --color-tidings-primary-dark: #D97706;
+  --color-tidings-chrome:       #1E293B;
+
+  /* ---- Neutrals ---- */
+  --color-gray-50:  #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+
+  /* ---- Semantic ---- */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error:   #EF4444;
+  --color-info:    #3B82F6;
+
+  /* ---- Magnify workflow stages ---- */
+  --color-stage-ideas:          #6B7280;
+  --color-stage-for-approval:   #F59E0B;
+  --color-stage-stake-approved: #3B82F6;
+  --color-stage-hc-approval:    #8B5CF6;
+  --color-stage-issue-calling:  #EC4899;
+  --color-stage-sustain:        #14B8A6;
+  --color-stage-set-apart:      #22C55E;
+  --color-stage-record:         #F97316;
+  --color-stage-complete:       #10B981;
+
+  /* ---- Magnify calling-type colors ---- */
+  --color-type-ward:  #3B82F6;
+  --color-type-stake: #8B5CF6;
+  --color-type-mp:    #10B981;
+
+  /* ---- Steward checklist values ---- */
+  --color-y:     #22C55E;  /* yes / done */
+  --color-n:     #EF4444;  /* no / missed */
+  --color-k:     #F59E0B;  /* partial */
+  --color-empty: #F3F4F6;  /* untouched */
+  --color-today: #DBEAFE;
+
+  /* ---- Type ---- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+               "Inter", Roboto, Oxygen, Ubuntu, Cantarell,
+               "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --text-xs:   11px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   15px;
+  --text-lg:   17px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+
+  --font-weight-normal:    400;
+  --font-weight-medium:    600;  /* labels, secondary buttons */
+  --font-weight-semibold:  700;  /* titles */
+  --font-weight-bold:      800;  /* badges, count chips */
+
+  /* ---- Spacing ---- */
+  /* Tailwind ships 0/0.5/1/… by default. We add named tokens
+     to match the suite scale (4/8/16/24/32/48). */
+  --spacing-xs:  4px;
+  --spacing-sm:  8px;
+  --spacing-md:  16px;
+  --spacing-lg:  24px;
+  --spacing-xl:  32px;
+  --spacing-2xl: 48px;
+
+  /* ---- Radii ---- */
+  --radius-sm:   6px;
+  --radius-md:   10px;   /* canonical card / button radius */
+  --radius-lg:   16px;   /* modals, sheets */
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);   /* canonical card shadow */
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* ============================================================
+   Foreground / background tokens (not in @theme — these are
+   semantic aliases, not utility-generating)
+   ============================================================ */
+:root {
+  --fg-1: var(--color-gray-900);
+  --fg-2: var(--color-gray-700);
+  --fg-3: var(--color-gray-500);
+  --fg-4: var(--color-gray-400);
+  --bg-1: #FFFFFF;
+  --bg-2: var(--color-gray-50);
+  --bg-3: var(--color-gray-100);
+  --border-1: var(--color-gray-200);
+  --border-2: var(--color-gray-300);
+}

@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Steward — UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  /* Steward uses Tailwind v4 + system-ui; theme-color is navy #1e3a5f.
+     Status palette: green-500 / red-500 / amber-500 / gray-300.
+     Primary CTA: blue-600. Page bg: white. */
+
+  :root {
+    --steward-y:        #22c55e;   /* yes  */
+    --steward-n:        #ef4444;   /* no   */
+    --steward-na:       #d1d5db;   /* n/a  */
+    --steward-empty:    #f3f4f6;   /* empty cell */
+    --steward-today:    #dbeafe;   /* today highlight */
+    --steward-primary:  #2563eb;   /* blue-600 */
+    --steward-primary-hover: #1d4ed8;
+    --steward-blue-50:  #eff6ff;
+    --steward-amber:    #f59e0b;
+    --steward-theme:    #1e3a5f;   /* manifest theme color */
+
+    --gathered-bar:     #1e1b4b;   /* indigo-950, suite chrome */
+  }
+
+  html, body { margin:0; padding:0; background: #E8E4DA; min-height:100vh;
+               font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+               color: #111827; }
+
+  .stage { min-height: 100vh; display:flex; align-items:flex-start; justify-content:center;
+           padding: 32px 16px 80px; gap: 24px; flex-wrap: wrap; }
+  .col { display:flex; flex-direction:column; gap: 24px; align-items:center; }
+
+  /* phone */
+  .phone {
+    width: 390px; height: 800px; border-radius: 38px; background: white;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18); overflow: hidden; position: relative;
+    border: 8px solid #111;
+  }
+  .phone-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+                 text-transform: uppercase; color: var(--gray-600); }
+
+  .notch { position:absolute; top: 8px; left: 50%; transform: translateX(-50%);
+           width: 110px; height: 24px; background: #111; border-radius: 14px; z-index: 30; }
+  .status-bar {
+    position:absolute; top:0; left:0; right:0; height: 36px;
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 0 22px; font-size: 13px; font-weight: 700; z-index: 20;
+    color: #111827;
+  }
+  .status-bar.dark { color: white !important; }
+  .status-bar .right { display:flex; gap: 4px; align-items:center; }
+
+  /* gathered suite bar */
+  .gathered-bar {
+    background: var(--gathered-bar); color: white;
+    padding: 6px 16px; display:flex; align-items:center; justify-content:space-between;
+    font-size: 13px;
+  }
+  .gathered-bar .left { display:flex; align-items:center; gap: 8px; }
+  .gathered-bar .gathered-mark {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: rgba(255,255,255,0.5);
+  }
+  .gathered-bar .sep { width: 1px; height: 12px; background: rgba(255,255,255,0.2); }
+  .gathered-bar .app-mark {
+    width: 18px; height: 18px; border-radius: 4px;
+    background: linear-gradient(135deg, #1B3A6B, #2A5298);
+    display:inline-flex; align-items:center; justify-content:center;
+    color: #C9A84C; font-size: 10px; font-weight: 800;
+  }
+  .gathered-bar .app-name { font-weight: 700; font-size: 14px; }
+  .gathered-bar .chev { color: rgba(255,255,255,0.7); font-size: 10px; }
+
+  /* steward header */
+  .stw-header {
+    position: sticky; top: 0; z-index: 10; background: white;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 10px 16px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap: 12px;
+  }
+  .stw-header h1 { margin: 0; font-size: 18px; font-weight: 700; color: #111827;
+                   font-family: system-ui, sans-serif; line-height: 1.2; }
+  .stw-header .quote { font-size: 10px; font-style: italic; color: var(--gray-400);
+                       line-height: 1.3; margin-top: 2px; max-width: 260px; }
+  .stw-header .quote .ref { font-style: normal; }
+  .menu-btn { background: transparent; border: 0; padding: 4px;
+              color: var(--gray-500); cursor: pointer; }
+
+  /* screen container */
+  .screen { position:absolute; inset:0; background: white; padding-top: 36px;
+            display: flex; flex-direction: column; }
+  .screen-body { flex: 1; overflow: hidden; }
+
+  /* bottom nav (3 tabs) */
+  .stw-tabbar {
+    position:absolute; bottom: 0; left: 0; right: 0; background: white;
+    border-top: 1px solid var(--gray-200); display: flex; padding-bottom: 8px;
+  }
+  .stw-tab { flex: 1; display:flex; flex-direction:column; align-items:center; gap: 2px;
+             padding: 8px 0; cursor:pointer; color: var(--gray-400);
+             background: transparent; border: 0;
+             font-family: system-ui, sans-serif; font-size: 11px; font-weight: 500; }
+  .stw-tab.active { color: var(--steward-primary); }
+  .stw-tab svg { width: 20px; height: 20px; }
+
+  /* section header (collapsible) */
+  .section-head {
+    width: 100%; display:flex; justify-content:space-between; align-items:center;
+    padding: 12px 16px; background: white; border-bottom: 1px solid var(--gray-200);
+    cursor: pointer; border: 0; text-align: left; font-family: inherit;
+  }
+  .section-head .title { display:flex; align-items:center; gap: 8px;
+                          font-size: 14px; font-weight: 700; color: #1f2937; }
+  .section-head .count { font-size: 13px; font-weight: 700; color: var(--gray-400); }
+  .section-head .count.complete { color: var(--steward-y); }
+
+  /* period nav */
+  .period-nav {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 6px 16px; background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .period-nav .nav-btn { background: transparent; border: 0; color: var(--gray-400);
+                          padding: 4px; cursor: pointer; }
+  .period-nav .center { display:flex; align-items:center; gap: 8px; }
+  .period-nav .label { font-size: 13px; font-weight: 500; color: var(--gray-600); }
+  .period-nav .pill { font-size: 10px; font-weight: 700; padding: 2px 6px;
+                      border-radius: 4px; }
+  .period-nav .pill.current { color: var(--steward-y); background: #f0fdf4; }
+  .period-nav .pill.past { color: var(--gray-500); background: var(--gray-100); }
+  .period-nav .pill.future { color: var(--steward-primary); background: var(--steward-blue-50); }
+
+  /* category label */
+  .cat-label {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 6px 16px; background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .cat-label .name { font-size: 11px; font-weight: 700;
+                      letter-spacing: 0.06em; text-transform: uppercase;
+                      color: var(--gray-400); }
+  .cat-label .actions { display: flex; gap: 4px; }
+  .cat-label .actions button { background: transparent; border: 0;
+                               color: var(--gray-300); padding: 2px;
+                               cursor: pointer; }
+
+  /* behavior row */
+  .beh-row {
+    display:flex; align-items:center; gap: 12px;
+    padding: 12px 16px; background: white;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .status-btn {
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-weight: 700; font-size: 14px; border: 0; cursor: pointer;
+  }
+  .status-btn.empty { background: var(--gray-100); border: 2px solid var(--gray-200);
+                       color: var(--gray-300); }
+  .status-btn.y { background: var(--steward-y); color: white; }
+  .status-btn.n { background: var(--steward-n); color: white; }
+  .status-btn.na { background: var(--steward-na); color: white; }
+
+  .beh-meta { flex: 1; min-width: 0; }
+  .beh-name { font-size: 14px; line-height: 1.3; color: #1f2937; }
+  .beh-name.done { color: var(--gray-400); text-decoration: line-through; }
+  .beh-name.skip { color: var(--gray-400); }
+  .beh-pct { font-size: 10px; font-weight: 500; margin-top: 2px; }
+  .beh-pct.high { color: var(--steward-y); }
+  .beh-pct.mid { color: var(--steward-amber); }
+  .beh-pct.low { color: var(--steward-n); }
+
+  .icon-btn {
+    background: transparent; border: 0; padding: 6px; cursor: pointer;
+    color: var(--gray-300); flex-shrink: 0;
+  }
+  .icon-btn.has-comment { color: var(--steward-primary); }
+
+  /* day cell (history grid) */
+  .day-cell {
+    width: 40px; height: 40px; min-width: 40px; border-radius: 4px;
+    border: 1px solid; display:inline-flex; align-items:center; justify-content:center;
+    font-size: 13px; font-weight: 700; cursor: pointer; position: relative;
+  }
+  .day-cell.empty { background: var(--gray-50); border-color: var(--gray-200); color: var(--gray-300); }
+  .day-cell.today { background: var(--steward-today); border-color: #93c5fd; color: var(--steward-primary); }
+  .day-cell.y { background: var(--steward-y); border-color: var(--steward-y); color: white; }
+  .day-cell.n { background: var(--steward-n); border-color: var(--steward-n); color: white; }
+  .day-cell.na { background: var(--steward-na); border-color: var(--steward-na); color: white; }
+  .day-cell .has-comment-dot {
+    position: absolute; top: 3px; right: 3px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--steward-primary);
+  }
+
+  /* dashed add button */
+  .add-dashed {
+    width: calc(100% - 32px); margin: 12px 16px 0;
+    padding: 12px; border: 2px dashed var(--gray-300);
+    border-radius: 8px; background: transparent;
+    color: var(--gray-500); font-size: 14px; font-weight: 500;
+    display:flex; align-items:center; justify-content: center; gap: 6px;
+    cursor: pointer; font-family: inherit;
+  }
+  .add-dashed:hover { border-color: #60a5fa; color: var(--steward-primary); }
+  .save-tile {
+    width: calc(100% - 32px); margin: 8px 16px 8px;
+    padding: 10px; background: var(--steward-blue-50);
+    border: 1px solid #bfdbfe; border-radius: 8px;
+    color: var(--steward-primary); font-size: 14px; font-weight: 500;
+    display:flex; align-items:center; justify-content: center; gap: 6px;
+    cursor: pointer; font-family: inherit;
+  }
+
+  /* modal — bottom sheet on mobile */
+  .modal-overlay {
+    position:absolute; inset: 0; z-index: 50;
+    display:flex; align-items: flex-end; justify-content: center;
+    background: rgba(0,0,0,0.4);
+  }
+  .modal-card {
+    background: white; width: 100%; max-width: 420px;
+    border-radius: 16px 16px 0 0;
+    padding: 20px;
+  }
+  .modal-card h3 { margin: 0; font-size: 16px; font-weight: 600; color: #111827; }
+  .modal-card .sub { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+  .modal-close {
+    background: transparent; border: 0; padding: 4px; cursor: pointer;
+    color: var(--gray-400);
+  }
+  .modal-row { display:flex; align-items: flex-start; justify-content: space-between; }
+  .modal-section { margin-top: 14px; }
+  .modal-section .lbl { font-size: 11px; font-weight: 500; color: var(--gray-500);
+                          margin-bottom: 8px; text-transform: none; letter-spacing: 0; }
+  .status-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .status-pick {
+    padding: 8px; border-radius: 8px; border: 0; cursor: pointer;
+    font-size: 13px; font-weight: 500; font-family: inherit;
+  }
+  .status-pick.empty { background: var(--gray-100); color: var(--gray-600); }
+  .status-pick.y { background: var(--steward-y); color: white; }
+  .status-pick.n { background: var(--steward-n); color: white; }
+  .status-pick.na { background: var(--steward-na); color: white; }
+  .status-pick.selected {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--steward-primary);
+  }
+  textarea, .modal-card input[type=text] {
+    width: 100%; box-sizing: border-box;
+    padding: 8px 12px; border: 1px solid var(--gray-300);
+    border-radius: 8px; font-family: inherit; font-size: 14px;
+    color: #111827; resize: none;
+  }
+  textarea:focus, .modal-card input[type=text]:focus {
+    outline: 0; border-color: transparent; box-shadow: 0 0 0 2px var(--steward-primary);
+  }
+  .save-btn {
+    margin-top: 16px; width: 100%; padding: 10px; border-radius: 8px;
+    background: var(--steward-primary); color: white;
+    font-size: 14px; font-weight: 500; border: 0; cursor: pointer;
+    font-family: inherit;
+  }
+  .save-btn:hover { background: var(--steward-primary-hover); }
+
+  /* component table */
+  .ds-grid {
+    background: white; border-radius: 16px; padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    width: 880px; max-width: 100%;
+  }
+  .ds-grid h2 { margin: 0 0 16px; font-size: 18px; }
+  .ds-grid .ds-section { display:grid; grid-template-columns: 160px 1fr; gap: 16px;
+                           padding: 14px 0; border-top: 1px solid var(--gray-200); }
+  .ds-grid .ds-section:first-of-type { border-top: 0; }
+  .ds-grid .ds-section h3 { margin: 0; font-size: 12px; font-weight: 800;
+                              letter-spacing: 0.08em; text-transform: uppercase;
+                              color: var(--gray-500); }
+  .ds-grid .ds-section .desc { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+  .swatch-row { display:flex; gap: 12px; flex-wrap: wrap; }
+  .swatch { display:flex; flex-direction: column; gap: 6px; }
+  .swatch .chip { width: 56px; height: 56px; border-radius: 8px; }
+  .swatch .nm { font-size: 11px; font-weight: 700; color: var(--gray-700); }
+  .swatch .vl { font-size: 10px; color: var(--gray-500); font-family: ui-monospace, Menlo, monospace; }
+
+  .reflect-empty {
+    padding: 60px 24px; text-align: center; color: var(--gray-400);
+  }
+  .reflect-empty h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: var(--gray-700); }
+  .reflect-empty p { margin: 0; font-size: 13px; }
+
+  .reflect-list { padding: 12px 16px; display:flex; flex-direction: column; gap: 10px; }
+  .reflect-card {
+    background: white; border: 1px solid var(--gray-200); border-radius: 12px;
+    padding: 14px;
+  }
+  .reflect-card .when { font-size: 11px; font-weight: 600; color: var(--gray-500);
+                          text-transform: uppercase; letter-spacing: 0.06em; }
+  .reflect-card .body { font-size: 13px; color: #1f2937; line-height: 1.45; margin-top: 6px; }
+
+  /* login */
+  .login-screen {
+    position:absolute; inset: 0; padding-top: 36px;
+    display:flex; align-items: center; justify-content: center;
+    background: var(--gray-50);
+  }
+  .login-card-stw {
+    width: 280px; display:flex; flex-direction: column; gap: 16px;
+  }
+  .login-card-stw .logo {
+    width: 96px; height: 96px; margin: 0 auto;
+    border-radius: 22px; background: linear-gradient(160deg, #1e3a5f, #0f2347);
+    color: white; display:inline-flex; align-items:center; justify-content:center;
+    font-size: 14px; font-weight: 800; letter-spacing: 0.08em;
+    box-shadow: 0 12px 32px rgba(30,58,95,0.35);
+  }
+  .login-card-stw .tagline { text-align: center; font-size: 13px; color: var(--gray-500); }
+  .stw-field { display:flex; flex-direction: column; gap: 4px; }
+  .stw-field label { font-size: 13px; font-weight: 500; color: var(--gray-700); }
+  .stw-field input {
+    padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 8px;
+    font-family: inherit; font-size: 14px; color: #111827;
+  }
+  .stw-field input:focus { outline: 0; border-color: transparent;
+                            box-shadow: 0 0 0 2px var(--steward-primary); }
+  .stw-toggle { font-size: 13px; color: var(--gray-500); text-align: center; }
+  .stw-toggle a { color: var(--steward-primary); font-weight: 500; cursor: pointer; }
+
+  /* compliance overview row */
+  .compliance-strip { display:flex; gap: 6px; align-items:center; padding: 8px 16px; background: white;
+                       border-bottom: 1px solid var(--gray-100); }
+  .compliance-strip .pill {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+  }
+  .compliance-strip .pill.high { background: #f0fdf4; color: var(--steward-y); }
+  .compliance-strip .pill.mid { background: #fefce8; color: var(--steward-amber); }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <!-- ============================== COL 1: Today -->
+  <div class="col">
+    <div class="phone-label">01 — TODAY (CHECKLIST)</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar dark">
+        <span>9:41</span>
+        <span class="right">●●●● ●●●● 100%</span>
+      </div>
+      <div class="screen">
+        <!-- gathered suite bar -->
+        <div class="gathered-bar">
+          <div class="left">
+            <span class="gathered-mark">Gathered</span>
+            <div class="sep"></div>
+            <div class="app-mark">S</div>
+            <span class="app-name">Steward</span>
+          </div>
+          <span class="chev">▾</span>
+        </div>
+
+        <!-- app header -->
+        <header class="stw-header">
+          <div>
+            <h1>Steward</h1>
+            <p class="quote">&ldquo;I have appointed unto you to be stewards… even stewards indeed.&rdquo; <span class="ref">D&amp;C 104:57</span></p>
+          </div>
+          <button class="menu-btn" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </header>
+
+        <div class="screen-body" style="overflow-y:auto">
+          <!-- weekly section -->
+          <button class="section-head">
+            <span class="title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              This Week
+            </span>
+            <span class="count">3/5</span>
+          </button>
+
+          <div class="period-nav">
+            <button class="nav-btn" aria-label="Previous">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="center">
+              <span class="label">Week of Mar 4, 2024</span>
+              <span class="pill current">Current</span>
+            </div>
+            <button class="nav-btn" aria-label="Next">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          <div class="cat-label">
+            <span class="name">Personal</span>
+            <div class="actions">
+              <button aria-label="Edit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
+              <button aria-label="Add"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+            </div>
+          </div>
+
+          <div class="beh-row">
+            <button class="status-btn y" aria-label="Done">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <div class="beh-meta">
+              <p class="beh-name done">Daily prayer & scripture study</p>
+              <span class="beh-pct high">92% L12W</span>
+            </div>
+            <button class="icon-btn has-comment" aria-label="Comment">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </button>
+            <button class="icon-btn" aria-label="Calendar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </button>
+          </div>
+
+          <div class="beh-row">
+            <button class="status-btn empty" aria-label="Set status"></button>
+            <div class="beh-meta">
+              <p class="beh-name">Temple attendance</p>
+              <span class="beh-pct mid">67% L12W</span>
+            </div>
+            <button class="icon-btn" aria-label="Comment">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </button>
+            <button class="icon-btn" aria-label="Calendar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </button>
+          </div>
+
+          <div class="cat-label">
+            <span class="name">Calling</span>
+            <div class="actions">
+              <button><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
+              <button><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+            </div>
+          </div>
+
+          <div class="beh-row">
+            <button class="status-btn y">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <div class="beh-meta">
+              <p class="beh-name done">Visit assigned families</p>
+              <span class="beh-pct high">85% L12W</span>
+            </div>
+            <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
+            <button class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></button>
+          </div>
+
+          <div class="beh-row">
+            <button class="status-btn n">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="beh-meta">
+              <p class="beh-name">Counsel with bishop</p>
+              <span class="beh-pct low">42% L12W</span>
+            </div>
+            <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
+            <button class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></button>
+          </div>
+
+          <div class="beh-row">
+            <button class="status-btn na">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <div class="beh-meta">
+              <p class="beh-name skip">Quarterly stake council</p>
+              <span class="beh-pct high">100% L4Q</span>
+            </div>
+            <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
+            <button class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></button>
+          </div>
+
+          <button class="add-dashed">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Category
+          </button>
+          <button class="save-tile">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+            Save as Template
+          </button>
+
+          <div style="height: 32px"></div>
+        </div>
+
+        <nav class="stw-tabbar">
+          <button class="stw-tab active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4"/><polyline points="9 14 11 16 15 12"/></svg>
+            Work
+          </button>
+          <button class="stw-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            Reflect
+          </button>
+          <button class="stw-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5z"/><path d="M15 3v6h6"/></svg>
+            Notes
+          </button>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== COL 2: Cell detail modal + login -->
+  <div class="col">
+    <div class="phone-label">02 — CELL DETAIL MODAL</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar dark">
+        <span>9:41</span>
+        <span class="right">●●●● ●●●● 100%</span>
+      </div>
+      <div class="screen">
+        <div class="gathered-bar">
+          <div class="left">
+            <span class="gathered-mark">Gathered</span>
+            <div class="sep"></div>
+            <div class="app-mark">S</div>
+            <span class="app-name">Steward</span>
+          </div>
+          <span class="chev">▾</span>
+        </div>
+        <header class="stw-header">
+          <div><h1>Steward</h1><p class="quote">&ldquo;…even stewards indeed.&rdquo; <span class="ref">D&amp;C 104:57</span></p></div>
+          <button class="menu-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </header>
+
+        <!-- dimmed background -->
+        <div class="screen-body" style="opacity: 0.35; pointer-events: none; overflow: hidden;">
+          <div class="period-nav">
+            <button class="nav-btn">‹</button>
+            <div class="center"><span class="label">Week of Mar 4</span></div>
+            <button class="nav-btn">›</button>
+          </div>
+          <div class="cat-label"><span class="name">Personal</span><div class="actions"></div></div>
+          <div class="beh-row">
+            <button class="status-btn empty"></button>
+            <div class="beh-meta"><p class="beh-name">Temple attendance</p></div>
+          </div>
+        </div>
+
+        <!-- modal -->
+        <div class="modal-overlay">
+          <div class="modal-card">
+            <div class="modal-row">
+              <div>
+                <h3>Temple attendance</h3>
+                <p class="sub">Mar 4, 2024</p>
+              </div>
+              <button class="modal-close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="modal-section">
+              <div class="lbl">Status</div>
+              <div class="status-grid">
+                <button class="status-pick empty">Empty</button>
+                <button class="status-pick y selected">Yes</button>
+                <button class="status-pick n">No</button>
+                <button class="status-pick na">N/A</button>
+              </div>
+            </div>
+
+            <div class="modal-section">
+              <div class="lbl">Comment</div>
+              <textarea rows="4" placeholder="What went well? What could improve? Why was this missed?">Attended initiatory session with Lisa. Wonderful spirit there.</textarea>
+            </div>
+
+            <button class="save-btn">Save</button>
+          </div>
+        </div>
+
+        <nav class="stw-tabbar">
+          <button class="stw-tab active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4"/></svg>
+            Work
+          </button>
+          <button class="stw-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14"/></svg>Reflect</button>
+          <button class="stw-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14"/></svg>Notes</button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- login -->
+    <div class="phone-label">03 — LOGIN</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><span class="right">●●●● ●●●● 100%</span></div>
+      <div class="login-screen">
+        <div class="login-card-stw">
+          <div class="logo">STEWARD</div>
+          <p class="tagline">Sign in to your account</p>
+          <div class="stw-field">
+            <label>Email</label>
+            <input type="email" value="ben@stake.org">
+          </div>
+          <div class="stw-field">
+            <label>Password</label>
+            <input type="password" value="••••••••">
+          </div>
+          <button class="save-btn">Sign In</button>
+          <p class="stw-toggle">Don't have an account? <a>Sign Up</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== COL 3: Reflection log + tokens -->
+  <div class="col">
+    <div class="phone-label">04 — REFLECTION LOG</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar dark">
+        <span>9:41</span>
+        <span class="right">●●●● ●●●● 100%</span>
+      </div>
+      <div class="screen">
+        <div class="gathered-bar">
+          <div class="left">
+            <span class="gathered-mark">Gathered</span>
+            <div class="sep"></div>
+            <div class="app-mark">S</div>
+            <span class="app-name">Steward</span>
+          </div>
+          <span class="chev">▾</span>
+        </div>
+        <header class="stw-header">
+          <div><h1>Steward</h1><p class="quote">&ldquo;…even stewards indeed.&rdquo; <span class="ref">D&amp;C 104:57</span></p></div>
+          <button class="menu-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </header>
+        <div class="screen-body" style="overflow-y:auto">
+          <div class="reflect-list">
+            <div class="reflect-card">
+              <div class="when">Mar 4 · Week reflection</div>
+              <p class="body">Visiting the Mendezes felt like the highlight of my week. Their boy is doing better. Need to follow up with the elders quorum about the move next Saturday.</p>
+            </div>
+            <div class="reflect-card">
+              <div class="when">Feb 26 · Week reflection</div>
+              <p class="body">Light week — missed temple attendance and felt it. Will calendar a Tuesday session ahead of time next week so it doesn't slip.</p>
+            </div>
+            <div class="reflect-card">
+              <div class="when">Feb 19 · Week reflection</div>
+              <p class="body">Good council with the bishop about ward boundaries. Took notes and will share with the high council on Sunday.</p>
+            </div>
+          </div>
+        </div>
+        <nav class="stw-tabbar">
+          <button class="stw-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4"/></svg>Work</button>
+          <button class="stw-tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14"/></svg>Reflect</button>
+          <button class="stw-tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14"/></svg>Notes</button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- design tokens panel -->
+    <div class="ds-grid">
+      <h2>Steward — design tokens</h2>
+
+      <div class="ds-section">
+        <div>
+          <h3>Status</h3>
+          <p class="desc">Three-state cell: Yes / No / N/A. Tap cycles through.</p>
+        </div>
+        <div class="swatch-row">
+          <div class="swatch"><div class="chip" style="background:#22c55e"></div><span class="nm">Yes</span><span class="vl">#22c55e · green-500</span></div>
+          <div class="swatch"><div class="chip" style="background:#ef4444"></div><span class="nm">No</span><span class="vl">#ef4444 · red-500</span></div>
+          <div class="swatch"><div class="chip" style="background:#d1d5db"></div><span class="nm">N/A</span><span class="vl">#d1d5db · gray-300</span></div>
+          <div class="swatch"><div class="chip" style="background:#f3f4f6;border:1px solid #e5e7eb"></div><span class="nm">Empty</span><span class="vl">#f3f4f6</span></div>
+          <div class="swatch"><div class="chip" style="background:#dbeafe;border:1px solid #93c5fd"></div><span class="nm">Today</span><span class="vl">#dbeafe</span></div>
+        </div>
+      </div>
+
+      <div class="ds-section">
+        <div>
+          <h3>Primary</h3>
+          <p class="desc">CTAs, links, active nav, focus rings.</p>
+        </div>
+        <div class="swatch-row">
+          <div class="swatch"><div class="chip" style="background:#2563eb"></div><span class="nm">blue-600</span><span class="vl">#2563eb</span></div>
+          <div class="swatch"><div class="chip" style="background:#1d4ed8"></div><span class="nm">blue-700</span><span class="vl">#1d4ed8</span></div>
+          <div class="swatch"><div class="chip" style="background:#eff6ff;border:1px solid #bfdbfe"></div><span class="nm">blue-50</span><span class="vl">#eff6ff</span></div>
+          <div class="swatch"><div class="chip" style="background:#1e3a5f"></div><span class="nm">theme-color</span><span class="vl">#1e3a5f</span></div>
+        </div>
+      </div>
+
+      <div class="ds-section">
+        <div>
+          <h3>Compliance</h3>
+          <p class="desc">L12W / L12M / L4Q label coloring.</p>
+        </div>
+        <div class="swatch-row">
+          <div class="swatch"><div class="chip" style="background:#22c55e"></div><span class="nm">≥ 80%</span><span class="vl">green-600</span></div>
+          <div class="swatch"><div class="chip" style="background:#f59e0b"></div><span class="nm">50–79%</span><span class="vl">amber-600</span></div>
+          <div class="swatch"><div class="chip" style="background:#ef4444"></div><span class="nm">&lt; 50%</span><span class="vl">red-500</span></div>
+        </div>
+      </div>
+
+      <div class="ds-section">
+        <div>
+          <h3>Type</h3>
+          <p class="desc">system-ui stack, no custom font. Densely set for mobile.</p>
+        </div>
+        <div>
+          <div style="font-size: 18px; font-weight: 700; color: #111827;">App title — 18/700</div>
+          <div style="font-size: 14px; font-weight: 700; color: #1f2937; margin-top: 6px;">Section heading — 14/700</div>
+          <div style="font-size: 14px; color: #1f2937; margin-top: 6px;">Behavior name — 14/400</div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9ca3af; margin-top: 6px;">Category label — 11/700 · uppercase</div>
+          <div style="font-size: 10px; font-weight: 500; color: #22c55e; margin-top: 6px;">Compliance — 10/500</div>
+          <div style="font-size: 10px; font-style: italic; color: #9ca3af; margin-top: 6px;">Scripture quote — 10/400 · italic</div>
+        </div>
+      </div>
+
+      <div class="ds-section">
+        <div>
+          <h3>Notes</h3>
+          <p class="desc">Density and chrome guidance.</p>
+        </div>
+        <div style="font-size: 13px; color: #4b5563; line-height: 1.55;">
+          Mobile-first; min hit-target 36 px (status button) and 44 px on the icon strip including padding. Modals enter from the bottom on phones, become centered cards ≥ sm. Section headers and category labels are intentionally low-contrast to keep visual weight on the row content.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

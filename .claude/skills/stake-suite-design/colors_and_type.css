@@ -1,0 +1,178 @@
+/* ============================================================
+   Magnify Design System — Colors & Type
+   Source: sendscott-del/magnify (constants/theme.ts)
+   ============================================================ */
+
+:root {
+  /* ---- Brand ---- */
+  --brand-primary:        #1B3A6B;   /* deep stake-blue */
+  --brand-primary-light:  #2A5298;
+  --brand-primary-dark:   #0F2347;
+  --brand-primary-fade:   #E8EEF8;   /* tinted backgrounds */
+  --brand-accent:         #C9A84C;   /* warm temple gold */
+  --brand-accent-light:   #FFF8E7;
+
+  /* ---- Neutrals ---- */
+  --white: #FFFFFF;
+  --black: #111111;
+  --gray-50:  #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+
+  /* ---- Semantic ---- */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error:   #EF4444;
+  --info:    #3B82F6;
+
+  /* ---- Workflow stage colors ---- */
+  --stage-ideas:          #6B7280;
+  --stage-for-approval:   #F59E0B;
+  --stage-stake-approved: #3B82F6;
+  --stage-hc-approval:    #8B5CF6;
+  --stage-issue-calling:  #EC4899;
+  --stage-sustain:        #14B8A6;
+  --stage-set-apart:      #22C55E;
+  --stage-record:         #F97316;
+  --stage-complete:       #10B981;
+
+  /* ---- Calling type colors ---- */
+  --type-ward:   #3B82F6;
+  --type-stake:  #8B5CF6;
+  --type-mp:     #10B981;
+
+  /* ---- Foreground / background tokens ---- */
+  --fg-1: var(--gray-900);  /* primary text */
+  --fg-2: var(--gray-700);  /* secondary text */
+  --fg-3: var(--gray-500);  /* tertiary / metadata */
+  --fg-4: var(--gray-400);  /* placeholder / icons */
+  --bg-1: var(--white);     /* card surface */
+  --bg-2: var(--gray-50);   /* page background */
+  --bg-3: var(--gray-100);  /* subtle fill */
+  --border-1: var(--gray-200);
+  --border-2: var(--gray-300);
+
+  /* ---- Spacing scale ---- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* ---- Radii ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);   /* canonical card shadow */
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+  /* ---- Type scale (px, mobile-app-derived) ---- */
+  --fs-xs:   11px;
+  --fs-sm:   13px;
+  --fs-md:   15px;
+  --fs-lg:   17px;
+  --fs-xl:   20px;
+  --fs-xxl:  24px;
+  --fs-xxxl: 30px;
+
+  /* ---- Font families ---- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Inter",
+               Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  --font-display: var(--font-sans);   /* app uses system stack — display = same family, heavier */
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ============================================================
+   Semantic typography
+   ============================================================ */
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  color: var(--fg-1);
+  background: var(--bg-2);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xxxl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg-1);
+  line-height: 1.15;
+}
+
+h2, .h2 {
+  font-size: var(--fs-xxl);
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--fg-1);
+  line-height: 1.2;
+}
+
+h3, .h3 {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--fg-1);
+}
+
+h4, .h4 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--fg-1);
+}
+
+.subtitle {
+  font-size: var(--fs-sm);
+  color: var(--fg-3);
+  font-weight: 400;
+}
+
+.label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--fg-2);
+}
+
+.eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+p, .body {
+  font-size: var(--fs-md);
+  color: var(--fg-1);
+  line-height: 1.5;
+}
+
+small, .meta {
+  font-size: var(--fs-xs);
+  color: var(--fg-3);
+  font-weight: 600;
+}
+
+code, .code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--gray-100);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
