@@ -45,7 +45,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top bar */}
-      <header className="bg-slate-800 text-white shadow-md">
+      <header className="bg-tidings-chrome text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

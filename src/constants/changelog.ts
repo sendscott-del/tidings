@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.2.1'
+export const VERSION = '0.2.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.2.2',
+    date: '2026-04-29',
+    changes: [
+      'Primary action buttons (Send, Save, Sign In, Continue) and chrome surfaces (header, modals, secondary buttons) now route through the Tidings tokens — bg-tidings-primary instead of bg-amber-500, bg-tidings-chrome instead of bg-slate-800. Same color, same hover, but the codebase now expresses brand intent so the design system can shift the accent in one place',
+    ],
+  },
   {
     version: '0.2.1',
     date: '2026-04-29',
