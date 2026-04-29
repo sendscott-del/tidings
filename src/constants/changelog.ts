@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.2.0'
+export const VERSION = '0.2.4'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.2.4',
+    date: '2026-04-29',
+    changes: [
+      'Compose wizard now shows units on every count: list members ("12 members"), recipient totals on Step 2 ("312 unique recipients selected across 4 lists"), the Confirm row ("3 of 7 lists selected", "1 segment per recipient"), the character counter ("87 of 160 chars · 1 SMS segment"), and the Send button ("Send 312 messages"). Aligns with the design system rule that counts always carry their unit.',
+    ],
+  },
   {
     version: '0.2.0',
     date: '2026-04-22',
