@@ -93,7 +93,7 @@ export default function Inbox() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold text-slate-900">Inbox</h1>
           {unreadCount > 0 && (
-            <span className="bg-amber-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+            <span className="bg-tidings-primary text-white text-xs font-medium px-2 py-0.5 rounded-full">
               {unreadCount} unread
             </span>
           )}
@@ -116,7 +116,7 @@ export default function Inbox() {
             >
               {/* Unread dot */}
               <div className="pt-1.5">
-                <div className={`w-2 h-2 rounded-full ${!msg.read_by ? 'bg-amber-500' : 'bg-transparent'}`} />
+                <div className={`w-2 h-2 rounded-full ${!msg.read_by ? 'bg-tidings-primary' : 'bg-transparent'}`} />
               </div>
 
               <div className="flex-1 min-w-0">
