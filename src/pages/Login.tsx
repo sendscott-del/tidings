@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../i18n/LanguageContext'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -9,6 +10,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const { t } = useLanguage()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -17,7 +19,7 @@ export default function Login() {
 
     const { error } = await signIn(email, password)
     if (error) {
-      setError('Invalid email or password')
+      setError(t('auth.invalidCredentials'))
       setSubmitting(false)
     } else {
       navigate('/', { replace: true })
@@ -48,7 +50,7 @@ export default function Login() {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-              Email
+              {t('auth.email')}
             </label>
             <input
               id="email"
@@ -57,13 +59,13 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-              Password
+              {t('auth.password')}
             </label>
             <input
               id="password"
@@ -72,7 +74,7 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
-              placeholder="Enter your password"
+              placeholder={t('auth.passwordPlaceholder')}
             />
           </div>
 
@@ -81,7 +83,7 @@ export default function Login() {
             disabled={submitting}
             className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Signing in...' : 'Sign In'}
+            {submitting ? t('auth.signingIn') : t('auth.signIn')}
           </button>
         </form>
 

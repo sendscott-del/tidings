@@ -1,17 +1,25 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../i18n/LanguageContext'
+import type { TranslationKey } from '../i18n/translations'
 
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: 'home' },
-  { to: '/stake', label: 'Stake', icon: 'users' },
-  { to: '/community', label: 'Community', icon: 'building' },
-  { to: '/lists', label: 'Lists', icon: 'list' },
-  { to: '/compose', label: 'Compose', icon: 'send' },
-  { to: '/inbox', label: 'Inbox', icon: 'inbox' },
-  { to: '/history', label: 'History', icon: 'clock' },
+interface NavItem {
+  to: string
+  labelKey: TranslationKey
+  icon: string
+}
+
+const navItems: NavItem[] = [
+  { to: '/', labelKey: 'nav.dashboard', icon: 'home' },
+  { to: '/stake', labelKey: 'nav.stake', icon: 'users' },
+  { to: '/community', labelKey: 'nav.community', icon: 'building' },
+  { to: '/lists', labelKey: 'nav.lists', icon: 'list' },
+  { to: '/compose', labelKey: 'nav.compose', icon: 'send' },
+  { to: '/inbox', labelKey: 'nav.inbox', icon: 'inbox' },
+  { to: '/history', labelKey: 'nav.history', icon: 'clock' },
 ]
 
-const adminItem = { to: '/admin', label: 'Admin', icon: 'shield' }
+const adminItem: NavItem = { to: '/admin', labelKey: 'nav.admin', icon: 'shield' }
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
   const icons: Record<string, React.ReactNode> = {
@@ -34,6 +42,7 @@ function NavIcon({ name, className }: { name: string; className?: string }) {
 export default function Layout() {
   const { appUser, signOut } = useAuth()
   const navigate = useNavigate()
+  const { t, lang, setLang } = useLanguage()
 
   async function handleSignOut() {
     await signOut()
@@ -58,11 +67,30 @@ export default function Layout() {
             <span className="text-sm text-slate-300 hidden sm:block">
               {appUser?.full_name || appUser?.email}
             </span>
+            <div className="flex items-center gap-1 text-xs">
+              <button
+                onClick={() => setLang('en')}
+                className={`px-1.5 py-0.5 rounded ${lang === 'en' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                aria-label={t('menu.languageEnglish')}
+                aria-pressed={lang === 'en'}
+              >
+                EN
+              </button>
+              <span className="text-slate-600">·</span>
+              <button
+                onClick={() => setLang('es')}
+                className={`px-1.5 py-0.5 rounded ${lang === 'es' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                aria-label={t('menu.languageSpanish')}
+                aria-pressed={lang === 'es'}
+              >
+                ES
+              </button>
+            </div>
             <button
               onClick={handleSignOut}
               className="text-sm text-slate-400 hover:text-white transition-colors"
             >
-              Sign Out
+              {t('nav.signOut')}
             </button>
           </div>
         </div>
@@ -86,7 +114,7 @@ export default function Layout() {
                   }
                 >
                   <NavIcon name={item.icon} />
-                  {item.label}
+                  {t(item.labelKey)}
                 </NavLink>
               </li>
             ))}
@@ -108,7 +136,7 @@ export default function Layout() {
                   }
                 >
                   <NavIcon name={item.icon} />
-                  {item.label}
+                  {t(item.labelKey)}
                 </NavLink>
               </li>
             ))}
