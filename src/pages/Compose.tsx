@@ -129,7 +129,7 @@ export default function Compose() {
                 {result.status === 'queued' ? 'Message Scheduled' : 'Message Sent'}
               </h2>
               <p className="text-sm text-slate-500">
-                {result.recipient_count} recipients
+                Sent to {result.recipient_count} {result.recipient_count === 1 ? 'recipient' : 'recipients'}
                 {result.note && ` — ${result.note}`}
               </p>
             </div>
@@ -217,7 +217,7 @@ export default function Compose() {
                     <span className="text-sm font-medium text-slate-900">{list.name}</span>
                     {list.is_auto && <span className="text-xs text-slate-400 ml-1">(auto)</span>}
                   </div>
-                  <span className="text-sm text-slate-500">{list.member_count}</span>
+                  <span className="text-sm text-slate-500">{list.member_count} {list.member_count === 1 ? 'member' : 'members'}</span>
                 </label>
               ))}
             </div>
@@ -225,7 +225,7 @@ export default function Compose() {
 
           {recipientCount > 0 && (
             <p className="text-sm text-slate-600 font-medium">
-              {recipientCount} unique recipients selected
+              {recipientCount} unique {recipientCount === 1 ? 'recipient' : 'recipients'} selected{selectedListIds.length > 1 ? ` across ${selectedListIds.length} lists` : ''}
             </p>
           )}
 
@@ -262,7 +262,7 @@ export default function Compose() {
             />
             <div className="flex justify-between mt-1">
               <span className={`text-xs ${body.length > 320 ? 'text-red-500 font-medium' : 'text-slate-400'}`}>
-                {body.length} chars — {smsCount} SMS segment{smsCount !== 1 ? 's' : ''}
+                {body.length} of 160 chars · {smsCount} SMS segment{smsCount !== 1 ? 's' : ''}
               </span>
               {body.length > 320 && (
                 <span className="text-xs text-red-500">Long message — higher cost per recipient</span>
@@ -330,15 +330,15 @@ export default function Compose() {
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Lists</span>
-              <span className="text-slate-900 font-medium">{selectedListIds.length} selected</span>
+              <span className="text-slate-900 font-medium">{selectedListIds.length} of {lists.length} {lists.length === 1 ? 'list' : 'lists'} selected</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Unique recipients</span>
-              <span className="text-slate-900 font-medium">{recipientCount}</span>
+              <span className="text-slate-900 font-medium">{recipientCount} {recipientCount === 1 ? 'recipient' : 'recipients'}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">SMS segments</span>
-              <span className="text-slate-900 font-medium">{smsCount}</span>
+              <span className="text-slate-900 font-medium">{smsCount} {smsCount === 1 ? 'segment' : 'segments'} per recipient</span>
             </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Estimated cost</span>
@@ -357,7 +357,7 @@ export default function Compose() {
               disabled={sending}
               className="px-5 py-2.5 bg-tidings-primary text-white text-sm font-medium rounded-lg hover:bg-tidings-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {sending ? 'Sending...' : `Send to ${recipientCount} recipients`}
+              {sending ? 'Sending…' : `Send ${recipientCount} ${recipientCount === 1 ? 'message' : 'messages'}`}
             </button>
             <button
               onClick={() => setStep('message')}
