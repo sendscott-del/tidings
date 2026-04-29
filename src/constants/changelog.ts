@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.2.2'
+export const VERSION = '0.2.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.2.3',
+    date: '2026-04-29',
+    changes: [
+      'Spanish UI support — toggle EN / ES from the header. The chrome (sidebar nav, mobile bottom tabs, sign-out button) and the entire login page are translated; preference persists in localStorage and auto-detects from the browser on first load. Per-recipient outgoing-message language is a separate concern not included here.',
+    ],
+  },
   {
     version: '0.2.2',
     date: '2026-04-29',
