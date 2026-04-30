@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.2.4'
+export const VERSION = '0.3.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.3.0',
+    date: '2026-04-29',
+    changes: [
+      'Login page redesigned to match the Stake Suite auth pattern: solid Tidings-chrome navy hero band at top with the logo + "Tidings" + "Stake Communications" tagline, and the white form card overlapping the bottom of the hero. Replaces the previous full-bleed gradient background',
+      'Login page now has an English / Español language toggle directly inside the form card so users can switch language before signing in',
+    ],
+  },
   {
     version: '0.2.4',
     date: '2026-04-29',
