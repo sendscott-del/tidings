@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.3.0'
+export const VERSION = '0.4.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.4.0',
+    date: '2026-04-29',
+    changes: [
+      'New Tidings logo — white "T" letterform with two gold "signal sweep" arcs off the upper-right of the crossbar (suggesting transmission). Replaces the generic sparkle on the Login hero and the Layout header. Tagline updated to "Two-Way SMS for Stakes"',
+      'New favicon, apple-touch-icon, and high-resolution PNG icon for PWA install — all generated from the new SVG mark on the deep navy brand background',
+    ],
+  },
   {
     version: '0.3.0',
     date: '2026-04-29',

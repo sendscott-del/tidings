@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../i18n/LanguageContext'
+import { TidingsLogo } from '../components/icons/TidingsLogo'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -32,14 +33,10 @@ export default function Login() {
       <div className="bg-tidings-chrome px-6 pt-14 pb-24 text-white">
         <div className="max-w-sm mx-auto">
           <div className="flex items-center gap-3 mb-6">
-            <div className="inline-flex items-center justify-center w-11 h-11 rounded-md bg-white/10">
-              <svg className="w-7 h-7 text-tidings-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-              </svg>
-            </div>
+            <TidingsLogo size={44} />
             <div>
               <p className="text-lg font-semibold tracking-tight">Tidings</p>
-              <p className="text-xs text-white/70">Stake Communications</p>
+              <p className="text-xs text-white/70">Two-Way SMS for Stakes</p>
             </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight">{t('auth.signInTitle')}</h1>
