@@ -4,9 +4,19 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.5.0'
+export const VERSION = '0.6.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.6.0',
+    date: '2026-05-02',
+    changes: [
+      'Signatures: each user now has an optional signature (e.g. "— Sent by Chicago Stake", "— Sent by the Bishopric") that is automatically appended to every outbound message they send. Set or edit it in Admin → Users → Edit; quick-pick presets are provided for stake, bishopric, EQ, RS, YM/YW, and Primary presidencies.',
+      'Compose: shows the active signature in a callout above the iMessage-style preview, and the bubble + character counter + confirm preview now include the appended signature so what you see is exactly what each recipient will receive.',
+      'Edge functions: send-message and create-user redeployed — send-message looks up the sender\'s signature and appends it to the body before posting to Twilio (and stores the final body in messages.body so History reflects what was actually sent).',
+      'Note: the "Sent from your Twilio trial account" prefix that Twilio adds is a Twilio trial-account behavior. It can only be removed by upgrading the Twilio account out of trial mode in the Twilio console — no app change can suppress it.',
+    ],
+  },
   {
     version: '0.5.0',
     date: '2026-05-01',

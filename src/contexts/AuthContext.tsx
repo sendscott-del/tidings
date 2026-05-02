@@ -8,6 +8,7 @@ interface AppUser {
   full_name: string | null
   role: string
   permissions: Record<string, unknown>
+  signature: string | null
 }
 
 interface AuthContextType {

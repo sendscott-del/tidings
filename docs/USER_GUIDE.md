@@ -89,10 +89,14 @@ The Compose page walks you through four steps:
 ### Scheduling
 On step 3, check "Schedule for later" and pick a date/time to send in the future.
 
+### Signatures
+Every message you send can have an automatic signature appended (e.g., `— Sent by the Bishopric`). The signature is set per user by an admin in **Admin → Users → Edit**. When you compose, the active signature is shown in a callout above the preview, the iMessage-style bubble shows what will actually be sent, and the character counter includes the signature so you can see the segment count for the full message. If a user has no signature configured, nothing extra is appended.
+
 ### What happens when you send
 - Opted-out contacts are **automatically skipped** — you don't need to filter them out.
 - Messages go out at approximately 3 per second (Twilio toll-free rate limit).
 - Each recipient gets its own delivery log (see **Message History**).
+- If your Twilio account is on the free trial, Twilio prepends "Sent from your Twilio trial account" to every outbound message. This is a Twilio behavior and **cannot be removed in the app** — it goes away as soon as the Twilio account is upgraded out of trial mode in the Twilio console.
 
 ---
 
@@ -125,7 +129,7 @@ Create, edit, or delete Tidings user accounts. Roles:
 - **Sender** — can compose, send, view inbox and history. No user management.
 - **Viewer** — read-only.
 
-Each user has two permission flags: `can_text_stake` and `can_text_community`.
+Each user has two permission flags: `can_text_stake` and `can_text_community`, and an optional **signature** that is appended to every message they send. The Edit form has quick-pick buttons for common signatures (Stake Presidency, Bishopric, EQ Presidency, RS Presidency, YM/YW Presidency, Primary Presidency); you can also type a custom one or leave it blank for no signature.
 
 ### Settings
 Twilio credentials (Account SID, Auth Token, From Number) are stored as Supabase Edge Function secrets — not in the app database. Set them in the Supabase dashboard under **Edge Functions → Secrets**.
