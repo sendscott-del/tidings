@@ -29,6 +29,8 @@ export default function Compose() {
   const replyTo = (location.state as { replyTo?: ReplyTarget } | null)?.replyTo
   const signature = (appUser?.signature || '').trim()
 
+  const [budget, setBudget] = useState<{ budget_cents: number; used_cents: number; remaining_cents: number; quarter_end: string } | null>(null)
+
   const [step, setStep] = useState<Step>(replyTo ? 'message' : 'database')
   const [database, setDatabase] = useState<'stake' | 'community'>(
     replyTo?.contactType === 'community' ? 'community' : 'stake'
@@ -47,6 +49,23 @@ export default function Compose() {
   useEffect(() => {
     if (!replyTo) loadLists()
   }, [database])
+
+  useEffect(() => {
+    if (appUser?.ward) loadBudget(appUser.ward)
+  }, [appUser?.ward])
+
+  async function loadBudget(ward: string) {
+    const { data } = await supabase.rpc('get_ward_budget_status', { p_ward: ward })
+    const row = Array.isArray(data) ? data[0] : data
+    if (row) {
+      setBudget({
+        budget_cents: row.budget_cents,
+        used_cents: Number(row.used_cents),
+        remaining_cents: Number(row.remaining_cents),
+        quarter_end: row.quarter_end,
+      })
+    }
+  }
 
   async function loadLists() {
     const { data: listsData } = await supabase
@@ -196,7 +215,19 @@ export default function Compose() {
   const finalBody = signature && body.trim() ? `${body}\n\n${signature}` : body
   const smsCount = Math.ceil(finalBody.length / 160) || 0
   const effectiveRecipientCount = replyTo ? 1 : recipientCount
-  const estimatedCost = (effectiveRecipientCount * 0.0079).toFixed(2)
+  const willReceive = Math.max(0, effectiveRecipientCount - optedOutCount)
+  const projectedCostCents = smsCount * willReceive * 0.79
+  const estimatedCost = (projectedCostCents / 100).toFixed(2)
+
+  const pctUsed = budget && budget.budget_cents > 0
+    ? (budget.used_cents / budget.budget_cents) * 100
+    : 0
+  const pctAfter = budget && budget.budget_cents > 0
+    ? ((budget.used_cents + projectedCostCents) / budget.budget_cents) * 100
+    : 0
+  const wouldExceed = budget !== null && projectedCostCents > budget.remaining_cents
+  const noWardAssigned = !appUser?.ward
+  const hardBlock = noWardAssigned || wouldExceed
 
   if (result) {
     return (
@@ -239,11 +270,58 @@ export default function Compose() {
     )
   }
 
+  const budgetPillClasses =
+    pctUsed >= 100 || wouldExceed ? 'bg-red-50 border-red-200 text-red-900' :
+    pctUsed >= 95 || pctAfter >= 100 ? 'bg-red-50 border-red-200 text-red-900' :
+    pctUsed >= 80 || pctAfter >= 80 ? 'bg-amber-50 border-amber-200 text-amber-900' :
+    'bg-slate-50 border-slate-200 text-slate-700'
+
+  const quarterEndLabel = budget?.quarter_end
+    ? new Date(budget.quarter_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : ''
+
   return (
     <div className="max-w-xl">
       <h1 className="text-2xl font-semibold text-slate-900 mb-6">
         {replyTo ? 'Reply' : 'Compose Message'}
       </h1>
+
+      {noWardAssigned && (
+        <div className="bg-red-50 border border-red-200 text-red-900 text-sm px-4 py-3 rounded-lg mb-4">
+          <strong>You're not assigned to a ward.</strong> Ask an admin to set your ward in Admin → Users before sending.
+        </div>
+      )}
+
+      {appUser?.ward && budget && (
+        <div className={`border rounded-lg px-4 py-3 mb-4 text-sm ${budgetPillClasses}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-semibold">{appUser.ward}</span>
+              <span className="ml-2">
+                ${(Math.max(0, budget.remaining_cents) / 100).toFixed(2)} of ${(budget.budget_cents / 100).toFixed(2)} left this quarter
+              </span>
+            </div>
+            <span className="text-xs opacity-75">resets {quarterEndLabel}</span>
+          </div>
+          {budget.budget_cents > 0 && (
+            <div className="mt-2 h-1.5 bg-white/60 rounded-full overflow-hidden">
+              <div
+                className={`h-full ${
+                  pctUsed >= 95 ? 'bg-red-500' :
+                  pctUsed >= 80 ? 'bg-amber-500' :
+                  'bg-slate-500'
+                }`}
+                style={{ width: `${Math.min(100, pctUsed)}%` }}
+              />
+            </div>
+          )}
+          {wouldExceed && (
+            <p className="mt-2 text-xs font-medium">
+              This send would cost ~${(projectedCostCents / 100).toFixed(2)} and exceed the remaining budget. It will be blocked.
+            </p>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>
@@ -502,7 +580,7 @@ export default function Compose() {
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleSend}
-              disabled={sending}
+              disabled={sending || hardBlock}
               className="px-5 py-2.5 bg-tidings-primary text-white text-sm font-medium rounded-lg hover:bg-tidings-primary-dark disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
             >
               {sending && (
@@ -513,6 +591,10 @@ export default function Compose() {
               )}
               {sending
                 ? 'Sending…'
+                : noWardAssigned
+                ? 'No ward assigned'
+                : wouldExceed
+                ? 'Budget exceeded — blocked'
                 : scheduleEnabled
                 ? `Schedule ${effectiveRecipientCount} ${effectiveRecipientCount === 1 ? 'message' : 'messages'}`
                 : `Send ${effectiveRecipientCount} ${effectiveRecipientCount === 1 ? 'message' : 'messages'}`}

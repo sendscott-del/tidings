@@ -4,9 +4,21 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.6.0'
+export const VERSION = '0.7.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.7.0',
+    date: '2026-05-02',
+    changes: [
+      'Ward budgets: every ward (and a "Stake" pool) now has a quarterly SMS budget in dollars, set in Admin → Budgets. Usage is computed live from sent + failed message_logs (Twilio bills attempts) and resets automatically on Jan 1, Apr 1, Jul 1, and Oct 1 — no manual reset needed.',
+      'Admin → Users: each user must now be assigned to a ward (the budget pool their sends draw from). Stake-level senders use the "Stake" pool. The user list shows ward; users with no ward are flagged amber.',
+      'Admin → Budgets: new tab listing every ward with editable dollar cap, current quarter usage (with %), remaining, and quarter-end date. Initial caps seeded at $25/quarter for every ward and the Stake pool — adjust before relying on the system.',
+      'Compose: budget pill at the top showing ward + remaining $ + reset date. Pill turns yellow at 80%, red at 95%. The Send button is hard-blocked when the projected cost would exceed remaining budget, with a clear message naming the shortfall and reset date. Cost projection now multiplies segments × recipients (was previously a flat per-recipient estimate).',
+      'send-message edge function: rejects with HTTP 402 BUDGET_EXCEEDED before any Twilio call when the projected cost would push the ward past its cap. Also rejects with NO_WARD_ASSIGNED if the sender has no ward.',
+      'Schema: new ward_budgets table (RLS: read for all authed users, write for admins) and ward column on users; SECURITY DEFINER RPCs get_ward_usage_cents and get_ward_budget_status compute current-quarter cents used and full status (budget/used/remaining/quarter window). Quarter boundaries use America/Chicago calendar quarters.',
+    ],
+  },
   {
     version: '0.6.0',
     date: '2026-05-02',
