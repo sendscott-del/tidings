@@ -30,6 +30,9 @@ export default function Compose() {
   const signature = (appUser?.signature || '').trim()
 
   const [budget, setBudget] = useState<{ budget_cents: number; used_cents: number; remaining_cents: number; quarter_end: string } | null>(null)
+  const [shortening, setShortening] = useState(false)
+  const [shortenError, setShortenError] = useState('')
+  const [suggestion, setSuggestion] = useState<{ shortened: string; original_chars: number; shortened_chars: number; shortened_segments: number; original_segments: number } | null>(null)
 
   const [step, setStep] = useState<Step>(replyTo ? 'message' : 'database')
   const [database, setDatabase] = useState<'stake' | 'community'>(
@@ -54,6 +57,41 @@ export default function Compose() {
     if (appUser?.ward) loadBudget(appUser.ward)
   }, [appUser?.ward])
 
+  async function requestShortening() {
+    if (!body.trim()) return
+    setShortening(true)
+    setShortenError('')
+    setSuggestion(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+      // Target is 160 chars MINUS the signature length (so the final body fits in 1 segment)
+      const sigLen = signature ? signature.length + 2 : 0 // +2 for "\n\n"
+      const target = Math.max(40, 160 - sigLen)
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shorten-message`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ body, target_chars: target }),
+        }
+      )
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(data.message || data.error || 'Shorten failed')
+      setSuggestion(data)
+    } catch (err) {
+      setShortenError((err as Error).message)
+    }
+    setShortening(false)
+  }
+
+  function acceptShortening() {
+    if (suggestion) {
+      setBody(suggestion.shortened)
+      setSuggestion(null)
+    }
+  }
+
   async function loadBudget(ward: string) {
     const { data } = await supabase.rpc('get_ward_budget_status', { p_ward: ward })
     const row = Array.isArray(data) ? data[0] : data
@@ -68,11 +106,18 @@ export default function Compose() {
   }
 
   async function loadLists() {
-    const { data: listsData } = await supabase
+    let query = supabase
       .from('lists')
-      .select('id, name, database, is_auto')
+      .select('id, name, database, is_auto, ward_scope')
       .eq('database', database)
       .order('name')
+
+    // Non-admin, non-Stake users see only stake-wide lists + their own ward's lists.
+    if (appUser?.role !== 'admin' && appUser?.ward && appUser.ward !== 'Stake') {
+      query = query.or(`ward_scope.is.null,ward_scope.eq.${appUser.ward}`)
+    }
+
+    const { data: listsData } = await query
 
     if (listsData) {
       const counts = await fetchAll<{ list_id: string }>(() =>
@@ -461,6 +506,76 @@ export default function Compose() {
             <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
               <span className="font-medium text-slate-600">Your signature:</span> <span className="whitespace-pre-wrap">{signature}</span>
               <span className="block mt-1 text-slate-400">Appended automatically to every message you send.</span>
+            </div>
+          )}
+
+          {smsCount >= 2 && willReceive > 0 && !suggestion && (
+            <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-violet-900">
+                    This message is {smsCount} segments per recipient.
+                  </p>
+                  <p className="text-xs text-violet-700 mt-0.5">
+                    Shortening to 1 segment could save about $
+                    {((smsCount - 1) * willReceive * 0.79 / 100).toFixed(2)} on this send.
+                  </p>
+                </div>
+                <button
+                  onClick={requestShortening}
+                  disabled={shortening}
+                  className="px-3 py-1.5 bg-violet-600 text-white text-xs font-medium rounded-md hover:bg-violet-700 disabled:opacity-50 whitespace-nowrap"
+                >
+                  {shortening ? 'Thinking…' : '✨ Suggest shorter'}
+                </button>
+              </div>
+              {shortenError && (
+                <p className="text-xs text-red-600 mt-2">{shortenError}</p>
+              )}
+            </div>
+          )}
+
+          {suggestion && (
+            <div className="rounded-lg border border-violet-300 bg-white p-3 text-sm space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-slate-500">Original</span>
+                  <span className="text-xs text-slate-400">
+                    {suggestion.original_chars} chars · {suggestion.original_segments} segments
+                  </span>
+                </div>
+                <p className="text-slate-700 whitespace-pre-wrap text-sm bg-slate-50 rounded px-2.5 py-2">{body}</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-violet-700">✨ Suggested</span>
+                  <span className="text-xs text-violet-600">
+                    {suggestion.shortened_chars} chars · {suggestion.shortened_segments} segments
+                  </span>
+                </div>
+                <p className="text-slate-900 whitespace-pre-wrap text-sm bg-violet-50 border border-violet-200 rounded px-2.5 py-2">{suggestion.shortened}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={acceptShortening}
+                  className="px-3 py-1.5 bg-violet-600 text-white text-xs font-medium rounded-md hover:bg-violet-700"
+                >
+                  Use shortened version
+                </button>
+                <button
+                  onClick={() => setSuggestion(null)}
+                  className="px-3 py-1.5 text-slate-600 text-xs font-medium rounded-md border border-slate-300 hover:bg-slate-50"
+                >
+                  Keep original
+                </button>
+                <button
+                  onClick={requestShortening}
+                  disabled={shortening}
+                  className="px-3 py-1.5 text-violet-700 text-xs font-medium rounded-md border border-violet-300 hover:bg-violet-50 disabled:opacity-50 ml-auto"
+                >
+                  {shortening ? 'Thinking…' : 'Try again'}
+                </button>
+              </div>
             </div>
           )}
 

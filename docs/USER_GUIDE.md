@@ -64,6 +64,16 @@ Lists are how you target a group of contacts in a single message.
 - **Auto-lists** (labeled "(auto)") are rebuilt every time you import the LCR CSV — you can't edit them directly.
 - **Custom lists** can be created manually from either database. Useful for things like "Stake Youth Council" or "Hyde Park Community Event Attendees."
 
+### Ward visibility
+
+Each list has a **ward scope**. Lists scoped to a ward (shown with a green ward tag) are only visible to senders assigned to that ward. Lists with no ward scope are stake-wide and visible to everyone.
+
+- **Ward auto-lists** ("Hyde Park 1st Ward", "Westchester 2nd Ward (Spanish)", etc.) are auto-scoped to their ward.
+- **Org auto-lists** (Relief Society, Elders Quorum, Young Women, Aaronic Priesthood, Primary, Melchizedek Priesthood, Households with Children) are stake-wide.
+- **Custom lists**: when an admin or "Stake" pool user creates a list, they pick the visibility (stake-wide or scoped to a specific ward). When a ward sender creates a list, it is automatically scoped to their ward.
+
+Admins and users in the "Stake" pool see every list regardless of scope.
+
 ### Creating a custom list
 1. **Lists → New List**.
 2. Name the list, optionally describe it, choose stake or community.
@@ -85,6 +95,16 @@ The Compose page walks you through four steps:
 2. **Choose recipients** — Pick one or more lists. Tidings shows the **unique** recipient count (if someone's in two lists, they only get the message once).
 3. **Write message** — Character counter warns at 160/320/480 characters (each 160 = one SMS segment and costs more).
 4. **Confirm & Send** — Review the summary, estimated cost, and recipient count before sending.
+
+### LLM-assisted shortening
+
+When your message is 2 or more SMS segments long, Compose shows a **"✨ Suggest shorter"** button with the dollar savings you'd capture by shortening. Click it to have Claude Haiku 4.5 rewrite a tighter version. You see the original and suggestion side-by-side and explicitly choose **"Use shortened version"** or **"Keep original"** — nothing is auto-applied.
+
+The model is told to preserve names, dates, times, locations, links, and tone, and to omit any sign-off (your signature is appended separately). It will not match your voice perfectly, so important communications should still be reviewed before sending.
+
+**Setup:** the feature requires an **`ANTHROPIC_API_KEY`** in Supabase Edge Function secrets. Set it in the Supabase dashboard under **Edge Functions → Secrets**, otherwise the button surfaces a clear "feature not configured" error.
+
+**Cost note:** a single shortening call is fractions of a cent. On a 100-recipient ward broadcast, shaving one segment saves about $0.79; on a stake-wide blast, about $25. The LLM cost is dwarfed by the SMS savings at any non-trivial broadcast size.
 
 ### Ward budgets
 
