@@ -4,9 +4,22 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.7.0'
+export const VERSION = '0.8.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.8.0',
+    date: '2026-05-02',
+    changes: [
+      'Ward-scoped lists: lists now have a ward_scope field. Ward auto-lists (Hyde Park 1st Ward, etc.) are scoped to that ward; org auto-lists (Relief Society, EQ, YW, AP, Primary, Melch, Households w/ Children) stay stake-wide. Non-admin senders only see lists where ward_scope IS NULL or matches their assigned ward — so a Hyde Park 1st sender no longer sees Westchester 2nd\'s ward list cluttering Compose.',
+      'Lists page: new-list form now has a Visibility dropdown (admin / Stake users pick between stake-wide and ward-specific; ward senders see a note that the list will be scoped to their ward). List cards show a green ward tag when scoped.',
+      'Admins and users in the "Stake" pool still see all lists; nothing is hidden from them.',
+      'Schema: lists.ward_scope text (nullable) added; existing ward auto-lists backfilled by name match against ward_budgets. import-contacts edge fn updated to stamp ward_scope on every future ward auto-list rebuild.',
+      'LLM message shortening: when a message is 2+ segments and would be sent to at least 1 recipient, Compose now shows a "✨ Suggest shorter" button with the projected dollar savings. Clicking calls Claude Haiku 4.5 (via a new shorten-message edge function) to rewrite the body, preserving names, dates, times, links, and signature handling. The suggestion is shown side-by-side with the original; users explicitly accept or keep their wording — never auto-applied.',
+      'Cost analysis recap: a single shortening API call is roughly 800x cheaper than the segments saved on a 100-recipient broadcast and ~25,000x cheaper on a stake-wide blast. Suggestion only fires when there is real savings (≥2 segments + recipients > 0).',
+      'Setup needed: shorten-message requires a Supabase Edge Function secret named ANTHROPIC_API_KEY. Until that secret is set, the button surfaces a clear "feature not configured" error and nothing else breaks.',
+    ],
+  },
   {
     version: '0.7.0',
     date: '2026-05-02',

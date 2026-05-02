@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
+import { useAuth } from '../contexts/AuthContext'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 interface List {
@@ -9,6 +10,7 @@ interface List {
   description: string | null
   database: string
   is_auto: boolean
+  ward_scope: string | null
   created_at: string
   member_count: number
 }
@@ -35,18 +37,25 @@ interface PickerContact {
 
 export default function Lists() {
   const { toast } = useToast()
+  const { appUser } = useAuth()
   const [lists, setLists] = useState<List[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'stake' | 'community'>('all')
   const [selectedList, setSelectedList] = useState<List | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
+  const [wardOptions, setWardOptions] = useState<string[]>([])
+
+  const isAdmin = appUser?.role === 'admin'
+  const isStakePool = appUser?.ward === 'Stake'
+  const userWard = appUser?.ward || ''
 
   const [showCreate, setShowCreate] = useState(false)
-  const [createForm, setCreateForm] = useState<{ name: string; description: string; database: 'stake' | 'community' }>({
+  const [createForm, setCreateForm] = useState<{ name: string; description: string; database: 'stake' | 'community'; ward_scope: string }>({
     name: '',
     description: '',
     database: 'stake',
+    ward_scope: '',
   })
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState<{ name: string; description: string }>({ name: '', description: '' })
@@ -60,14 +69,26 @@ export default function Lists() {
 
   useEffect(() => {
     loadLists()
-  }, [])
+    loadWardOptions()
+  }, [appUser?.ward, appUser?.role])
+
+  async function loadWardOptions() {
+    const { data } = await supabase.from('ward_budgets').select('ward_name').order('ward_name')
+    setWardOptions((data || []).map((r: { ward_name: string }) => r.ward_name).filter((w: string) => w !== 'Stake'))
+  }
 
   async function loadLists() {
     setLoading(true)
-    const { data: listsData } = await supabase
+    let query = supabase
       .from('lists')
       .select('*')
       .order('name')
+
+    if (!isAdmin && userWard && !isStakePool) {
+      query = query.or(`ward_scope.is.null,ward_scope.eq.${userWard}`)
+    }
+
+    const { data: listsData } = await query
 
     if (listsData) {
       const counts = await fetchAll<{ list_id: string }>(() =>
@@ -148,6 +169,10 @@ export default function Lists() {
   async function handleCreate() {
     const name = createForm.name.trim()
     if (!name) return
+    // Non-admin non-Stake users always create within their own ward; admins choose.
+    const wardScope = isAdmin || isStakePool
+      ? (createForm.ward_scope || null)
+      : (userWard || null)
     const { data, error } = await supabase
       .from('lists')
       .insert({
@@ -155,6 +180,7 @@ export default function Lists() {
         description: createForm.description.trim() || null,
         database: createForm.database,
         is_auto: false,
+        ward_scope: wardScope,
       })
       .select()
       .single()
@@ -164,7 +190,7 @@ export default function Lists() {
     }
     toast(`List "${name}" created`, 'success')
     setShowCreate(false)
-    setCreateForm({ name: '', description: '', database: 'stake' })
+    setCreateForm({ name: '', description: '', database: 'stake', ward_scope: '' })
     await loadLists()
     if (data) viewMembers({ ...data, member_count: 0 })
   }
@@ -353,6 +379,27 @@ export default function Lists() {
               </button>
             ))}
           </div>
+          {(isAdmin || isStakePool) ? (
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Visibility
+              </label>
+              <select
+                value={createForm.ward_scope}
+                onChange={(e) => setCreateForm({ ...createForm, ward_scope: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+              >
+                <option value="">Stake-wide (visible to all senders)</option>
+                {wardOptions.map((w) => (
+                  <option key={w} value={w}>{w} only</option>
+                ))}
+              </select>
+            </div>
+          ) : userWard ? (
+            <p className="text-xs text-slate-500">
+              This list will be visible to <span className="font-semibold">{userWard}</span> senders only.
+            </p>
+          ) : null}
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleCreate}
@@ -364,7 +411,7 @@ export default function Lists() {
             <button
               onClick={() => {
                 setShowCreate(false)
-                setCreateForm({ name: '', description: '', database: 'stake' })
+                setCreateForm({ name: '', description: '', database: 'stake', ward_scope: '' })
               }}
               className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
             >
@@ -386,7 +433,7 @@ export default function Lists() {
               className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
             >
               <div onClick={() => viewMembers(list)} className="flex-1 cursor-pointer">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-slate-900 font-medium">{list.name}</span>
                   {list.is_auto && (
                     <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">(auto)</span>
@@ -396,6 +443,11 @@ export default function Lists() {
                   }`}>
                     {list.database}
                   </span>
+                  {list.ward_scope && (
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                      {list.ward_scope}
+                    </span>
+                  )}
                 </div>
                 {list.description && (
                   <p className="text-sm text-slate-500 mt-0.5">{list.description}</p>
