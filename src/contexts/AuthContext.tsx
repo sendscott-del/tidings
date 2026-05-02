@@ -9,6 +9,7 @@ interface AppUser {
   role: string
   permissions: Record<string, unknown>
   signature: string | null
+  ward: string | null
 }
 
 interface AuthContextType {

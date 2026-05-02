@@ -86,6 +86,23 @@ The Compose page walks you through four steps:
 3. **Write message** — Character counter warns at 160/320/480 characters (each 160 = one SMS segment and costs more).
 4. **Confirm & Send** — Review the summary, estimated cost, and recipient count before sending.
 
+### Ward budgets
+
+Every ward has a quarterly SMS budget in dollars. The budget shows up at the top of Compose as a pill: **"Hyde Park 1st Ward · $14.20 of $25.00 left this quarter — resets Jul 1, 2026"**.
+
+- **Yellow** at 80% used.
+- **Red** at 95% used.
+- **Hard block** at 100%: the Send button disables and the user can't send anything else from that ward until the next calendar quarter (Jan 1 / Apr 1 / Jul 1 / Oct 1).
+- A user must be assigned to a ward to send. Stake-level senders (Stake Presidency, etc.) use the special **"Stake"** pool.
+
+**Setting and adjusting budgets:** **Admin → Budgets**. You'll see every ward with editable dollar cap, current quarter usage (with %), remaining, and the next reset date. Type a new dollar amount and click Save. Initial caps are seeded at $25/quarter for every ward — review and adjust to match what you actually want to spend.
+
+**Assigning users to wards:** **Admin → Users → Edit**. The Ward dropdown is populated from the wards in your stake (taken from LCR import) plus "Stake". Users without a ward will see a clear "No ward assigned" message in Compose and won't be able to send.
+
+**What counts toward the budget:** every successful Twilio attempt (sent + failed) is counted at $0.0079 per segment per recipient. A 2-segment broadcast to 100 ward members costs ~$1.58 against the budget. Twilio bills attempts even on some failures, so failed deliveries are counted to keep the budget honest.
+
+**What about scheduling?** The budget check happens at submit time. If the budget shifts after a message is queued, the queued message currently goes through. (Worth knowing: scheduled sends aren't delivered yet by a worker — that's a separate piece of work.)
+
 ### Scheduling
 On step 3, check "Schedule for later" and pick a date/time to send in the future.
 
@@ -130,6 +147,9 @@ Create, edit, or delete Tidings user accounts. Roles:
 - **Viewer** — read-only.
 
 Each user has two permission flags: `can_text_stake` and `can_text_community`, and an optional **signature** that is appended to every message they send. The Edit form has quick-pick buttons for common signatures (Stake Presidency, Bishopric, EQ Presidency, RS Presidency, YM/YW Presidency, Primary Presidency); you can also type a custom one or leave it blank for no signature.
+
+### Budgets
+See **Ward budgets** under Compose & Send for full detail. In short: each ward has a dollar cap per calendar quarter; usage resets automatically; senders are hard-blocked at 100%.
 
 ### Settings
 Twilio credentials (Account SID, Auth Token, From Number) are stored as Supabase Edge Function secrets — not in the app database. Set them in the Supabase dashboard under **Edge Functions → Secrets**.
