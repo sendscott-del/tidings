@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -17,9 +18,14 @@ interface InboundMessage {
 
 export default function Inbox() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [messages, setMessages] = useState<InboundMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<InboundMessage | null>(null)
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
 
   useEffect(() => {
     loadMessages()
@@ -31,10 +37,9 @@ export default function Inbox() {
       .from('inbound_messages')
       .select('*')
       .order('received_at', { ascending: false })
-      .limit(200)
+      .limit(500)
 
     if (data) {
-      // Resolve contact names
       const stakeIds = data.filter((m) => m.contact_type === 'stake' && m.contact_id).map((m) => m.contact_id!)
       const communityIds = data.filter((m) => m.contact_type === 'community' && m.contact_id).map((m) => m.contact_id!)
 
@@ -62,7 +67,7 @@ export default function Inbox() {
 
       setMessages(data.map((m) => ({
         ...m,
-        contact_name: m.contact_id ? nameMap[m.contact_id] || null : null,
+        contact_name: m.contact_id ? nameMap[m.contact_id] || undefined : undefined,
       })))
     }
     setLoading(false)
@@ -80,6 +85,36 @@ export default function Inbox() {
       )
     }
   }
+
+  function handleReply() {
+    if (!selected) return
+    navigate('/compose', {
+      state: {
+        replyTo: {
+          phone: selected.from_phone,
+          name: selected.contact_name,
+          contactId: selected.contact_id,
+          contactType: selected.contact_type,
+        },
+      },
+    })
+  }
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const fromTs = dateFrom ? new Date(dateFrom).getTime() : null
+    const toTs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null
+    return messages.filter((m) => {
+      if (showUnreadOnly && m.read_by) return false
+      if (q) {
+        const hay = `${m.contact_name || ''} ${m.from_phone} ${m.body}`.toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      if (fromTs && new Date(m.received_at).getTime() < fromTs) return false
+      if (toTs && new Date(m.received_at).getTime() > toTs) return false
+      return true
+    })
+  }, [messages, search, dateFrom, dateTo, showUnreadOnly])
 
   const unreadCount = messages.filter((m) => !m.read_by).length
 
@@ -100,13 +135,57 @@ export default function Inbox() {
         </div>
       </div>
 
-      {messages.length === 0 ? (
+      {/* Search & filter row */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, phone, or message..."
+          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent"
+        />
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+          aria-label="From date"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+          aria-label="To date"
+        />
+        <label className="flex items-center gap-2 text-sm text-slate-700 whitespace-nowrap">
+          <input
+            type="checkbox"
+            checked={showUnreadOnly}
+            onChange={(e) => setShowUnreadOnly(e.target.checked)}
+            className="rounded border-slate-300 text-tidings-primary focus:ring-tidings-primary"
+          />
+          Unread only
+        </label>
+        {(search || dateFrom || dateTo || showUnreadOnly) && (
+          <button
+            onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setShowUnreadOnly(false) }}
+            className="text-sm text-slate-500 hover:text-slate-700 whitespace-nowrap"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <p className="text-slate-500">No inbound messages yet.</p>
+          <p className="text-slate-500">
+            {messages.length === 0 ? 'No inbound messages yet.' : 'No messages match your filters.'}
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          {messages.map((msg) => (
+          {filtered.map((msg) => (
             <div
               key={msg.id}
               onClick={() => markAsRead(msg)}
@@ -114,7 +193,6 @@ export default function Inbox() {
                 !msg.read_by ? 'bg-amber-50/50' : ''
               }`}
             >
-              {/* Unread dot */}
               <div className="pt-1.5">
                 <div className={`w-2 h-2 rounded-full ${!msg.read_by ? 'bg-tidings-primary' : 'bg-transparent'}`} />
               </div>
@@ -163,14 +241,24 @@ export default function Inbox() {
               <p className="text-sm text-slate-900">{selected.body}</p>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 mb-4">
               Received {new Date(selected.received_at).toLocaleString()}
             </p>
 
-            {selected.is_stop && (
-              <div className="mt-4 bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">
-                This contact has opted out of messages.
+            {selected.is_stop ? (
+              <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">
+                This contact has opted out of messages. You cannot reply.
               </div>
+            ) : (
+              <button
+                onClick={handleReply}
+                className="w-full px-4 py-2.5 bg-tidings-primary text-white text-sm font-medium rounded-lg hover:bg-tidings-primary-dark inline-flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                </svg>
+                Reply to {selected.contact_name?.split(' ')[0] || 'sender'}
+              </button>
             )}
           </div>
         </div>

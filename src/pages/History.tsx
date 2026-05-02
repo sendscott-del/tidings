@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../contexts/ToastContext'
 
 interface Message {
   id: string
@@ -20,13 +21,35 @@ interface MessageLog {
   sent_at: string
 }
 
+function downloadCSV(filename: string, rows: string[][]) {
+  const escape = (v: string) => {
+    if (v.includes(',') || v.includes('"') || v.includes('\n')) {
+      return `"${v.replace(/"/g, '""')}"`
+    }
+    return v
+  }
+  const csv = rows.map((r) => r.map(escape).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export default function History() {
+  const { toast } = useToast()
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Message | null>(null)
   const [logs, setLogs] = useState<MessageLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
   const [dbFilter, setDbFilter] = useState<string>('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   useEffect(() => { loadMessages() }, [])
 
@@ -72,7 +95,33 @@ export default function History() {
     undelivered: 'bg-red-100 text-red-700',
   }
 
-  const filtered = messages.filter((m) => !dbFilter || m.database === dbFilter)
+  const filtered = useMemo(() => {
+    const fromTs = dateFrom ? new Date(dateFrom).getTime() : null
+    const toTs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null
+    return messages.filter((m) => {
+      if (dbFilter && m.database !== dbFilter) return false
+      const ts = new Date(m.sent_at || m.created_at).getTime()
+      if (fromTs && ts < fromTs) return false
+      if (toTs && ts > toTs) return false
+      return true
+    })
+  }, [messages, dbFilter, dateFrom, dateTo])
+
+  function exportFailed() {
+    if (!selected) return
+    const failed = logs.filter((l) => l.status === 'failed' || l.status === 'undelivered')
+    if (failed.length === 0) {
+      toast('No failed recipients to export', 'info')
+      return
+    }
+    const rows: string[][] = [
+      ['Phone', 'Status', 'Error Code', 'Sent At'],
+      ...failed.map((l) => [l.phone, l.status, l.error_code || '', l.sent_at]),
+    ]
+    const datePart = new Date(selected.sent_at || selected.created_at).toISOString().slice(0, 10)
+    downloadCSV(`tidings-failed-${datePart}-${selected.id.slice(0, 8)}.csv`, rows)
+    toast(`Exported ${failed.length} failed ${failed.length === 1 ? 'recipient' : 'recipients'}`, 'success')
+  }
 
   if (loading) return <div className="text-slate-400 py-8 text-center">Loading history...</div>
 
@@ -80,12 +129,38 @@ export default function History() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">Message History</h1>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
         <select value={dbFilter} onChange={(e) => setDbFilter(e.target.value)}
           className="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900">
-          <option value="">All</option>
+          <option value="">All databases</option>
           <option value="stake">Stake</option>
           <option value="community">Community</option>
         </select>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          aria-label="From date"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          aria-label="To date"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+        />
+        {(dbFilter || dateFrom || dateTo) && (
+          <button onClick={() => { setDbFilter(''); setDateFrom(''); setDateTo('') }}
+            className="text-sm text-slate-500 hover:text-slate-700">
+            Clear
+          </button>
+        )}
+        <span className="text-xs text-slate-500 ml-auto">
+          {filtered.length} of {messages.length} {messages.length === 1 ? 'message' : 'messages'}
+        </span>
       </div>
 
       {filtered.length === 0 ? (
@@ -148,13 +223,23 @@ export default function History() {
                 <p className="text-slate-500 text-center py-4">No delivery logs found.</p>
               ) : (
                 <>
-                  <div className="flex gap-3 mb-4 text-sm">
-                    <span className="text-green-600 font-medium">
-                      {logs.filter((l) => l.status === 'delivered' || l.status === 'sent').length} delivered
-                    </span>
-                    <span className="text-red-600 font-medium">
-                      {logs.filter((l) => l.status === 'failed' || l.status === 'undelivered').length} failed
-                    </span>
+                  <div className="flex items-center justify-between mb-4 text-sm">
+                    <div className="flex gap-3">
+                      <span className="text-green-600 font-medium">
+                        {logs.filter((l) => l.status === 'delivered' || l.status === 'sent').length} delivered
+                      </span>
+                      <span className="text-red-600 font-medium">
+                        {logs.filter((l) => l.status === 'failed' || l.status === 'undelivered').length} failed
+                      </span>
+                    </div>
+                    {logs.some((l) => l.status === 'failed' || l.status === 'undelivered') && (
+                      <button
+                        onClick={exportFailed}
+                        className="text-xs px-3 py-1.5 bg-tidings-chrome text-white rounded-md hover:bg-slate-700"
+                      >
+                        Export Failed CSV
+                      </button>
+                    )}
                   </div>
                   <div className="space-y-2">
                     {logs.map((log) => (

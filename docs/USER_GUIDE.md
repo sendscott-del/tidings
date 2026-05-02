@@ -46,7 +46,14 @@ Community contacts are people near your meetinghouses who've opted in to receive
 **Community → Buildings**: add each meetinghouse (name + address). Every community contact belongs to one building.
 
 ### Contacts
-**Community → Contacts**: add, edit, or delete community contacts manually, or import a CSV per building (simpler format: first name, last name, phone).
+**Community → Contacts**: add, edit, or delete community contacts manually, or import a CSV per building.
+
+### Importing a community CSV
+1. Pick a building from the dropdown at the top of the Contacts tab.
+2. Click **Import CSV** and drop in a file with `First Name`, `Last Name`, `Phone`, `Notes` (optional). Phone is required.
+3. Review the preview (added / updated / removed) and click **Confirm Import**.
+
+Like the stake import, this is a **full sync** scoped to the selected building: any contact whose phone isn't in the new CSV is removed from that building.
 
 ---
 
@@ -57,7 +64,16 @@ Lists are how you target a group of contacts in a single message.
 - **Auto-lists** (labeled "(auto)") are rebuilt every time you import the LCR CSV — you can't edit them directly.
 - **Custom lists** can be created manually from either database. Useful for things like "Stake Youth Council" or "Hyde Park Community Event Attendees."
 
-Click any list to see its members.
+### Creating a custom list
+1. **Lists → New List**.
+2. Name the list, optionally describe it, choose stake or community.
+3. After creating, the list opens — click **+ Add Members** to pick contacts from the chosen database. Search by name, phone, or ward.
+
+### Editing or deleting a custom list
+- Open any custom list and click the pencil icon to rename or change its description.
+- Click the trash icon on the list card (or in the slide-over) to delete. Members are not deleted, just removed from the list.
+
+Auto-lists cannot be edited or deleted — re-import the CSV if you need them refreshed.
 
 ---
 
@@ -88,13 +104,16 @@ When someone replies to a message or texts your number, it shows up in **Inbox**
 - **STOP** (or STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT) automatically marks that contact as opted out.
 - **START** or **UNSTOP** re-subscribes them.
 - Click any message to mark it as read.
-- Click **Reply** on a message to compose a 1:1 response.
+- Use the search box, date range, or "Unread only" toggle to narrow the list.
+- Click any message and then **Reply** to send a 1:1 response — Compose opens pre-filled with the recipient's phone, skipping list selection.
 
 ---
 
 ## Message History
 
-All sent messages, with delivery stats per message. Filter by date, database, or sender. Click a message to see per-recipient delivery status.
+All sent messages, with delivery stats per message. Filter by date range or database. Click a message to see per-recipient delivery status.
+
+If any recipients failed delivery, click **Export Failed CSV** in the detail panel to download a CSV of phone numbers, status, and Twilio error code — useful for triaging which numbers to clean up or retry by hand.
 
 ---
 
