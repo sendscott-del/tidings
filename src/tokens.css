@@ -106,14 +106,12 @@
   --font-weight-bold:      800;  /* badges, count chips */
 
   /* ---- Spacing ---- */
-  /* Tailwind ships 0/0.5/1/… by default. We add named tokens
-     to match the suite scale (4/8/16/24/32/48). */
-  --spacing-xs:  4px;
-  --spacing-sm:  8px;
-  --spacing-md:  16px;
-  --spacing-lg:  24px;
-  --spacing-xl:  32px;
-  --spacing-2xl: 48px;
+  /* Tailwind v4 ships the 0/0.5/1/… scale via the base --spacing
+     multiplier (0.25rem). Do NOT add named --spacing-* tokens here:
+     in v4, the spacing namespace also drives max-w-*, so naming a
+     token --spacing-sm hijacks max-w-sm and collapses it to that
+     value (e.g. 8px instead of 24rem). Suite-scale CSS variables
+     for raw use live in :root below as --space-*. */
 
   /* ---- Radii ---- */
   --radius-sm:   6px;
@@ -133,6 +131,15 @@
    semantic aliases, not utility-generating)
    ============================================================ */
 :root {
+  /* Suite-scale spacing — usable as raw CSS vars (var(--space-md))
+     without touching Tailwind's spacing namespace. */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+
   --fg-1: var(--color-gray-900);
   --fg-2: var(--color-gray-700);
   --fg-3: var(--color-gray-500);

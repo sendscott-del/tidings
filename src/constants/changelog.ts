@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.4.0'
+export const VERSION = '0.4.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.4.1',
+    date: '2026-05-01',
+    changes: [
+      'Fixed: Login page (and any page using max-w-sm / max-w-md / max-w-xl / max-w-2xl) was collapsing to a thin vertical strip. Root cause was in tokens.css — the shared design system defined named --spacing-sm / -md / -xl / -2xl tokens inside the Tailwind v4 @theme block. In v4 the spacing namespace also drives max-w-*, so max-w-sm was resolving to 8px instead of 24rem. Renamed the suite spacing scale to --space-* in :root so it stays available as raw CSS vars but no longer hijacks Tailwind utilities.',
+    ],
+  },
   {
     version: '0.4.0',
     date: '2026-04-29',
