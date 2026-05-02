@@ -4,9 +4,34 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.4.1'
+export const VERSION = '0.6.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.6.0',
+    date: '2026-05-02',
+    changes: [
+      'Signatures: each user now has an optional signature (e.g. "— Sent by Chicago Stake", "— Sent by the Bishopric") that is automatically appended to every outbound message they send. Set or edit it in Admin → Users → Edit; quick-pick presets are provided for stake, bishopric, EQ, RS, YM/YW, and Primary presidencies.',
+      'Compose: shows the active signature in a callout above the iMessage-style preview, and the bubble + character counter + confirm preview now include the appended signature so what you see is exactly what each recipient will receive.',
+      'Edge functions: send-message and create-user redeployed — send-message looks up the sender\'s signature and appends it to the body before posting to Twilio (and stores the final body in messages.body so History reflects what was actually sent).',
+      'Note: the "Sent from your Twilio trial account" prefix that Twilio adds is a Twilio trial-account behavior. It can only be removed by upgrading the Twilio account out of trial mode in the Twilio console — no app change can suppress it.',
+    ],
+  },
+  {
+    version: '0.5.0',
+    date: '2026-05-01',
+    changes: [
+      'Compose: "Schedule for later" checkbox now actually toggles the date/time picker (previous version was a no-op). The Review button stays disabled until you pick a future time, and the Send button label updates to "Schedule N messages" when scheduling.',
+      'Compose: opt-out preview added to Step 2 (recipients) and Step 4 (confirm). You now see "12 opted out — they will be skipped (300 will receive)" before sending, instead of the count silently shrinking on the back end.',
+      'Compose: Send button now shows a spinner while the request is in flight.',
+      'Inbox: Reply button on the message detail opens Compose pre-filled to that person\'s phone (1:1 reply, not a broadcast). The send-message edge function gained a to_phones param to support direct sends.',
+      'Inbox: search box (name / phone / message body) plus from/to date filter and "Unread only" toggle. Loaded message limit raised from 200 to 500.',
+      'Lists: full custom list management — create new list, rename + edit description, delete, and add/remove individual members through a searchable contact picker. Auto-lists remain read-only.',
+      'Community: per-building CSV bulk import (First Name, Last Name, Phone, Notes). Same full-sync behavior as the stake import — contacts in the building whose phone isn\'t in the CSV are removed.',
+      'History: date range filter and "Export Failed CSV" button on the per-message detail panel for triaging delivery failures.',
+      'Polish: shared toast notification system for success/error feedback (Compose send, list operations, community deletes, imports). Confirm dialog component now used for all destructive actions (delete list, delete building, delete community contact). Replaces silent no-confirm deletes from prior versions.',
+    ],
+  },
   {
     version: '0.4.1',
     date: '2026-05-01',

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { LanguageProvider } from './i18n/LanguageContext'
+import { ToastProvider } from './contexts/ToastContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -18,6 +19,7 @@ export default function App() {
     <BrowserRouter>
       <LanguageProvider>
         <AuthProvider>
+          <ToastProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route
@@ -37,6 +39,7 @@ export default function App() {
               <Route path="admin" element={<Admin />} />
             </Route>
           </Routes>
+          </ToastProvider>
         </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>

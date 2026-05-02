@@ -8,7 +8,19 @@ interface AppUser {
   full_name: string
   role: string
   permissions: Record<string, any>
+  signature: string | null
 }
+
+const SIGNATURE_PRESETS = [
+  '— Sent by Chicago Stake',
+  '— Sent by the Stake Presidency',
+  '— Sent by the Bishopric',
+  '— Sent by the Elders Quorum Presidency',
+  '— Sent by the Relief Society Presidency',
+  '— Sent by the Young Men Presidency',
+  '— Sent by the Young Women Presidency',
+  '— Sent by the Primary Presidency',
+]
 
 export default function Admin() {
   const { appUser } = useAuth()
@@ -17,7 +29,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingUser, setEditingUser] = useState<AppUser | null>(null)
-  const [form, setForm] = useState({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false })
+  const [form, setForm] = useState({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false, signature: '' })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -54,6 +66,7 @@ export default function Admin() {
           full_name: form.full_name,
           role: form.role,
           permissions,
+          signature: form.signature.trim() || null,
         }).eq('id', editingUser.id)
       } else {
         // Create new user via edge function
@@ -74,6 +87,7 @@ export default function Admin() {
               full_name: form.full_name,
               role: form.role,
               permissions,
+              signature: form.signature.trim() || null,
             }),
           }
         )
@@ -83,7 +97,7 @@ export default function Admin() {
 
       setShowForm(false)
       setEditingUser(null)
-      setForm({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false })
+      setForm({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false, signature: '' })
       loadUsers()
     } catch (err) {
       setError((err as Error).message)
@@ -106,6 +120,7 @@ export default function Admin() {
       role: u.role,
       can_text_stake: u.permissions?.can_text_stake ?? true,
       can_text_community: u.permissions?.can_text_community ?? false,
+      signature: u.signature || '',
     })
     setShowForm(true)
   }
@@ -129,7 +144,7 @@ export default function Admin() {
         <div>
           <button onClick={() => {
             setEditingUser(null)
-            setForm({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false })
+            setForm({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false, signature: '' })
             setShowForm(true)
           }} className="mb-4 px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700">
             Create User
@@ -169,6 +184,33 @@ export default function Admin() {
                     className="rounded border-slate-300 text-amber-500 focus:ring-amber-500" />
                   Can text community contacts
                 </label>
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-slate-600">
+                  Signature (appended to every message this user sends)
+                </label>
+                <textarea
+                  placeholder="e.g. — Sent by the Bishopric"
+                  value={form.signature}
+                  onChange={(e) => setForm({ ...form, signature: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {SIGNATURE_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setForm({ ...form, signature: preset })}
+                      className="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded"
+                    >
+                      {preset.replace('— Sent by ', '')}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500">
+                  Leave blank for no signature. Two newlines are added automatically before the signature.
+                </p>
               </div>
               <div className="flex gap-2">
                 <button onClick={saveUser} disabled={saving || (!editingUser && (!form.email || !form.password))}
