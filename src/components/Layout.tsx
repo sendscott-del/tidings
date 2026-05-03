@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { supabase } from '../lib/supabase'
 import type { TranslationKey } from '../i18n/translations'
 import { TidingsLogo } from './icons/TidingsLogo'
+import AppSwitcher from './AppSwitcher'
 
 interface NavItem {
   to: string
@@ -75,6 +76,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <AppSwitcher />
       {/* Top bar */}
       <header className="bg-tidings-chrome text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">

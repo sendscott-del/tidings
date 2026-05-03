@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.9.1'
+export const VERSION = '0.10.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.10.0',
+    date: '2026-05-03',
+    changes: [
+      'Gather suite unification: a navy "Gathered" jump bar at the very top of every Tidings page lets you hop between the five sibling apps — Magnify, Steward, Glean, Tidings, Knit. Each app shows as a brand-colored letter chip with a one-line description.',
+      'Note: Tidings runs on its own Supabase project (the others share one), so for now the switcher in Tidings shows the full app catalog rather than gating on per-user access. The other four apps (Magnify, Steward, Glean, Knit) read live from the shared user_apps table and only show apps you can actually open. Cross-project gating in Tidings will come in a follow-up via a SECURITY DEFINER RPC on the shared project.',
+    ],
+  },
   {
     version: '0.9.1',
     date: '2026-05-02',
