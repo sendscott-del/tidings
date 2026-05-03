@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.13.0'
+export const VERSION = '0.14.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.14.0',
+    date: '2026-05-03',
+    changes: [
+      'Compose is now demo-safe: in demo mode, hitting Send no longer calls the send-message edge function (which talks to Twilio + records to messages). Instead the UI fakes a successful response so the trainer can walk through the post-send screen without spending real SMS credit or contacting real recipients.',
+    ],
+  },
   {
     version: '0.13.0',
     date: '2026-05-03',

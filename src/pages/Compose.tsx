@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
+import { useDemoMode } from '../contexts/DemoModeContext'
 
 interface ListOption {
   id: string
@@ -26,6 +27,7 @@ export default function Compose() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { appUser } = useAuth()
+  const { demoMode } = useDemoMode()
   const replyTo = (location.state as { replyTo?: ReplyTarget } | null)?.replyTo
   const signature = (appUser?.signature || '').trim()
 
@@ -213,6 +215,29 @@ export default function Compose() {
     setError('')
 
     try {
+      // Demo: never call the send-message edge function (Twilio-backed) in
+      // demo mode. Fake a success response so the trainer can walk through
+      // the post-send UI without spending real SMS credit or contacting
+      // real recipients.
+      if (demoMode) {
+        await new Promise(r => setTimeout(r, 600))
+        const recipient_count = replyTo ? 1 : Math.max(1, recipientCount - optedOutCount)
+        const fakeResult = {
+          status: scheduleEnabled && scheduledAt ? 'queued' : 'sent',
+          recipient_count,
+          message_id: 'demo-msg-' + Date.now(),
+          demo: true,
+        }
+        setResult(fakeResult)
+        toast(
+          fakeResult.status === 'queued'
+            ? `Demo: pretended to schedule message for ${recipient_count} ${recipient_count === 1 ? 'recipient' : 'recipients'}`
+            : `Demo: pretended to send to ${recipient_count} ${recipient_count === 1 ? 'recipient' : 'recipients'}`,
+          'success'
+        )
+        setSending(false)
+        return
+      }
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
 
