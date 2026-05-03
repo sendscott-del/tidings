@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.12.0'
+export const VERSION = '0.13.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.13.0',
+    date: '2026-05-03',
+    changes: [
+      'Demo mode now actually shows demo data: turning the banner on swaps the Dashboard counts (1,284 stake contacts, 7 unread, 23 opted out, 84 messages sent), the recent-messages list, the Inbox (with two unread fixtures including a STOP example), the Message History page (8 messages over the last 22 days), the per-message delivery log drill-down, and the inbox-unread badge in the nav. Marking an inbound message as read in demo mode updates in-memory state only — nothing writes to inbound_messages, so demo and real coexist on the same device.',
+      'New /lib/demoData.ts holds all the fixtures so swapping in additional fake content for Compose / Stake / Lists later is a one-file edit.',
+    ],
+  },
   {
     version: '0.12.0',
     date: '2026-05-03',

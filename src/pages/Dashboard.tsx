@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { useDemoMode } from '../contexts/DemoModeContext'
+import { TIDINGS_DEMO_DASHBOARD, TIDINGS_DEMO_RECENT } from '../lib/demoData'
 
 interface RecentMessage {
   id: string
@@ -14,14 +16,23 @@ interface RecentMessage {
 
 export default function Dashboard() {
   const { appUser } = useAuth()
+  const { demoMode, demoRole } = useDemoMode()
   const navigate = useNavigate()
   const [stats, setStats] = useState({ stakeContacts: 0, unreadReplies: 0, optedOut: 0, messagesSent: 0 })
   const [recentMessages, setRecentMessages] = useState<RecentMessage[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (demoMode) {
+      // Demo: fixture stats + recent messages so trainers can talk
+      // through the dashboard without exposing real recipient data.
+      setStats(TIDINGS_DEMO_DASHBOARD)
+      setRecentMessages(TIDINGS_DEMO_RECENT)
+      setLoading(false)
+      return
+    }
     loadDashboard()
-  }, [])
+  }, [demoMode, demoRole])
 
   async function loadDashboard() {
     const [

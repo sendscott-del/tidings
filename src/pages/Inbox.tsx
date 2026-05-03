@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useDemoMode } from '../contexts/DemoModeContext'
+import { TIDINGS_DEMO_INBOX } from '../lib/demoData'
 
 interface InboundMessage {
   id: string
@@ -18,6 +20,7 @@ interface InboundMessage {
 
 export default function Inbox() {
   const { user } = useAuth()
+  const { demoMode } = useDemoMode()
   const navigate = useNavigate()
   const [messages, setMessages] = useState<InboundMessage[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,8 +31,28 @@ export default function Inbox() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
 
   useEffect(() => {
+    if (demoMode) {
+      // Demo: fixture inbox so trainers can show STOP-handling and reply
+      // threading without exposing real numbers.
+      setMessages(
+        TIDINGS_DEMO_INBOX.map((m) => ({
+          id: m.id,
+          from_phone: m.from_phone,
+          body: m.body,
+          contact_id: null,
+          contact_type: 'stake',
+          is_stop: m.body.trim().toUpperCase() === 'STOP',
+          received_at: m.received_at,
+          read_by: m.read_by,
+          read_at: m.read_by ? m.received_at : null,
+          contact_name: m.from_name,
+        })) as InboundMessage[]
+      )
+      setLoading(false)
+      return
+    }
     loadMessages()
-  }, [])
+  }, [demoMode])
 
   async function loadMessages() {
     setLoading(true)
@@ -75,7 +98,15 @@ export default function Inbox() {
 
   async function markAsRead(msg: InboundMessage) {
     setSelected(msg)
-    if (!msg.read_by && user) {
+    if (msg.read_by) return
+    if (demoMode) {
+      // Demo: in-memory only — never write to inbound_messages.
+      setMessages((prev) =>
+        prev.map((m) => m.id === msg.id ? { ...m, read_by: 'demo-admin', read_at: new Date().toISOString() } : m)
+      )
+      return
+    }
+    if (user) {
       await supabase
         .from('inbound_messages')
         .update({ read_by: user.id, read_at: new Date().toISOString() })

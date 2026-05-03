@@ -62,6 +62,11 @@ export default function Layout() {
 
   useEffect(() => {
     if (!appUser?.id) return
+    if (demoMode) {
+      // Demo: hardcoded unread count matching the fixture inbox (2 unread).
+      setUnreadInbox(2)
+      return
+    }
     let active = true
     async function fetchUnread() {
       const { count } = await supabase
@@ -75,7 +80,7 @@ export default function Layout() {
     function onFocus() { fetchUnread() }
     window.addEventListener('focus', onFocus)
     return () => { active = false; clearInterval(interval); window.removeEventListener('focus', onFocus) }
-  }, [appUser?.id])
+  }, [appUser?.id, demoMode])
 
   const items = appUser?.role === 'admin' ? [...navItems, adminItem] : navItems
   const badgeFor = (to: string) => (to === '/inbox' ? unreadInbox : 0)
