@@ -5,13 +5,11 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { TidingsLogo } from '../components/icons/TidingsLogo'
 
 export default function ForgotPassword() {
-  const { lang, setLang } = useLanguage()
+  const { t, lang, setLang } = useLanguage()
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
-
-  const t = (en: string, es: string) => (lang === 'es' ? es : en)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -38,9 +36,7 @@ export default function ForgotPassword() {
               <p className="text-xs text-white/70">Two-Way SMS for Stakes</p>
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t('Reset your password', 'Restablecer contraseña')}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('auth.resetTitle')}</h1>
         </div>
       </div>
 
@@ -48,33 +44,23 @@ export default function ForgotPassword() {
         <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-4">
           {sent ? (
             <>
-              <p className="text-sm text-slate-700">
-                {t(
-                  "Check your inbox. We sent a password reset link to that email — open it to choose a new password.",
-                  "Revisa tu bandeja de entrada. Te enviamos un enlace para restablecer la contraseña."
-                )}
-              </p>
+              <p className="text-sm text-slate-700">{t('auth.resetSent')}</p>
               <Link
                 to="/login"
-                className="block w-full text-center py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white rounded-lg text-sm font-medium"
+                className="block w-full text-center py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white rounded-lg text-sm font-medium min-h-[44px] flex items-center justify-center"
               >
-                {t('Back to sign in', 'Volver a iniciar sesión')}
+                {t('auth.backToSignIn')}
               </Link>
             </>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <p className="text-sm text-slate-600">
-                {t(
-                  "Enter your email and we'll send you a link to reset your password.",
-                  "Escribe tu correo y te enviaremos un enlace para restablecer la contraseña."
-                )}
-              </p>
+              <p className="text-sm text-slate-600">{t('auth.resetIntro')}</p>
               {error && (
                 <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>
               )}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-                  {t('Email', 'Correo electrónico')}
+                  {t('auth.email')}
                 </label>
                 <input
                   id="email"
@@ -82,20 +68,20 @@ export default function ForgotPassword() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent"
-                  placeholder="you@example.com"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent min-h-[44px]"
+                  placeholder={t('auth.emailPlaceholder')}
                 />
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
               >
-                {submitting ? t('Sending…', 'Enviando…') : t('Send reset link', 'Enviar enlace')}
+                {submitting ? t('auth.sending') : t('auth.sendResetLink')}
               </button>
               <p className="text-center text-sm text-slate-500">
                 <Link to="/login" className="text-tidings-primary-dark font-medium hover:underline">
-                  {t('Back to sign in', 'Volver a iniciar sesión')}
+                  {t('auth.backToSignIn')}
                 </Link>
               </p>
             </form>
