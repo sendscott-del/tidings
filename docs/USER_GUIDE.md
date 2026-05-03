@@ -124,7 +124,15 @@ Every ward has a quarterly SMS budget in dollars. The budget shows up at the top
 **What about scheduling?** The budget check happens at submit time. If the budget shifts after a message is queued, the queued message currently goes through. (Worth knowing: scheduled sends aren't delivered yet by a worker — that's a separate piece of work.)
 
 ### Scheduling
-On step 3, check "Schedule for later" and pick a date/time to send in the future.
+On step 3, check "Schedule for later" and pick a date/time to send in the future. The message is queued in the database and dispatched by a background worker that runs every minute.
+
+**One-time setup for scheduled delivery (admin):** Tidings ships an edge function `dispatch-scheduled-messages` that needs to be invoked every minute. Set this up once in the Supabase dashboard:
+1. Go to **Supabase project → Database → Cron Jobs → Create job**.
+2. Name: `dispatch-scheduled-messages`. Schedule: `* * * * *` (every minute).
+3. Type: **Edge Function**. Function: `dispatch-scheduled-messages`. Method: `POST`. Body: `{}`.
+4. Save. Verify by scheduling a test message a couple minutes out and watching it move from `queued` → `sent` in Message History.
+
+The worker re-checks the ward budget at fire time (so a message scheduled before a budget hit won't sneak through), refreshes the recipient list (so anyone who opted out between scheduling and firing is skipped), and uses an atomic lock so the same message can't be dispatched twice.
 
 ### Signatures
 Every message you send can have an automatic signature appended (e.g., `— Sent by the Bishopric`). The signature is set per user by an admin in **Admin → Users → Edit**. When you compose, the active signature is shown in a callout above the preview, the iMessage-style bubble shows what will actually be sent, and the character counter includes the signature so you can see the segment count for the full message. If a user has no signature configured, nothing extra is appended.
@@ -139,7 +147,7 @@ Every message you send can have an automatic signature appended (e.g., `— Sent
 
 ## Inbox
 
-When someone replies to a message or texts your number, it shows up in **Inbox**.
+When someone replies to a message or texts your number, it shows up in **Inbox**. A **red badge** with the unread count appears next to the Inbox nav item (sidebar on desktop, bottom nav on mobile). The badge polls every 30 seconds and refreshes when you focus the tab.
 
 - Unread messages have a badge.
 - **STOP** (or STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT) automatically marks that contact as opted out.
@@ -170,6 +178,8 @@ Each user has two permission flags: `can_text_stake` and `can_text_community`, a
 
 ### Budgets
 See **Ward budgets** under Compose & Send for full detail. In short: each ward has a dollar cap per calendar quarter; usage resets automatically; senders are hard-blocked at 100%.
+
+Click the triangle next to a ward name in **Admin → Budgets** to expand a small bar chart of the last 4 quarters' usage in dollars — useful for spotting wards trending high before they hit the cap.
 
 ### Settings
 Twilio credentials (Account SID, Auth Token, From Number) are stored as Supabase Edge Function secrets — not in the app database. Set them in the Supabase dashboard under **Edge Functions → Secrets**.
