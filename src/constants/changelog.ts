@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.9.0'
+export const VERSION = '0.9.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.9.1',
+    date: '2026-05-02',
+    changes: [
+      'Scheduled delivery: dropped the dashboard-cron-setup step. pg_cron + pg_net are now enabled and the dispatcher cron is scheduled automatically (* * * * *) calling the dispatch-scheduled-messages edge function. The function was hardened to be safely callable without auth (idempotent + atomically locks queued → sending) so no service-role-key juggling is needed in the cron job definition.',
+    ],
+  },
   {
     version: '0.9.0',
     date: '2026-05-02',
