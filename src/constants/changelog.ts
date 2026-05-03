@@ -4,9 +4,20 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.8.0'
+export const VERSION = '0.9.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.9.0',
+    date: '2026-05-02',
+    changes: [
+      'Scheduled message delivery: a new dispatch-scheduled-messages edge function picks up queued messages whose scheduled_at has arrived, locks them (queued → sending), re-resolves recipients (so opt-out changes since scheduling are honored), re-checks the ward budget at fire time, then dispatches via Twilio. Up to 5 messages processed per run. Set up the cron from the Supabase dashboard (Database → Cron Jobs) calling this edge fn every minute — see user guide for the exact settings.',
+      'Schema: messages.to_phones text[], messages.dispatch_attempts int, messages.last_dispatch_error text. send-message edge fn now persists to_phones for scheduled direct sends so the worker can re-deliver them. Indexed (scheduled_at) WHERE status = \'queued\' for cheap worker scans.',
+      'Per-ward usage history: Admin → Budgets now has a click-to-expand triangle on each ward row showing the last 4 quarters as a small bar chart with dollar values. Uses a new SECURITY DEFINER RPC get_ward_usage_history(ward, n_quarters_back) that walks calendar quarters in America/Chicago and joins through message_logs → messages → users.ward.',
+      'Inbox unread badge: red pill on the Inbox nav item (sidebar + mobile bottom nav) showing count of inbound_messages with read_at IS NULL. Polls every 30 seconds and refreshes on window focus. Mobile bottom nav extended from 5 to 6 items so Inbox is reachable + visible on phones.',
+      'Note: the badge is in-app only — to get OS-level notifications when Tidings is closed, browser push (PWA + service worker) would need to be added separately. Captured to backlog.',
+    ],
+  },
   {
     version: '0.8.0',
     date: '2026-05-02',

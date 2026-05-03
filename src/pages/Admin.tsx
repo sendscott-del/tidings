@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -45,6 +45,8 @@ export default function Admin() {
   const [budgets, setBudgets] = useState<WardBudget[]>([])
   const [budgetsLoading, setBudgetsLoading] = useState(false)
   const [budgetEdits, setBudgetEdits] = useState<Record<string, string>>({})
+  const [historyOpenFor, setHistoryOpenFor] = useState<string | null>(null)
+  const [historyData, setHistoryData] = useState<Record<string, { quarter_label: string; used_cents: number }[]>>({})
 
   useEffect(() => { loadUsers(); loadWardOptions() }, [])
   useEffect(() => { if (tab === 'budgets') loadBudgets() }, [tab])
@@ -87,6 +89,24 @@ export default function Admin() {
     setBudgets(result)
     setBudgetEdits({})
     setBudgetsLoading(false)
+  }
+
+  async function toggleHistory(wardName: string) {
+    if (historyOpenFor === wardName) {
+      setHistoryOpenFor(null)
+      return
+    }
+    setHistoryOpenFor(wardName)
+    if (!historyData[wardName]) {
+      const { data } = await supabase.rpc('get_ward_usage_history', { p_ward: wardName, p_quarters_back: 4 })
+      setHistoryData((prev) => ({
+        ...prev,
+        [wardName]: (data || []).map((r: any) => ({
+          quarter_label: r.quarter_label,
+          used_cents: Number(r.used_cents ?? 0),
+        })),
+      }))
+    }
   }
 
   async function saveBudget(wardName: string) {
@@ -367,41 +387,82 @@ export default function Admin() {
                       pctUsed >= 95 ? 'text-red-600' :
                       pctUsed >= 80 ? 'text-amber-600' :
                       'text-slate-700'
+                    const history = historyData[b.ward_name] || []
                     return (
-                      <tr key={b.ward_name} className="border-b border-slate-100">
-                        <td className="px-4 py-3 text-slate-900 font-medium">{b.ward_name}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="inline-flex items-center gap-1">
-                            <span className="text-slate-400 text-xs">$</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.25"
-                              value={editValue}
-                              onChange={(e) => setBudgetEdits({ ...budgetEdits, [b.ward_name]: e.target.value })}
-                              className="w-20 px-2 py-1 border border-slate-300 rounded text-sm text-right text-slate-900"
-                            />
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-600 hidden sm:table-cell">
-                          ${(b.used_cents / 100).toFixed(2)}
-                          <span className="text-xs text-slate-400 ml-1">({pctUsed.toFixed(0)}%)</span>
-                        </td>
-                        <td className={`px-4 py-3 text-right ${remainingClass}`}>
-                          ${(Math.max(0, b.remaining_cents) / 100).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {budgetEdits[b.ward_name] !== undefined &&
-                            budgetEdits[b.ward_name] !== (b.budget_cents / 100).toFixed(2) && (
+                      <Fragment key={b.ward_name}>
+                        <tr className="border-b border-slate-100">
+                          <td className="px-4 py-3 text-slate-900 font-medium">
                             <button
-                              onClick={() => saveBudget(b.ward_name)}
-                              className="px-3 py-1 bg-tidings-chrome text-white text-xs font-medium rounded hover:bg-slate-700"
+                              onClick={() => toggleHistory(b.ward_name)}
+                              className="inline-flex items-center gap-1 hover:text-slate-700"
+                              title="Show / hide quarterly history"
                             >
-                              Save
+                              <span className={`inline-block w-3 text-slate-400 transition-transform ${historyOpenFor === b.ward_name ? 'rotate-90' : ''}`}>▸</span>
+                              {b.ward_name}
                             </button>
-                          )}
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="inline-flex items-center gap-1">
+                              <span className="text-slate-400 text-xs">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.25"
+                                value={editValue}
+                                onChange={(e) => setBudgetEdits({ ...budgetEdits, [b.ward_name]: e.target.value })}
+                                className="w-20 px-2 py-1 border border-slate-300 rounded text-sm text-right text-slate-900"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right text-slate-600 hidden sm:table-cell">
+                            ${(b.used_cents / 100).toFixed(2)}
+                            <span className="text-xs text-slate-400 ml-1">({pctUsed.toFixed(0)}%)</span>
+                          </td>
+                          <td className={`px-4 py-3 text-right ${remainingClass}`}>
+                            ${(Math.max(0, b.remaining_cents) / 100).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {budgetEdits[b.ward_name] !== undefined &&
+                              budgetEdits[b.ward_name] !== (b.budget_cents / 100).toFixed(2) && (
+                              <button
+                                onClick={() => saveBudget(b.ward_name)}
+                                className="px-3 py-1 bg-tidings-chrome text-white text-xs font-medium rounded hover:bg-slate-700"
+                              >
+                                Save
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        {historyOpenFor === b.ward_name && (
+                          <tr className="bg-slate-50 border-b border-slate-100">
+                            <td colSpan={5} className="px-4 py-3">
+                              <p className="text-xs font-medium text-slate-500 mb-2">Quarterly history (last 4 quarters, oldest right)</p>
+                              {history.length === 0 ? (
+                                <p className="text-xs text-slate-400">Loading…</p>
+                              ) : (
+                                <div className="flex gap-3 items-end">
+                                  {[...history].reverse().map((h) => {
+                                    const dollars = h.used_cents / 100
+                                    const pct = b.budget_cents > 0 ? Math.min(100, (h.used_cents / b.budget_cents) * 100) : 0
+                                    return (
+                                      <div key={h.quarter_label} className="flex flex-col items-center text-center min-w-16">
+                                        <div className="h-16 w-8 bg-slate-200 rounded relative overflow-hidden flex items-end">
+                                          <div className="w-full bg-slate-500" style={{ height: `${pct}%` }} />
+                                        </div>
+                                        <span className="text-xs text-slate-700 font-medium mt-1">${dollars.toFixed(2)}</span>
+                                        <span className="text-[10px] text-slate-500">{h.quarter_label}</span>
+                                      </div>
+                                    )
+                                  })}
+                                  <p className="text-[11px] text-slate-400 ml-2 self-center">
+                                    Bars are scaled to the current cap (${(b.budget_cents / 100).toFixed(2)}).
+                                  </p>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     )
                   })}
                 </tbody>

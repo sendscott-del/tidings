@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../i18n/LanguageContext'
+import { supabase } from '../lib/supabase'
 import type { TranslationKey } from '../i18n/translations'
 import { TidingsLogo } from './icons/TidingsLogo'
 
@@ -44,13 +46,32 @@ export default function Layout() {
   const { appUser, signOut } = useAuth()
   const navigate = useNavigate()
   const { t, lang, setLang } = useLanguage()
+  const [unreadInbox, setUnreadInbox] = useState(0)
 
   async function handleSignOut() {
     await signOut()
     navigate('/login')
   }
 
+  useEffect(() => {
+    if (!appUser?.id) return
+    let active = true
+    async function fetchUnread() {
+      const { count } = await supabase
+        .from('inbound_messages')
+        .select('id', { count: 'exact', head: true })
+        .is('read_at', null)
+      if (active) setUnreadInbox(count ?? 0)
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 30000)
+    function onFocus() { fetchUnread() }
+    window.addEventListener('focus', onFocus)
+    return () => { active = false; clearInterval(interval); window.removeEventListener('focus', onFocus) }
+  }, [appUser?.id])
+
   const items = appUser?.role === 'admin' ? [...navItems, adminItem] : navItems
+  const badgeFor = (to: string) => (to === '/inbox' ? unreadInbox : 0)
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -99,46 +120,64 @@ export default function Layout() {
         {/* Sidebar */}
         <nav className="w-56 min-h-[calc(100vh-3.5rem)] bg-white border-r border-slate-200 hidden md:block">
           <ul className="py-4 space-y-0.5">
-            {items.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.to === '/'}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'text-slate-900 bg-slate-100 border-r-2 border-amber-500'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`
-                  }
-                >
-                  <NavIcon name={item.icon} />
-                  {t(item.labelKey)}
-                </NavLink>
-              </li>
-            ))}
+            {items.map((item) => {
+              const badge = badgeFor(item.to)
+              return (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={item.to === '/'}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'text-slate-900 bg-slate-100 border-r-2 border-amber-500'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`
+                    }
+                  >
+                    <NavIcon name={item.icon} />
+                    <span className="flex-1">{t(item.labelKey)}</span>
+                    {badge > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold">
+                        {badge > 99 ? '99+' : badge}
+                      </span>
+                    )}
+                  </NavLink>
+                </li>
+              )
+            })}
           </ul>
         </nav>
 
         {/* Mobile bottom nav */}
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-50">
           <ul className="flex justify-around py-2">
-            {items.slice(0, 5).map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.to === '/'}
-                  className={({ isActive }) =>
-                    `flex flex-col items-center gap-0.5 text-xs ${
-                      isActive ? 'text-amber-600' : 'text-slate-400'
-                    }`
-                  }
-                >
-                  <NavIcon name={item.icon} />
-                  {t(item.labelKey)}
-                </NavLink>
-              </li>
-            ))}
+            {items.slice(0, 6).map((item) => {
+              const badge = badgeFor(item.to)
+              return (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={item.to === '/'}
+                    className={({ isActive }) =>
+                      `flex flex-col items-center gap-0.5 text-xs relative ${
+                        isActive ? 'text-amber-600' : 'text-slate-400'
+                      }`
+                    }
+                  >
+                    <div className="relative">
+                      <NavIcon name={item.icon} />
+                      {badge > 0 && (
+                        <span className="absolute -top-1 -right-2 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold">
+                          {badge > 9 ? '9+' : badge}
+                        </span>
+                      )}
+                    </div>
+                    {t(item.labelKey)}
+                  </NavLink>
+                </li>
+              )
+            })}
           </ul>
         </nav>
 
