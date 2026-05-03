@@ -6,7 +6,7 @@ import { TidingsLogo } from '../components/icons/TidingsLogo'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
-  const { lang } = useLanguage()
+  const { t } = useLanguage()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -17,17 +17,15 @@ export default function ResetPassword() {
     supabase.auth.getSession().then(({ data }) => setReady(!!data.session))
   }, [])
 
-  const t = (en: string, es: string) => (lang === 'es' ? es : en)
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     if (password !== confirm) {
-      setError(t('Passwords do not match.', 'Las contraseñas no coinciden.'))
+      setError(t('auth.passwordsNoMatch'))
       return
     }
     if (password.length < 6) {
-      setError(t('Password must be at least 6 characters.', 'La contraseña debe tener al menos 6 caracteres.'))
+      setError(t('auth.passwordTooShort'))
       return
     }
     setSubmitting(true)
@@ -48,26 +46,19 @@ export default function ResetPassword() {
               <p className="text-xs text-white/70">Two-Way SMS for Stakes</p>
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t('Choose a new password', 'Elige una nueva contraseña')}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('auth.chooseNewPassword')}</h1>
         </div>
       </div>
 
       <div className="px-4 -mt-12 pb-10">
         <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6">
           {!ready ? (
-            <p className="text-sm text-slate-600">
-              {t(
-                "This page only works from a password reset email link. Please use the link sent to your inbox.",
-                "Esta página solo funciona desde el enlace que recibiste por correo."
-              )}
-            </p>
+            <p className="text-sm text-slate-600">{t('auth.resetGateOnly')}</p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  {t('New password', 'Nueva contraseña')}
+                  {t('auth.newPassword')}
                 </label>
                 <input
                   id="password"
@@ -76,12 +67,12 @@ export default function ResetPassword() {
                   onChange={e => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary min-h-[44px]"
                 />
               </div>
               <div>
                 <label htmlFor="confirm" className="block text-sm font-medium text-slate-700 mb-1">
-                  {t('Confirm password', 'Confirmar contraseña')}
+                  {t('auth.confirmPassword')}
                 </label>
                 <input
                   id="confirm"
@@ -90,16 +81,16 @@ export default function ResetPassword() {
                   onChange={e => setConfirm(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary min-h-[44px]"
                 />
               </div>
               {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>}
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
               >
-                {submitting ? t('Saving…', 'Guardando…') : t('Update password', 'Actualizar contraseña')}
+                {submitting ? t('auth.saving') : t('auth.updatePassword')}
               </button>
             </form>
           )}

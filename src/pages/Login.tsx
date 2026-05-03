@@ -92,7 +92,7 @@ export default function Login() {
 
           <p className="text-center text-sm">
             <Link to="/forgot-password" className="text-tidings-primary-dark font-medium hover:underline">
-              {lang === 'es' ? '¿Olvidaste tu contraseña?' : 'Forgot your password?'}
+              {t('auth.forgotPassword')}
             </Link>
           </p>
 

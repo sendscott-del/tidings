@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.14.0'
+export const VERSION = '0.15.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.15.0',
+    date: '2026-05-03',
+    changes: [
+      'i18n: forgot-password and reset-password pages are now wired through translations.ts t() lookup with full English and Spanish coverage. Spanish-locale users get fully translated pages instead of inline English fallbacks.',
+      'A11y: every input and primary button on the new auth pages now meets the design system\'s 44×44 minimum tap target.',
+    ],
+  },
   {
     version: '0.14.0',
     date: '2026-05-03',
