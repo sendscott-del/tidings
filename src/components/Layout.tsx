@@ -25,6 +25,10 @@ const navItems: NavItem[] = [
 ]
 
 const adminItem: NavItem = { to: '/admin', labelKey: 'nav.admin', icon: 'shield' }
+// Tidings is on its own Supabase project, so it can't host /admin/gather
+// directly (cross-project writes need additional plumbing). Steward hosts
+// the canonical version; we open it in a new tab for super admins.
+const GATHER_ADMIN_URL = 'https://stewards-indeed.vercel.app/admin/gather'
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
   const icons: Record<string, React.ReactNode> = {
@@ -110,6 +114,17 @@ export default function Layout() {
                 ES
               </button>
             </div>
+            {appUser?.role === 'admin' && (
+              <a
+                href={GATHER_ADMIN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded border border-slate-600 text-slate-400 hover:text-white"
+                title="Manage user access across all Gather apps (opens in Steward)"
+              >
+                Gather
+              </a>
+            )}
             <button
               type="button"
               onClick={() => setDemoMode(!demoMode)}

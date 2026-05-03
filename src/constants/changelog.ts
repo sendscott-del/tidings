@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.11.0'
+export const VERSION = '0.12.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.12.0',
+    date: '2026-05-03',
+    changes: [
+      'Cross-app user-access link: a new "GATHER" button in the header (admins only) opens the canonical /admin/gather screen in Steward in a new tab. Tidings runs on its own Supabase project, so it can\'t host that screen directly — pointing super-admins at the version in Steward keeps everyone managing access from one place.',
+    ],
+  },
   {
     version: '0.11.0',
     date: '2026-05-03',
