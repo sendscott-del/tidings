@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import type { TranslationKey } from '../i18n/translations'
 import { TidingsLogo } from './icons/TidingsLogo'
 import AppSwitcher from './AppSwitcher'
+import { useDemoMode } from '../contexts/DemoModeContext'
 
 interface NavItem {
   to: string
@@ -47,6 +48,7 @@ export default function Layout() {
   const { appUser, signOut } = useAuth()
   const navigate = useNavigate()
   const { t, lang, setLang } = useLanguage()
+  const { demoMode, setDemoMode } = useDemoMode()
   const [unreadInbox, setUnreadInbox] = useState(0)
 
   async function handleSignOut() {
@@ -108,6 +110,14 @@ export default function Layout() {
                 ES
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setDemoMode(!demoMode)}
+              className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded border ${demoMode ? 'border-amber-300 text-amber-300' : 'border-slate-600 text-slate-400 hover:text-white'}`}
+              title={demoMode ? 'Demo mode is on — click to exit' : 'Enable demo mode'}
+            >
+              Demo
+            </button>
             <button
               onClick={handleSignOut}
               className="text-sm text-slate-400 hover:text-white transition-colors"

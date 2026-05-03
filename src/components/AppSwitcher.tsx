@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { fetchGatherAppsForEmail } from '../lib/gatherSharedSupabase'
 
 interface AppInfo {
   name: string
@@ -10,13 +11,6 @@ interface AppInfo {
 }
 
 // Canonical Gather suite catalog. Mirror this list across all five apps.
-//
-// Note: Tidings is the only app on its own Supabase project (not the shared
-// "Scott's Apps" project). Cross-project user access lookup is non-trivial,
-// so for now this switcher shows the full catalog to any signed-in Tidings
-// user. The other four apps gate by `user_apps` rows. A follow-up should
-// expose `gather_apps_for_email(email)` as a SECURITY DEFINER RPC on the
-// shared project so Tidings can call it and gate the catalog the same way.
 const APP_CATALOG: AppInfo[] = [
   { name: 'magnify', label: 'Magnify', url: 'https://magnify-sendscott-dels-projects.vercel.app', color: '#1B3A6B', blurb: 'Calling administration' },
   { name: 'steward', label: 'Steward', url: 'https://stewards-indeed.vercel.app',                color: '#2563EB', blurb: 'Leader standard work' },
@@ -52,12 +46,40 @@ function AppMark({ app, size = 28 }: { app: AppInfo; size?: number }) {
 
 export default function AppSwitcher() {
   const { appUser } = useAuth()
+  const [otherApps, setOtherApps] = useState<AppInfo[]>([])
   const [expanded, setExpanded] = useState(false)
 
-  if (!appUser) return null
+  useEffect(() => {
+    let cancelled = false
+    const email = appUser?.email
+    if (!email) {
+      setOtherApps([])
+      return
+    }
+    void (async () => {
+      // Tidings is on a separate Supabase project from the other apps.
+      // Use the cross-project RPC gather_apps_for_email to find out which
+      // apps the user has access to. If the call fails or env vars are
+      // missing, fetchGatherAppsForEmail returns null and we show the
+      // full catalog as a permissive fallback (better than hiding apps
+      // the user might have access to).
+      const accessible = await fetchGatherAppsForEmail(email)
+      if (cancelled) return
+      if (accessible === null) {
+        // Fallback: show all other apps.
+        setOtherApps(APP_CATALOG.filter(a => a.name !== CURRENT_APP))
+      } else {
+        setOtherApps(
+          APP_CATALOG.filter(a => a.name !== CURRENT_APP && accessible.includes(a.name))
+        )
+      }
+    })()
+    return () => { cancelled = true }
+  }, [appUser?.email])
+
+  if (!appUser || otherApps.length === 0) return null
 
   const currentApp = APP_CATALOG.find(a => a.name === CURRENT_APP)!
-  const otherApps = APP_CATALOG.filter(a => a.name !== CURRENT_APP)
 
   return (
     <div className="relative z-[100] w-full">

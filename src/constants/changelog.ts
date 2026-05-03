@@ -4,9 +4,18 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.10.0'
+export const VERSION = '0.11.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.11.0',
+    date: '2026-05-03',
+    changes: [
+      'Forgot password: new /forgot-password and /reset-password pages (bilingual EN/ES). The Login page links to forgot-password inline, Supabase sends the reset email, and the link drops the user on /reset-password to choose a new one.',
+      'Cross-project Gather access lookup: Tidings now calls the SECURITY DEFINER RPC gather_apps_for_email on the shared "Scott\'s Apps" Supabase project to find out which apps the signed-in user has access to. The Gathered switcher uses that result to filter the catalog, matching how the other four apps work. Set VITE_GATHER_SHARED_SUPABASE_URL + VITE_GATHER_SHARED_SUPABASE_ANON_KEY in Vercel; if missing, the switcher falls back to showing the full catalog.',
+      'Demo mode: a striped amber banner appears at the top of every Tidings screen when demo mode is on, with a role picker (Stake President, Stake Clerk, admin, sender, viewer, member) so trainers can walk through each role without exposing real recipient data. New "DEMO" button in the header toggles it; flag persists in localStorage so demo and real mode coexist on the same device.',
+    ],
+  },
   {
     version: '0.10.0',
     date: '2026-05-03',
