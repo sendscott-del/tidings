@@ -5,6 +5,8 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { supabase } from '../lib/supabase'
 import type { TranslationKey } from '../i18n/translations'
 import { TidingsLogo } from './icons/TidingsLogo'
+import AppSwitcher from './AppSwitcher'
+import { useDemoMode } from '../contexts/DemoModeContext'
 
 interface NavItem {
   to: string
@@ -23,6 +25,10 @@ const navItems: NavItem[] = [
 ]
 
 const adminItem: NavItem = { to: '/admin', labelKey: 'nav.admin', icon: 'shield' }
+// Tidings is on its own Supabase project, so it can't host /admin/gather
+// directly (cross-project writes need additional plumbing). Steward hosts
+// the canonical version; we open it in a new tab for super admins.
+const GATHER_ADMIN_URL = 'https://stewards-indeed.vercel.app/admin/gather'
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
   const icons: Record<string, React.ReactNode> = {
@@ -46,6 +52,7 @@ export default function Layout() {
   const { appUser, signOut } = useAuth()
   const navigate = useNavigate()
   const { t, lang, setLang } = useLanguage()
+  const { demoMode, setDemoMode } = useDemoMode()
   const [unreadInbox, setUnreadInbox] = useState(0)
 
   async function handleSignOut() {
@@ -55,6 +62,11 @@ export default function Layout() {
 
   useEffect(() => {
     if (!appUser?.id) return
+    if (demoMode) {
+      // Demo: hardcoded unread count matching the fixture inbox (2 unread).
+      setUnreadInbox(2)
+      return
+    }
     let active = true
     async function fetchUnread() {
       const { count } = await supabase
@@ -68,13 +80,14 @@ export default function Layout() {
     function onFocus() { fetchUnread() }
     window.addEventListener('focus', onFocus)
     return () => { active = false; clearInterval(interval); window.removeEventListener('focus', onFocus) }
-  }, [appUser?.id])
+  }, [appUser?.id, demoMode])
 
   const items = appUser?.role === 'admin' ? [...navItems, adminItem] : navItems
   const badgeFor = (to: string) => (to === '/inbox' ? unreadInbox : 0)
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <AppSwitcher />
       {/* Top bar */}
       <header className="bg-tidings-chrome text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -106,6 +119,25 @@ export default function Layout() {
                 ES
               </button>
             </div>
+            {appUser?.role === 'admin' && (
+              <a
+                href={GATHER_ADMIN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded border border-slate-600 text-slate-400 hover:text-white"
+                title="Manage user access across all Gather apps (opens in Steward)"
+              >
+                Gather
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setDemoMode(!demoMode)}
+              className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded border ${demoMode ? 'border-amber-300 text-amber-300' : 'border-slate-600 text-slate-400 hover:text-white'}`}
+              title={demoMode ? 'Demo mode is on — click to exit' : 'Enable demo mode'}
+            >
+              Demo
+            </button>
             <button
               onClick={handleSignOut}
               className="text-sm text-slate-400 hover:text-white transition-colors"

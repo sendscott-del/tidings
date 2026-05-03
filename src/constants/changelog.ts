@@ -4,9 +4,41 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.9.1'
+export const VERSION = '0.13.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.13.0',
+    date: '2026-05-03',
+    changes: [
+      'Demo mode now actually shows demo data: turning the banner on swaps the Dashboard counts (1,284 stake contacts, 7 unread, 23 opted out, 84 messages sent), the recent-messages list, the Inbox (with two unread fixtures including a STOP example), the Message History page (8 messages over the last 22 days), the per-message delivery log drill-down, and the inbox-unread badge in the nav. Marking an inbound message as read in demo mode updates in-memory state only — nothing writes to inbound_messages, so demo and real coexist on the same device.',
+      'New /lib/demoData.ts holds all the fixtures so swapping in additional fake content for Compose / Stake / Lists later is a one-file edit.',
+    ],
+  },
+  {
+    version: '0.12.0',
+    date: '2026-05-03',
+    changes: [
+      'Cross-app user-access link: a new "GATHER" button in the header (admins only) opens the canonical /admin/gather screen in Steward in a new tab. Tidings runs on its own Supabase project, so it can\'t host that screen directly — pointing super-admins at the version in Steward keeps everyone managing access from one place.',
+    ],
+  },
+  {
+    version: '0.11.0',
+    date: '2026-05-03',
+    changes: [
+      'Forgot password: new /forgot-password and /reset-password pages (bilingual EN/ES). The Login page links to forgot-password inline, Supabase sends the reset email, and the link drops the user on /reset-password to choose a new one.',
+      'Cross-project Gather access lookup: Tidings now calls the SECURITY DEFINER RPC gather_apps_for_email on the shared "Scott\'s Apps" Supabase project to find out which apps the signed-in user has access to. The Gathered switcher uses that result to filter the catalog, matching how the other four apps work. Set VITE_GATHER_SHARED_SUPABASE_URL + VITE_GATHER_SHARED_SUPABASE_ANON_KEY in Vercel; if missing, the switcher falls back to showing the full catalog.',
+      'Demo mode: a striped amber banner appears at the top of every Tidings screen when demo mode is on, with a role picker (Stake President, Stake Clerk, admin, sender, viewer, member) so trainers can walk through each role without exposing real recipient data. New "DEMO" button in the header toggles it; flag persists in localStorage so demo and real mode coexist on the same device.',
+    ],
+  },
+  {
+    version: '0.10.0',
+    date: '2026-05-03',
+    changes: [
+      'Gather suite unification: a navy "Gathered" jump bar at the very top of every Tidings page lets you hop between the five sibling apps — Magnify, Steward, Glean, Tidings, Knit. Each app shows as a brand-colored letter chip with a one-line description.',
+      'Note: Tidings runs on its own Supabase project (the others share one), so for now the switcher in Tidings shows the full app catalog rather than gating on per-user access. The other four apps (Magnify, Steward, Glean, Knit) read live from the shared user_apps table and only show apps you can actually open. Cross-project gating in Tidings will come in a follow-up via a SECURITY DEFINER RPC on the shared project.',
+    ],
+  },
   {
     version: '0.9.1',
     date: '2026-05-02',

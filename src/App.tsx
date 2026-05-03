@@ -2,9 +2,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { ToastProvider } from './contexts/ToastContext'
+import { DemoModeProvider } from './contexts/DemoModeContext'
+import DemoModeBanner from './components/DemoModeBanner'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import Stake from './pages/Stake'
 import Lists from './pages/Lists'
@@ -19,9 +23,13 @@ export default function App() {
     <BrowserRouter>
       <LanguageProvider>
         <AuthProvider>
+          <DemoModeProvider>
           <ToastProvider>
+          <DemoModeBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               element={
                 <ProtectedRoute>
@@ -40,6 +48,7 @@ export default function App() {
             </Route>
           </Routes>
           </ToastProvider>
+          </DemoModeProvider>
         </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>

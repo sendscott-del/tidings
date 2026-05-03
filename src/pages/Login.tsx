@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../i18n/LanguageContext'
 import { TidingsLogo } from '../components/icons/TidingsLogo'
@@ -89,6 +89,12 @@ export default function Login() {
           >
             {submitting ? t('auth.signingIn') : t('auth.signIn')}
           </button>
+
+          <p className="text-center text-sm">
+            <Link to="/forgot-password" className="text-tidings-primary-dark font-medium hover:underline">
+              {lang === 'es' ? '¿Olvidaste tu contraseña?' : 'Forgot your password?'}
+            </Link>
+          </p>
 
           {/* Language toggle */}
           <div className="flex justify-center gap-1 pt-4 border-t border-slate-100">

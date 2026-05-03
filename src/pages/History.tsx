@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
+import { useDemoMode } from '../contexts/DemoModeContext'
+import { TIDINGS_DEMO_HISTORY } from '../lib/demoData'
 
 interface Message {
   id: string
@@ -42,6 +44,7 @@ function downloadCSV(filename: string, rows: string[][]) {
 
 export default function History() {
   const { toast } = useToast()
+  const { demoMode } = useDemoMode()
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Message | null>(null)
@@ -51,7 +54,22 @@ export default function History() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
-  useEffect(() => { loadMessages() }, [])
+  useEffect(() => {
+    if (demoMode) {
+      // Demo: fixture history list. Per-message recipient logs in viewLogs
+      // also short-circuit so the drill-down panel stays consistent.
+      setMessages(
+        TIDINGS_DEMO_HISTORY.map((m) => ({
+          ...m,
+          database: 'stake',
+          sender_name: 'Stake Clerk (demo)',
+        })) as unknown as Message[]
+      )
+      setLoading(false)
+      return
+    }
+    loadMessages()
+  }, [demoMode])
 
   async function loadMessages() {
     setLoading(true)
@@ -77,6 +95,45 @@ export default function History() {
   async function viewLogs(msg: Message) {
     setSelected(msg)
     setLogsLoading(true)
+    if (demoMode) {
+      // Demo: synthesize a realistic per-recipient delivery log so the
+      // drill-down panel renders meaningfully.
+      const fakeLogs: MessageLog[] = []
+      const total = msg.recipient_count ?? 0
+      const delivered = Math.max(0, total - Math.min(2, Math.floor(total * 0.05)))
+      const failed = Math.min(1, total - delivered)
+      const undelivered = total - delivered - failed
+      for (let i = 0; i < delivered; i++) {
+        fakeLogs.push({
+          id: `demo-log-${msg.id}-d${i}`,
+          phone: `+1555${String(1000000 + i).slice(0, 7)}`,
+          status: 'delivered',
+          error_code: null,
+          sent_at: msg.sent_at,
+        })
+      }
+      for (let i = 0; i < failed; i++) {
+        fakeLogs.push({
+          id: `demo-log-${msg.id}-f${i}`,
+          phone: `+1555${String(2000000 + i).slice(0, 7)}`,
+          status: 'failed',
+          error_code: '21610',
+          sent_at: msg.sent_at,
+        })
+      }
+      for (let i = 0; i < undelivered; i++) {
+        fakeLogs.push({
+          id: `demo-log-${msg.id}-u${i}`,
+          phone: `+1555${String(3000000 + i).slice(0, 7)}`,
+          status: 'undelivered',
+          error_code: '30003',
+          sent_at: msg.sent_at,
+        })
+      }
+      setLogs(fakeLogs)
+      setLogsLoading(false)
+      return
+    }
     const { data } = await supabase
       .from('message_logs')
       .select('id, phone, status, error_code, sent_at')
