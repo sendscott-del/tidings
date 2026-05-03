@@ -126,13 +126,11 @@ Every ward has a quarterly SMS budget in dollars. The budget shows up at the top
 ### Scheduling
 On step 3, check "Schedule for later" and pick a date/time to send in the future. The message is queued in the database and dispatched by a background worker that runs every minute.
 
-**One-time setup for scheduled delivery (admin):** Tidings ships an edge function `dispatch-scheduled-messages` that needs to be invoked every minute. Set this up once in the Supabase dashboard:
-1. Go to **Supabase project → Database → Cron Jobs → Create job**.
-2. Name: `dispatch-scheduled-messages`. Schedule: `* * * * *` (every minute).
-3. Type: **Edge Function**. Function: `dispatch-scheduled-messages`. Method: `POST`. Body: `{}`.
-4. Save. Verify by scheduling a test message a couple minutes out and watching it move from `queued` → `sent` in Message History.
+**No setup needed.** A `pg_cron` job runs every minute calling the `dispatch-scheduled-messages` edge function automatically. Verify by scheduling a test message a couple minutes out and watching it move from `queued` → `sent` in Message History.
 
 The worker re-checks the ward budget at fire time (so a message scheduled before a budget hit won't sneak through), refreshes the recipient list (so anyone who opted out between scheduling and firing is skipped), and uses an atomic lock so the same message can't be dispatched twice.
+
+**Why the dispatch endpoint is open (no auth):** the edge function is callable without authentication. This is intentional and safe — it only acts on messages already queued by authenticated users, uses an atomic UPDATE WHERE status='queued' lock to prevent double-dispatch, and accepts no input that changes its behavior. The worst an external caller could do is dispatch your already-queued messages a few seconds early — to the recipients you already chose.
 
 ### Signatures
 Every message you send can have an automatic signature appended (e.g., `— Sent by the Bishopric`). The signature is set per user by an admin in **Admin → Users → Edit**. When you compose, the active signature is shown in a callout above the preview, the iMessage-style bubble shows what will actually be sent, and the character counter includes the signature so you can see the segment count for the full message. If a user has no signature configured, nothing extra is appended.
