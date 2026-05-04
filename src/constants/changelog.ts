@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.15.3'
+export const VERSION = '0.16.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.16.0',
+    date: '2026-05-04',
+    changes: [
+      'Per-app brand stripe: a 3px tidings-primary amber strip now sits between the Gathered jump bar and the slate chrome, picking up the same amber used in the switcher\'s "T" chip. The brand identity now follows you into the app instead of stopping at the chip.',
+    ],
+  },
   {
     version: '0.15.3',
     date: '2026-05-04',

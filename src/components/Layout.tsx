@@ -88,6 +88,9 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-slate-50">
       <AppSwitcher />
+      {/* Per-app brand stripe — same amber the Gathered "T" chip uses,
+          so Tidings's identity follows through into the chrome. */}
+      <div className="h-[3px] w-full bg-tidings-primary" aria-hidden="true" />
       {/* Top bar */}
       <header className="bg-tidings-chrome text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
