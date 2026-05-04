@@ -12,10 +12,10 @@ interface AppInfo {
 
 // Canonical Gather suite catalog. Mirror this list across all five apps.
 const APP_CATALOG: AppInfo[] = [
-  { name: 'magnify', label: 'Magnify', url: 'https://magnify-sendscott-dels-projects.vercel.app', color: '#1B3A6B', blurb: 'Calling administration' },
+  { name: 'magnify', label: 'Magnify', url: 'https://magnify-eta.vercel.app', color: '#1B3A6B', blurb: 'Calling administration' },
   { name: 'steward', label: 'Steward', url: 'https://stewards-indeed.vercel.app',                color: '#2563EB', blurb: 'Leader standard work' },
   { name: 'glean',   label: 'Glean',   url: 'https://glean-blue.vercel.app',                     color: '#C9A84C', blurb: 'Welfare & self-reliance' },
-  { name: 'tidings', label: 'Tidings', url: 'https://tidings-sendscott-dels-projects.vercel.app', color: '#F59E0B', blurb: 'Two-way SMS' },
+  { name: 'tidings', label: 'Tidings', url: 'https://tidings.vercel.app', color: '#F59E0B', blurb: 'Two-way SMS' },
   { name: 'knit',    label: 'Knit',    url: 'https://knit-together.vercel.app',                   color: '#E11D48', blurb: 'Fellowship matching' },
 ]
 
