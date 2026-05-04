@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.15.0'
+export const VERSION = '0.15.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.15.1',
+    date: '2026-05-03',
+    changes: [
+      'Gathered switcher: same-tab navigation instead of opening a new browser tab on each app switch. Less tab clutter.',
+    ],
+  },
   {
     version: '0.15.0',
     date: '2026-05-03',
