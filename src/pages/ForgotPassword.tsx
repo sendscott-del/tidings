@@ -41,7 +41,7 @@ export default function ForgotPassword() {
       </div>
 
       <div className="px-4 -mt-12 pb-10">
-        <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <div className="max-w-sm mx-auto bg-white rounded-md shadow-lg p-6 space-y-4">
           {sent ? (
             <>
               <p className="text-sm text-slate-700">{t('auth.resetSent')}</p>
@@ -68,14 +68,14 @@ export default function ForgotPassword() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent min-h-[44px]"
+                  className="w-full px-3 py-2 border-[1.5px] border-slate-300 rounded-md text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent min-h-[44px]"
                   placeholder={t('auth.emailPlaceholder')}
                 />
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
+                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 {submitting ? t('auth.sending') : t('auth.sendResetLink')}
               </button>

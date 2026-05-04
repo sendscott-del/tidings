@@ -45,7 +45,7 @@ export default function Login() {
 
       {/* Form card overlapping the hero */}
       <div className="px-4 -mt-12 pb-10">
-        <form onSubmit={handleSubmit} className="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="max-w-sm mx-auto bg-white rounded-md shadow-lg p-6 space-y-4">
           {error && (
             <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">
               {error}
@@ -62,7 +62,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent"
+              className="w-full px-3 py-2 border-[1.5px] border-slate-300 rounded-md text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent min-h-[44px]"
               placeholder={t('auth.emailPlaceholder')}
             />
           </div>
@@ -77,7 +77,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent"
+              className="w-full px-3 py-2 border-[1.5px] border-slate-300 rounded-md text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent min-h-[44px]"
               placeholder={t('auth.passwordPlaceholder')}
             />
           </div>
@@ -85,7 +85,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {submitting ? t('auth.signingIn') : t('auth.signIn')}
           </button>
