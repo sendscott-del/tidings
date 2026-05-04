@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.15.2'
+export const VERSION = '0.15.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.15.3',
+    date: '2026-05-04',
+    changes: [
+      'Gathered switcher: use canonical short URLs for Magnify (magnify-eta.vercel.app) and Tidings (tidings.vercel.app) instead of the team-scoped URLs.',
+    ],
+  },
   {
     version: '0.15.2',
     date: '2026-05-04',
