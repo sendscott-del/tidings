@@ -51,7 +51,7 @@ export default function ResetPassword() {
       </div>
 
       <div className="px-4 -mt-12 pb-10">
-        <div className="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6">
+        <div className="max-w-sm mx-auto bg-white rounded-md shadow-lg p-6">
           {!ready ? (
             <p className="text-sm text-slate-600">{t('auth.resetGateOnly')}</p>
           ) : (
@@ -67,7 +67,7 @@ export default function ResetPassword() {
                   onChange={e => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary min-h-[44px]"
+                  className="w-full px-3 py-2 border-[1.5px] border-slate-300 rounded-md text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary min-h-[44px]"
                 />
               </div>
               <div>
@@ -81,14 +81,14 @@ export default function ResetPassword() {
                   onChange={e => setConfirm(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary min-h-[44px]"
+                  className="w-full px-3 py-2 border-[1.5px] border-slate-300 rounded-md text-slate-900 focus:outline-none focus:ring-2 focus:ring-tidings-primary min-h-[44px]"
                 />
               </div>
               {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>}
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
+                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 {submitting ? t('auth.saving') : t('auth.updatePassword')}
               </button>

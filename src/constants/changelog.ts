@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.15.1'
+export const VERSION = '0.15.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.15.2',
+    date: '2026-05-04',
+    changes: [
+      'Visual consistency (Wave 6): login/forgot/reset inputs now use 1.5px borders and min-h-[44px] tap targets. Auth cards and primary buttons use the canonical 10px radius (rounded-md). AppSwitcher chrome color moved to --color-switcher-chrome CSS token.',
+    ],
+  },
   {
     version: '0.15.1',
     date: '2026-05-03',

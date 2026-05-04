@@ -44,6 +44,9 @@
   --color-tidings-primary-dark: #D97706;
   --color-tidings-chrome:       #1E293B;
 
+  /* ---- Gathered AppSwitcher chrome ---- */
+  --color-switcher-chrome:      #1e1b4b;
+
   /* ---- Neutrals ---- */
   --color-gray-50:  #F9FAFB;
   --color-gray-100: #F3F4F6;
