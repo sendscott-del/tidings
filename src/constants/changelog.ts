@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.16.0'
+export const VERSION = '0.16.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.16.1',
+    date: '2026-05-04',
+    changes: [
+      'Gathered switcher: Tidings URL corrected from tidings.vercel.app to glad-tidings.vercel.app (the previous URL pointed at someone else\'s project).',
+    ],
+  },
   {
     version: '0.16.0',
     date: '2026-05-04',
