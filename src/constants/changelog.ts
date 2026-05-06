@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.16.1'
+export const VERSION = '0.17.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.17.0',
+    date: '2026-05-05',
+    changes: [
+      'Home-screen badge notifications: when an unread message lands in the inbox, a red number badge now appears on the Tidings icon on your phone home screen, even when the app is closed. Tap the new "Get a home-screen alert" banner on the Inbox page to enable. iOS only badges installed home-screen apps — add Tidings via Safari → Share → Add to Home Screen first.',
+      'PWA basics: Tidings now ships a real web app manifest and service worker, so "Add to Home Screen" produces a proper installed app on iOS and Android with the right icon, name, and standalone display.',
+    ],
+  },
   {
     version: '0.16.1',
     date: '2026-05-04',

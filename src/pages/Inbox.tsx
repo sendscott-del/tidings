@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useDemoMode } from '../contexts/DemoModeContext'
 import { TIDINGS_DEMO_INBOX } from '../lib/demoData'
+import { setLocalAppBadge } from '../lib/push'
+import EnableNotificationsBanner from '../components/EnableNotificationsBanner'
 
 interface InboundMessage {
   id: string
@@ -149,12 +151,19 @@ export default function Inbox() {
 
   const unreadCount = messages.filter((m) => !m.read_by).length
 
+  // Mirror the unread count to the home-screen icon while the app is open.
+  // Push events from the Edge Function update it when the app is closed.
+  useEffect(() => {
+    setLocalAppBadge(unreadCount)
+  }, [unreadCount])
+
   if (loading) {
     return <div className="text-slate-400 py-8 text-center">Loading inbox...</div>
   }
 
   return (
     <div>
+      <EnableNotificationsBanner />
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold text-slate-900">Inbox</h1>
