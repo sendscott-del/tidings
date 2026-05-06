@@ -68,7 +68,9 @@ export async function subscribeToPush(userId: string): Promise<{ ok: boolean; re
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      // TS 5.7+ tightened Uint8Array's generic; PushSubscriptionOptions still
+      // expects the looser BufferSource.
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
     })
   }
 
