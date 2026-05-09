@@ -17,6 +17,8 @@ interface InboundMessage {
   received_at: string
   read_by: string | null
   read_at: string | null
+  media_urls: string[] | null
+  media_types: string[] | null
   contact_name?: string
 }
 
@@ -47,6 +49,8 @@ export default function Inbox() {
           received_at: m.received_at,
           read_by: m.read_by,
           read_at: m.read_by ? m.received_at : null,
+          media_urls: null,
+          media_types: null,
           contact_name: m.from_name,
         })) as InboundMessage[]
       )
@@ -249,7 +253,12 @@ export default function Inbox() {
                 {msg.contact_name && (
                   <p className="text-xs text-slate-400">{msg.from_phone}</p>
                 )}
-                <p className="text-sm text-slate-600 mt-0.5 truncate">{msg.body}</p>
+                <p className="text-sm text-slate-600 mt-0.5 truncate">
+                  {msg.media_urls && msg.media_urls.length > 0 && (
+                    <span className="mr-1" aria-label="has image">📷</span>
+                  )}
+                  {msg.body || (msg.media_urls && msg.media_urls.length > 0 ? '(image)' : '')}
+                </p>
                 {msg.is_stop && (
                   <span className="inline-block mt-1 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
                     STOP
@@ -277,8 +286,27 @@ export default function Inbox() {
             </h2>
             <p className="text-sm text-slate-500 mb-4">{selected.from_phone}</p>
 
-            <div className="bg-slate-100 rounded-xl p-4 mb-4">
-              <p className="text-sm text-slate-900">{selected.body}</p>
+            <div className="bg-slate-100 rounded-xl p-4 mb-4 space-y-3">
+              {selected.media_urls && selected.media_urls.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {selected.media_urls.map((url, i) => {
+                    const type = selected.media_types?.[i] || ''
+                    if (type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
+                      return (
+                        <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-slate-200">
+                          <img src={url} alt={`Attachment ${i + 1}`} className="w-full h-32 object-cover" />
+                        </a>
+                      )
+                    }
+                    return (
+                      <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-tidings-primary underline truncate">
+                        Attachment {i + 1}
+                      </a>
+                    )
+                  })}
+                </div>
+              )}
+              {selected.body && <p className="text-sm text-slate-900 whitespace-pre-wrap">{selected.body}</p>}
             </div>
 
             <p className="text-xs text-slate-400 mb-4">

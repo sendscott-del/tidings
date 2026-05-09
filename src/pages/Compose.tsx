@@ -22,6 +22,19 @@ interface ReplyTarget {
 
 type Step = 'database' | 'recipients' | 'message' | 'confirm'
 
+const MAX_MEDIA = 3
+const MAX_MEDIA_BYTES = 5 * 1024 * 1024 // 5 MB per image (Twilio MMS limit is ~5 MB total)
+const ACCEPTED_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const CENTS_PER_MMS = 2.0 // US MMS pricing (matches send-message edge fn)
+
+interface MediaItem {
+  url: string
+  path: string
+  name: string
+  contentType: string
+  size: number
+}
+
 export default function Compose() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -45,6 +58,9 @@ export default function Compose() {
   const [recipientCount, setRecipientCount] = useState(0)
   const [optedOutCount, setOptedOutCount] = useState(0)
   const [body, setBody] = useState('')
+  const [media, setMedia] = useState<MediaItem[]>([])
+  const [uploadingMedia, setUploadingMedia] = useState(false)
+  const [mediaError, setMediaError] = useState('')
   const [scheduleEnabled, setScheduleEnabled] = useState(false)
   const [scheduledAt, setScheduledAt] = useState('')
   const [sending, setSending] = useState(false)
@@ -58,6 +74,93 @@ export default function Compose() {
   useEffect(() => {
     if (appUser?.ward) loadBudget(appUser.ward)
   }, [appUser?.ward])
+
+  async function handleAttach(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setMediaError('')
+
+    const slotsLeft = MAX_MEDIA - media.length
+    if (slotsLeft <= 0) {
+      setMediaError(`Maximum ${MAX_MEDIA} images per message.`)
+      return
+    }
+
+    const toUpload: File[] = []
+    for (const f of Array.from(files).slice(0, slotsLeft)) {
+      if (!ACCEPTED_MEDIA_TYPES.includes(f.type)) {
+        setMediaError(`${f.name}: only JPG, PNG, GIF, or WebP images are supported.`)
+        return
+      }
+      if (f.size > MAX_MEDIA_BYTES) {
+        setMediaError(`${f.name}: image must be ${MAX_MEDIA_BYTES / 1024 / 1024} MB or smaller.`)
+        return
+      }
+      toUpload.push(f)
+    }
+
+    if (demoMode) {
+      // Demo: don't upload. Use object URLs so the trainer sees the preview,
+      // and tag them with a fake path that we'll never send to Twilio.
+      const demoItems: MediaItem[] = toUpload.map((f, i) => ({
+        url: URL.createObjectURL(f),
+        path: `demo-${Date.now()}-${i}`,
+        name: f.name,
+        contentType: f.type,
+        size: f.size,
+      }))
+      setMedia((prev) => [...prev, ...demoItems])
+      return
+    }
+
+    if (!appUser?.id) {
+      setMediaError('Not authenticated.')
+      return
+    }
+
+    setUploadingMedia(true)
+    try {
+      const uploaded: MediaItem[] = []
+      for (const file of toUpload) {
+        const ext = file.type.split('/')[1] || 'bin'
+        const safeExt = ext === 'jpeg' ? 'jpg' : ext
+        const rand = crypto.randomUUID()
+        const path = `outbound/${appUser.id}/${Date.now()}-${rand}.${safeExt}`
+        const { error: upErr } = await supabase.storage
+          .from('tidings-mms')
+          .upload(path, file, { contentType: file.type, upsert: false })
+        if (upErr) throw new Error(upErr.message)
+        const { data: pub } = supabase.storage.from('tidings-mms').getPublicUrl(path)
+        if (!pub?.publicUrl) throw new Error('Failed to get public URL for uploaded image')
+        uploaded.push({
+          url: pub.publicUrl,
+          path,
+          name: file.name,
+          contentType: file.type,
+          size: file.size,
+        })
+      }
+      setMedia((prev) => [...prev, ...uploaded])
+    } catch (err) {
+      setMediaError((err as Error).message)
+    }
+    setUploadingMedia(false)
+  }
+
+  async function handleRemoveMedia(idx: number) {
+    const item = media[idx]
+    if (!item) return
+    setMedia((prev) => prev.filter((_, i) => i !== idx))
+    if (demoMode) {
+      try { URL.revokeObjectURL(item.url) } catch {}
+      return
+    }
+    // Best-effort cleanup; ignore failures (Storage RLS scopes deletes to the
+    // user's own outbound/ folder, so this won't leak others' files even on
+    // unexpected paths).
+    if (item.path && item.path.startsWith('outbound/')) {
+      await supabase.storage.from('tidings-mms').remove([item.path]).catch(() => {})
+    }
+  }
 
   async function requestShortening() {
     if (!body.trim()) return
@@ -227,6 +330,7 @@ export default function Compose() {
           recipient_count,
           message_id: 'demo-msg-' + Date.now(),
           demo: true,
+          is_mms: media.length > 0,
         }
         setResult(fakeResult)
         toast(
@@ -244,6 +348,7 @@ export default function Compose() {
       const payload: Record<string, unknown> = {
         body,
         scheduled_at: scheduleEnabled && scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        media_urls: media.map((m) => m.url),
       }
       if (replyTo) {
         payload.to_phones = [replyTo.phone]
@@ -286,7 +391,10 @@ export default function Compose() {
   const smsCount = Math.ceil(finalBody.length / 160) || 0
   const effectiveRecipientCount = replyTo ? 1 : recipientCount
   const willReceive = Math.max(0, effectiveRecipientCount - optedOutCount)
-  const projectedCostCents = smsCount * willReceive * 0.79
+  const isMms = media.length > 0
+  const projectedCostCents = isMms
+    ? CENTS_PER_MMS * willReceive
+    : smsCount * willReceive * 0.79
   const estimatedCost = (projectedCostCents / 100).toFixed(2)
 
   const pctUsed = budget && budget.budget_cents > 0
@@ -324,6 +432,13 @@ export default function Compose() {
               onClick={() => {
                 setResult(null)
                 setBody('')
+                if (demoMode) {
+                  for (const m of media) {
+                    try { URL.revokeObjectURL(m.url) } catch {}
+                  }
+                }
+                setMedia([])
+                setMediaError('')
                 setSelectedListIds([])
                 setScheduleEnabled(false)
                 setScheduledAt('')
@@ -513,18 +628,73 @@ export default function Compose() {
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={5}
-              placeholder="Type your message here..."
+              placeholder={isMms ? 'Optional caption for your image…' : 'Type your message here...'}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
             />
             <div className="flex justify-between mt-1">
-              <span className={`text-xs ${finalBody.length > 320 ? 'text-red-500 font-medium' : 'text-slate-400'}`}>
-                {finalBody.length} of 160 chars · {smsCount} SMS segment{smsCount !== 1 ? 's' : ''}
+              <span className={`text-xs ${!isMms && finalBody.length > 320 ? 'text-red-500 font-medium' : 'text-slate-400'}`}>
+                {isMms
+                  ? `${finalBody.length} chars · MMS — flat ~2¢ per recipient regardless of length`
+                  : `${finalBody.length} of 160 chars · ${smsCount} SMS segment${smsCount !== 1 ? 's' : ''}`}
                 {signature && body.trim() && <span className="text-slate-500"> (incl. signature)</span>}
               </span>
-              {finalBody.length > 320 && (
+              {!isMms && finalBody.length > 320 && (
                 <span className="text-xs text-red-500">Long message — higher cost per recipient</span>
               )}
             </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-slate-700">
+                Images <span className="text-slate-400 font-normal">(optional, up to {MAX_MEDIA})</span>
+              </span>
+              <label
+                className={`text-xs font-medium px-3 py-1.5 rounded-md border cursor-pointer transition-colors ${
+                  uploadingMedia || media.length >= MAX_MEDIA
+                    ? 'border-slate-200 text-slate-300 cursor-not-allowed'
+                    : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {uploadingMedia ? 'Uploading…' : '📎 Add image'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  multiple
+                  className="hidden"
+                  disabled={uploadingMedia || media.length >= MAX_MEDIA}
+                  onChange={(e) => {
+                    handleAttach(e.target.files)
+                    e.target.value = '' // allow picking the same file again later
+                  }}
+                />
+              </label>
+            </div>
+            {media.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {media.map((m, i) => (
+                  <div key={m.path} className="relative group rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+                    <img src={m.url} alt={m.name} className="w-full h-24 object-cover" />
+                    <button
+                      onClick={() => handleRemoveMedia(i)}
+                      className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                      aria-label={`Remove ${m.name}`}
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {mediaError && (
+              <p className="text-xs text-red-600 mt-2">{mediaError}</p>
+            )}
+            {isMms && (
+              <p className="text-xs text-violet-700 mt-2">
+                MMS — Twilio bills a flat rate per recipient regardless of caption length.
+              </p>
+            )}
           </div>
 
           {signature && (
@@ -534,7 +704,7 @@ export default function Compose() {
             </div>
           )}
 
-          {smsCount >= 2 && willReceive > 0 && !suggestion && (
+          {!isMms && smsCount >= 2 && willReceive > 0 && !suggestion && (
             <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -604,11 +774,21 @@ export default function Compose() {
             </div>
           )}
 
-          {body && (
-            <div className="mx-auto w-64 bg-slate-100 rounded-2xl p-4">
-              <div className="bg-green-500 text-white text-sm rounded-2xl rounded-bl-sm px-3 py-2 max-w-[90%] whitespace-pre-wrap">
-                {finalBody}
-              </div>
+          {(body || media.length > 0) && (
+            <div className="mx-auto w-64 bg-slate-100 rounded-2xl p-4 space-y-2">
+              {media.length > 0 && (
+                <div className="bg-green-500 rounded-2xl rounded-bl-sm overflow-hidden max-w-[90%]">
+                  <img src={media[0].url} alt="" className="w-full h-auto" />
+                  {media.length > 1 && (
+                    <div className="bg-green-600 text-white text-[10px] px-2 py-1">+{media.length - 1} more</div>
+                  )}
+                </div>
+              )}
+              {body && (
+                <div className="bg-green-500 text-white text-sm rounded-2xl rounded-bl-sm px-3 py-2 max-w-[90%] whitespace-pre-wrap">
+                  {finalBody}
+                </div>
+              )}
             </div>
           )}
 
@@ -639,7 +819,7 @@ export default function Compose() {
           <div className="flex gap-3 pt-2">
             <button
               onClick={() => setStep('confirm')}
-              disabled={!body.trim() || (scheduleEnabled && !scheduledAt)}
+              disabled={(!body.trim() && media.length === 0) || uploadingMedia || (scheduleEnabled && !scheduledAt)}
               className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Review
@@ -697,8 +877,12 @@ export default function Compose() {
               </>
             )}
             <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500">SMS segments</span>
-              <span className="text-slate-900 font-medium">{smsCount} {smsCount === 1 ? 'segment' : 'segments'} per recipient</span>
+              <span className="text-slate-500">Type</span>
+              <span className="text-slate-900 font-medium">
+                {isMms
+                  ? `MMS (${media.length} ${media.length === 1 ? 'image' : 'images'})`
+                  : `SMS — ${smsCount} ${smsCount === 1 ? 'segment' : 'segments'} per recipient`}
+              </span>
             </div>
             {scheduleEnabled && scheduledAt && (
               <div className="flex justify-between py-2 border-b border-slate-100">
@@ -712,9 +896,16 @@ export default function Compose() {
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-lg p-3">
+          <div className="bg-slate-50 rounded-lg p-3 space-y-2">
             <p className="text-xs text-slate-500 mb-1">Message preview:</p>
-            <p className="text-sm text-slate-900 whitespace-pre-wrap">{finalBody}</p>
+            {media.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {media.map((m) => (
+                  <img key={m.path} src={m.url} alt={m.name} className="w-full h-20 object-cover rounded border border-slate-200" />
+                ))}
+              </div>
+            )}
+            {finalBody && <p className="text-sm text-slate-900 whitespace-pre-wrap">{finalBody}</p>}
           </div>
 
           <div className="flex gap-3 pt-2">

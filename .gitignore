@@ -25,3 +25,4 @@ dist-ssr
 .env
 .vapid-keys.txt
 supabase/.temp/
+.vercel

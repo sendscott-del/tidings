@@ -4,9 +4,19 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.17.0'
+export const VERSION = '0.18.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.18.0',
+    date: '2026-05-09',
+    changes: [
+      'MMS support: Compose now has an "Add image" button. Attach up to 3 JPG/PNG/GIF/WebP images (5 MB each) and Tidings sends them as MMS via Twilio. The cost preview switches to MMS pricing automatically (~2¢ per recipient flat, regardless of caption length), and the budget gate uses the MMS rate so the ward budget stays accurate. Image-only sends (no caption) are also supported.',
+      'Inbound MMS: when a member replies with a photo, the image is now mirrored into our own storage bucket and shown as a thumbnail in the Inbox detail panel — tap to open full-size. Previously inbound photos were silently dropped. The list view shows a 📷 icon next to messages that have media attached.',
+      'Database: added messages.media_urls and inbound_messages.media_urls/media_types columns; created a public tidings-mms storage bucket with RLS policies scoping outbound uploads to the sender\'s own folder.',
+      'Edge functions: send-message and dispatch-scheduled-messages now accept media_urls and pass MediaUrl params to Twilio; twilio-inbound parses NumMedia/MediaUrlN and mirrors each attachment into the bucket so the Inbox can render without a Twilio auth round-trip.',
+    ],
+  },
   {
     version: '0.17.0',
     date: '2026-05-05',

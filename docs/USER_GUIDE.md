@@ -93,7 +93,7 @@ The Compose page walks you through four steps:
 
 1. **Choose database** — Stake or Community.
 2. **Choose recipients** — Pick one or more lists. Tidings shows the **unique** recipient count (if someone's in two lists, they only get the message once).
-3. **Write message** — Character counter warns at 160/320/480 characters (each 160 = one SMS segment and costs more).
+3. **Write message** — Character counter warns at 160/320/480 characters (each 160 = one SMS segment and costs more). You can also attach up to 3 images to send as MMS — see "Sending images (MMS)" below.
 4. **Confirm & Send** — Review the summary, estimated cost, and recipient count before sending.
 
 ### LLM-assisted shortening
@@ -105,6 +105,20 @@ The model is told to preserve names, dates, times, locations, links, and tone, a
 **Setup:** the feature requires an **`ANTHROPIC_API_KEY`** in Supabase Edge Function secrets. Set it in the Supabase dashboard under **Edge Functions → Secrets**, otherwise the button surfaces a clear "feature not configured" error.
 
 **Cost note:** a single shortening call is fractions of a cent. On a 100-recipient ward broadcast, shaving one segment saves about $0.79; on a stake-wide blast, about $25. The LLM cost is dwarfed by the SMS savings at any non-trivial broadcast size.
+
+### Sending images (MMS)
+
+On step 3, click **📎 Add image** to attach up to **3 images** (JPG, PNG, GIF, or WebP, max 5 MB each). When at least one image is attached:
+
+- The send becomes an **MMS** instead of an SMS. Twilio bills MMS at a flat **~$0.02 per recipient** regardless of caption length, so the cost preview switches from "X segments × Y¢" to a single per-recipient flat rate.
+- The 160-character SMS counter is replaced with a free-form character count, since MMS doesn't have segment math.
+- The "✨ Suggest shorter" prompt is hidden — there's no segment savings to chase.
+- The **caption is optional**. You can send an image with no text at all (e.g., just a flyer).
+- Images upload to a private Tidings storage bucket as soon as you pick them. Click the **×** on a thumbnail to remove an upload before sending.
+
+**Twilio number requirement:** the sending number must be MMS-enabled. Most US 10DLC and toll-free numbers can send MMS by default, but if delivery starts failing with code `21620` ("Invalid mediaUrl") or `30007` ("Carrier filtering"), check the number's Messaging capabilities in the Twilio console.
+
+**Carrier behavior:** receiving carriers may compress or transcode large images, and animated GIFs may be flattened to a single frame on some carriers. For event flyers we recommend ≤1 MB JPG/PNG.
 
 ### Ward budgets
 
@@ -119,7 +133,7 @@ Every ward has a quarterly SMS budget in dollars. The budget shows up at the top
 
 **Assigning users to wards:** **Admin → Users → Edit**. The Ward dropdown is populated from the wards in your stake (taken from LCR import) plus "Stake". Users without a ward will see a clear "No ward assigned" message in Compose and won't be able to send.
 
-**What counts toward the budget:** every successful Twilio attempt (sent + failed) is counted at $0.0079 per segment per recipient. A 2-segment broadcast to 100 ward members costs ~$1.58 against the budget. Twilio bills attempts even on some failures, so failed deliveries are counted to keep the budget honest.
+**What counts toward the budget:** every successful Twilio attempt (sent + failed) is counted at $0.0079 per segment per recipient for SMS, or **$0.02 per recipient flat** for MMS (any send that has an image attached). A 2-segment SMS broadcast to 100 ward members costs ~$1.58; the same MMS broadcast costs ~$2.00. Twilio bills attempts even on some failures, so failed deliveries are counted to keep the budget honest.
 
 **What about scheduling?** The budget check happens at submit time. If the budget shifts after a message is queued, the queued message currently goes through. (Worth knowing: scheduled sends aren't delivered yet by a worker — that's a separate piece of work.)
 
@@ -153,6 +167,7 @@ When someone replies to a message or texts your number, it shows up in **Inbox**
 - Click any message to mark it as read.
 - Use the search box, date range, or "Unread only" toggle to narrow the list.
 - Click any message and then **Reply** to send a 1:1 response — Compose opens pre-filled with the recipient's phone, skipping list selection.
+- **Inbound images (MMS):** if a member texts back a photo, the list shows a 📷 next to that row, and the detail panel renders thumbnails — tap one to open full-size. Images are mirrored from Twilio into Tidings' own storage so they keep working even after Twilio's media URLs would otherwise expire.
 
 ---
 
