@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../i18n/LanguageContext'
 import { supabase } from '../lib/supabase'
@@ -100,9 +100,13 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-300 hidden sm:block">
+            <Link
+              to="/profile"
+              className="text-sm text-slate-300 hover:text-white truncate max-w-[8rem] sm:max-w-none"
+              title="My profile"
+            >
               {appUser?.full_name || appUser?.email}
-            </span>
+            </Link>
             <div className="flex items-center gap-1 text-xs">
               <button
                 onClick={() => setLang('en')}

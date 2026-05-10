@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
 
 interface AppUser {
   id: string
@@ -10,6 +11,19 @@ interface AppUser {
   permissions: Record<string, any>
   signature: string | null
   ward: string | null
+}
+
+interface PendingInvite {
+  id: string
+  email: string
+  full_name: string | null
+  role: string
+  ward: string | null
+  permissions: Record<string, any>
+  signature: string | null
+  token: string
+  expires_at: string
+  created_at: string
 }
 
 interface WardBudget {
@@ -33,14 +47,17 @@ const SIGNATURE_PRESETS = [
 
 export default function Admin() {
   const { appUser } = useAuth()
+  const { toast } = useToast()
   const [tab, setTab] = useState<'users' | 'budgets' | 'settings'>('users')
   const [users, setUsers] = useState<AppUser[]>([])
+  const [invites, setInvites] = useState<PendingInvite[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingUser, setEditingUser] = useState<AppUser | null>(null)
-  const [form, setForm] = useState({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
+  const [form, setForm] = useState({ email: '', full_name: '', role: 'sender', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [resendingId, setResendingId] = useState<string | null>(null)
   const [wardOptions, setWardOptions] = useState<string[]>([])
   const [budgets, setBudgets] = useState<WardBudget[]>([])
   const [budgetsLoading, setBudgetsLoading] = useState(false)
@@ -48,7 +65,7 @@ export default function Admin() {
   const [historyOpenFor, setHistoryOpenFor] = useState<string | null>(null)
   const [historyData, setHistoryData] = useState<Record<string, { quarter_label: string; used_cents: number }[]>>({})
 
-  useEffect(() => { loadUsers(); loadWardOptions() }, [])
+  useEffect(() => { loadUsers(); loadInvites(); loadWardOptions() }, [])
   useEffect(() => { if (tab === 'budgets') loadBudgets() }, [tab])
 
   if (appUser?.role !== 'admin') {
@@ -64,6 +81,58 @@ export default function Admin() {
     const { data } = await supabase.from('users').select('*').order('full_name')
     setUsers(data || [])
     setLoading(false)
+  }
+
+  async function loadInvites() {
+    const { data } = await supabase
+      .from('tidings_invites')
+      .select('*')
+      .is('accepted_at', null)
+      .is('revoked_at', null)
+      .order('created_at', { ascending: false })
+    setInvites(data || [])
+  }
+
+  async function callInviteFn(slug: 'invite-create' | 'invite-resend' | 'invite-revoke', body: Record<string, unknown>) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Not authenticated')
+    const resp = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${slug}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(body),
+      }
+    )
+    const data = await resp.json()
+    if (!resp.ok) throw new Error(data.error || `${slug} failed`)
+    return data
+  }
+
+  async function resendInvite(invite_id: string) {
+    setResendingId(invite_id)
+    try {
+      await callInviteFn('invite-resend', { invite_id })
+      toast('Invite resent — new link emailed', 'success')
+      loadInvites()
+    } catch (err) {
+      toast((err as Error).message, 'error')
+    }
+    setResendingId(null)
+  }
+
+  async function revokeInvite(invite_id: string) {
+    if (!confirm('Revoke this invite? The link in their email will stop working.')) return
+    try {
+      await callInviteFn('invite-revoke', { invite_id })
+      toast('Invite revoked', 'success')
+      loadInvites()
+    } catch (err) {
+      toast((err as Error).message, 'error')
+    }
   }
 
   async function loadWardOptions() {
@@ -136,7 +205,6 @@ export default function Admin() {
       }
 
       if (editingUser) {
-        // Update existing user
         await supabase.from('users').update({
           full_name: form.full_name,
           role: form.role,
@@ -144,38 +212,24 @@ export default function Admin() {
           signature: form.signature.trim() || null,
           ward: form.ward || null,
         }).eq('id', editingUser.id)
+        toast('User updated', 'success')
       } else {
-        // Create new user via edge function
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) throw new Error('Not authenticated')
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              email: form.email,
-              password: form.password,
-              full_name: form.full_name,
-              role: form.role,
-              permissions,
-              signature: form.signature.trim() || null,
-              ward: form.ward || null,
-            }),
-          }
-        )
-        const result = await response.json()
-        if (!response.ok) throw new Error(result.error || 'Failed to create user')
+        await callInviteFn('invite-create', {
+          email: form.email,
+          full_name: form.full_name || null,
+          role: form.role,
+          permissions,
+          signature: form.signature.trim() || null,
+          ward: form.ward || null,
+        })
+        toast(`Invite emailed to ${form.email}`, 'success')
       }
 
       setShowForm(false)
       setEditingUser(null)
-      setForm({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
+      setForm({ email: '', full_name: '', role: 'sender', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
       loadUsers()
+      loadInvites()
     } catch (err) {
       setError((err as Error).message)
     }
@@ -193,7 +247,6 @@ export default function Admin() {
     setForm({
       email: u.email,
       full_name: u.full_name || '',
-      password: '',
       role: u.role,
       can_text_stake: u.permissions?.can_text_stake ?? true,
       can_text_community: u.permissions?.can_text_community ?? false,
@@ -222,23 +275,24 @@ export default function Admin() {
         <div>
           <button onClick={() => {
             setEditingUser(null)
-            setForm({ email: '', full_name: '', password: '', role: 'viewer', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
+            setForm({ email: '', full_name: '', role: 'sender', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
             setShowForm(true)
           }} className="mb-4 px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700">
-            Create User
+            Send Invite
           </button>
 
           {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
 
           {showForm && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 mb-4 space-y-3">
-              <h3 className="text-sm font-medium text-slate-900">{editingUser ? 'Edit User' : 'New User'}</h3>
+              <h3 className="text-sm font-medium text-slate-900">{editingUser ? 'Edit User' : 'Send Invite'}</h3>
               {!editingUser && (
                 <>
-                  <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900" />
-                  <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900" />
+                  <p className="text-xs text-slate-500 -mt-2">
+                    They'll get an email with a link to set their own password and finish signup. Link expires in 7 days.
+                  </p>
                 </>
               )}
               <input placeholder="Full name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })}
@@ -306,13 +360,58 @@ export default function Admin() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button onClick={saveUser} disabled={saving || (!editingUser && (!form.email || !form.password))}
+                <button onClick={saveUser} disabled={saving || (!editingUser && !form.email)}
                   className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50">
-                  {saving ? 'Saving...' : editingUser ? 'Update' : 'Create'}
+                  {saving ? 'Saving...' : editingUser ? 'Update' : 'Send Invite'}
                 </button>
                 <button onClick={() => { setShowForm(false); setEditingUser(null); setError('') }}
                   className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
               </div>
+            </div>
+          )}
+
+          {invites.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-4">
+              <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-xs font-medium text-amber-900">
+                Pending invites ({invites.length})
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="text-left px-4 py-2 font-medium text-slate-600">Email</th>
+                    <th className="text-left px-4 py-2 font-medium text-slate-600">Role</th>
+                    <th className="text-left px-4 py-2 font-medium text-slate-600 hidden sm:table-cell">Ward</th>
+                    <th className="text-left px-4 py-2 font-medium text-slate-600 hidden md:table-cell">Expires</th>
+                    <th className="text-right px-4 py-2 font-medium text-slate-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invites.map((inv) => (
+                    <tr key={inv.id} className="border-b border-slate-100">
+                      <td className="px-4 py-2.5 text-slate-900 break-all">{inv.email}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{inv.role}</span>
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600 hidden sm:table-cell">{inv.ward || '—'}</td>
+                      <td className="px-4 py-2.5 text-slate-500 text-xs hidden md:table-cell">
+                        {new Date(inv.expires_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => resendInvite(inv.id)}
+                          disabled={resendingId === inv.id}
+                          className="text-slate-500 hover:text-slate-700 mr-3 disabled:opacity-50"
+                        >
+                          {resendingId === inv.id ? 'Resending…' : 'Resend'}
+                        </button>
+                        <button onClick={() => revokeInvite(inv.id)} className="text-slate-400 hover:text-red-500">
+                          Revoke
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 

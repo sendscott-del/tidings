@@ -4,9 +4,22 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.18.0'
+export const VERSION = '0.19.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.19.0',
+    date: '2026-05-09',
+    changes: [
+      'Invite-based signup: Admin → Users now opens a "Send Invite" form instead of forcing the admin to set a password. The invitee gets an email with a one-time link, lands on a /invite/<token> page already authenticated via the magic link, and chooses their own password. Role, ward, and permissions are pre-staged on the invite row so the invitee can\'t tamper with them. Links expire in 7 days.',
+      'Pending Invites table: a new section above the Users list shows every outstanding invite with one-click Resend (rotates the token and emails a new link, invalidating the old one) and Revoke (kills the link and tears down the unconfirmed auth user so the email can be invited again later).',
+      'My Profile page (top-right name link): every signed-in user can now edit their own display name and signature, change their email (Supabase sends a confirmation link to the new address), and change their password — all without bothering an admin. Role and ward stay admin-only.',
+      'Email change auto-syncs: a new auth.users → public.users trigger keeps the in-app email column in sync after a self-service email change confirms.',
+      'Database: added tidings_invites table with admin-only RLS, plus a get_invite_preview RPC that returns the email/role/ward for a pending token (used by /invite/<token> to show "you\'re being invited as Sender in Hyde Park 1st Ward" before the user sets their password).',
+      'Edge functions: invite-create, invite-accept, invite-resend, invite-revoke, and profile-update.',
+      'Setup note for admins: the Supabase Auth → URL Configuration → Redirect URLs allow-list must include https://glad-tidings.vercel.app/invite/* (and your custom domain when added) for invite links to resolve. The Site URL stays at the canonical Tidings URL.',
+    ],
+  },
   {
     version: '0.18.0',
     date: '2026-05-09',

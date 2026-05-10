@@ -182,12 +182,32 @@ If any recipients failed delivery, click **Export Failed CSV** in the detail pan
 ## Admin (admin role only)
 
 ### Users
-Create, edit, or delete Tidings user accounts. Roles:
+
+**Roles:**
 - **Admin** — full access.
 - **Sender** — can compose, send, view inbox and history. No user management.
 - **Viewer** — read-only.
 
-Each user has two permission flags: `can_text_stake` and `can_text_community`, and an optional **signature** that is appended to every message they send. The Edit form has quick-pick buttons for common signatures (Stake Presidency, Bishopric, EQ Presidency, RS Presidency, YM/YW Presidency, Primary Presidency); you can also type a custom one or leave it blank for no signature.
+Each user has two permission flags: `can_text_stake` and `can_text_community`, and an optional **signature** that is appended to every message they send. Admins can edit any user's role, ward, permissions, and signature. Users can edit their own name and signature in **My Profile** (see below).
+
+**Inviting a new user:** Click **Send Invite**. Fill in their email, pick role/ward/permissions, and optionally pre-fill a sensible signature for them (you can lean on the quick-pick buttons — Stake Presidency, Bishopric, EQ/RS Presidency, etc.). Submit. They get an email from Supabase with a one-time link that takes them to a setup page where they choose their own password. The link expires after **7 days**.
+
+**Pending Invites:** the section above the Users table lists every outstanding invite. Two actions on each row:
+- **Resend** — rotates the token and emails a fresh link. The previous link stops working.
+- **Revoke** — kills the link entirely and removes the unconfirmed auth user, so you can re-invite the same email later if needed.
+
+**Setup requirement (one-time):** Supabase Auth → URL Configuration → Redirect URLs must include `https://glad-tidings.vercel.app/invite/*` (or whatever your Tidings URL is). Without that, the invite link will land on a Supabase error page. The Site URL should stay at your canonical Tidings URL.
+
+**If a user already accepted, "Edit" them in the Users table** (you can change role, ward, permissions, signature there). To remove access entirely, **Delete** them.
+
+### My Profile (every user)
+
+Top-right of the page, click your name. From the Profile page you can:
+- **Update your display name and signature** — same quick-pick presets as the admin form. Saves immediately.
+- **Change your email** — enter a new address; we send a confirmation link to that address. The change takes effect once you click the link in the new inbox. Until then, you keep signing in with your current email.
+- **Change your password** — type a new one (8+ characters); takes effect immediately, no confirmation step.
+
+Role and ward are shown read-only here — those changes still go through your admin.
 
 ### Budgets
 See **Ward budgets** under Compose & Send for full detail. In short: each ward has a dollar cap per calendar quarter; usage resets automatically; senders are hard-blocked at 100%.

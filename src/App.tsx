@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import InviteAccept from './pages/InviteAccept'
 import Dashboard from './pages/Dashboard'
 import Stake from './pages/Stake'
 import Lists from './pages/Lists'
@@ -17,6 +18,7 @@ import Inbox from './pages/Inbox'
 import Community from './pages/Community'
 import History from './pages/History'
 import Admin from './pages/Admin'
+import Profile from './pages/Profile'
 
 export default function App() {
   return (
@@ -30,6 +32,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/invite/:token" element={<InviteAccept />} />
             <Route
               element={
                 <ProtectedRoute>
@@ -45,6 +48,7 @@ export default function App() {
               <Route path="inbox" element={<Inbox />} />
               <Route path="history" element={<History />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
           </Routes>
           </ToastProvider>
