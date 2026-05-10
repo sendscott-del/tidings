@@ -75,8 +75,8 @@ Paste the full HTML below. Supabase will render it as-is.
             <td style="background:#f8fafc;padding:18px 28px;border-top:1px solid #e2e8f0;">
               <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.5;">
                 Sent by <strong style="color:#475569;">Left Field Labs</strong> — the team that builds
-                {{ if .Data.app }}{{ .Data.app }}{{ else }}Magnify, Steward, Tidings, Knit, and Glean{{ end }}
-                and other tools for Latter-day Saint stake leadership.
+                {{ if .Data.app }}{{ .Data.app }} and other tools{{ else }}tools{{ end }}
+                for church members and leaders.
               </p>
             </td>
           </tr>
