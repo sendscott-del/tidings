@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.19.0'
+export const VERSION = '0.19.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.19.1',
+    date: '2026-05-10',
+    changes: [
+      'Branded invite emails: invite-create and invite-resend now pass app: "Tidings" in user_metadata when calling Supabase\'s inviteUserByEmail. The shared Left Field Labs invite email template (paste-in instructions live in docs/INVITE_EMAIL_TEMPLATE.md) reads {{ .Data.app }} to put "Tidings" in the subject and body, so invitees see "You\'ve been invited to Tidings" instead of Supabase\'s generic default. The same template works for the other Gathered apps (Magnify, Steward, Knit, Glean) once they add their own invite flows — each just passes its own app name in user_metadata.',
+    ],
+  },
   {
     version: '0.19.0',
     date: '2026-05-09',
