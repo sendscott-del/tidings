@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.19.2'
+export const VERSION = '0.19.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.19.3',
+    date: '2026-05-10',
+    changes: [
+      'Fixed: every slide-over panel (Lists members, Lists member picker, Inbox detail, History delivery details, Community CSV import, Stake contact detail) had a z-index lower than the Gathered AppSwitcher bar, so the panel header — including the close X button — was rendered behind the top app-switcher chrome. Found via end-to-end browser QA. Bumped all slide-overs to z-[110], the nested Lists picker to z-[115], and the ConfirmDialog to z-[120] so destructive confirms always appear above any slide-over that triggered them.',
+    ],
+  },
   {
     version: '0.19.2',
     date: '2026-05-10',

@@ -477,7 +477,7 @@ export default function Lists() {
 
       {/* Members slide-over */}
       {selectedList && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-[110] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setSelectedList(null)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-start justify-between">
@@ -581,7 +581,7 @@ export default function Lists() {
 
       {/* Member picker (nested over the slide-over) */}
       {showPicker && selectedList && (
-        <div className="fixed inset-0 z-[60] flex justify-end">
+        <div className="fixed inset-0 z-[115] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowPicker(false)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4">

@@ -257,7 +257,7 @@ export default function History() {
 
       {/* Detail slide-over */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-[110] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setSelected(null)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">

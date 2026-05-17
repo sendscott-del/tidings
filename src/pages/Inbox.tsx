@@ -272,7 +272,7 @@ export default function Inbox() {
 
       {/* Message detail */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-[110] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setSelected(null)} />
           <div className="relative bg-white w-full max-w-sm shadow-xl p-6 overflow-y-auto">
             <button onClick={() => setSelected(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">

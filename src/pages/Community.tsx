@@ -407,7 +407,7 @@ export default function Community() {
 
       {/* CSV Import slide-over */}
       {showImport && (
-        <div className="fixed inset-0 z-[55] flex justify-end">
+        <div className="fixed inset-0 z-[110] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowImport(false)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
