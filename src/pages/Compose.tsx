@@ -380,6 +380,7 @@ export default function Compose() {
           : `Sent to ${data.recipient_count} ${data.recipient_count === 1 ? 'recipient' : 'recipients'}`,
         'success'
       )
+      setSending(false)
     } catch (err) {
       setError((err as Error).message)
       toast((err as Error).message, 'error')
@@ -442,6 +443,8 @@ export default function Compose() {
                 setSelectedListIds([])
                 setScheduleEnabled(false)
                 setScheduledAt('')
+                setSending(false) // success path leaves sending=true; reset so the next Send is enabled
+                setError('')
                 if (replyTo) navigate('/inbox')
                 else setStep('database')
               }}

@@ -48,6 +48,7 @@ export const translations = {
     'menu.language': 'Language',
     'menu.languageEnglish': 'English',
     'menu.languageSpanish': 'Español',
+    'menu.myProfile': 'My profile',
 
     // Common
     'common.save': 'Save',
@@ -119,6 +120,7 @@ export const translations = {
     'menu.language': 'Idioma',
     'menu.languageEnglish': 'English',
     'menu.languageSpanish': 'Español',
+    'menu.myProfile': 'Mi perfil',
 
     // Common
     'common.save': 'Guardar',

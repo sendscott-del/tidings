@@ -4,9 +4,18 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.19.1'
+export const VERSION = '0.19.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.19.2',
+    date: '2026-05-10',
+    changes: [
+      'QA pass: standardized the inbox unread badge to use read_by IS NULL everywhere (Layout polling now matches Dashboard + Inbox). Both columns are set together by markAsRead so this was never wrong in practice, but standardizing avoids drift if anyone touches a row outside the app.',
+      'QA pass: i18n the Profile tooltip in the header so Spanish-locale users see "Mi perfil" instead of "My profile" when hovering the user-name link.',
+      'QA pass: Compose now resets the sending flag on success too (was only reset on demo-mode success and on error). No user-visible bug today because the post-send result panel takes over the UI, but defensive cleanup so the next compose starts in a clean state.',
+    ],
+  },
   {
     version: '0.19.1',
     date: '2026-05-10',

@@ -69,10 +69,13 @@ export default function Layout() {
     }
     let active = true
     async function fetchUnread() {
+      // Use read_by (matches Dashboard + Inbox). Both columns are set together
+      // by markAsRead, but standardizing on the same column avoids any future
+      // drift if a row is updated outside the app.
       const { count } = await supabase
         .from('inbound_messages')
         .select('id', { count: 'exact', head: true })
-        .is('read_at', null)
+        .is('read_by', null)
       if (active) setUnreadInbox(count ?? 0)
     }
     fetchUnread()
@@ -103,7 +106,8 @@ export default function Layout() {
             <Link
               to="/profile"
               className="text-sm text-slate-300 hover:text-white truncate max-w-[8rem] sm:max-w-none"
-              title="My profile"
+              title={t('menu.myProfile')}
+              aria-label={t('menu.myProfile')}
             >
               {appUser?.full_name || appUser?.email}
             </Link>
