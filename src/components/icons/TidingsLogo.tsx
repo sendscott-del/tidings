@@ -5,14 +5,15 @@ interface Props {
 }
 
 /**
- * Tidings brand mark. Matches the v0.22.4 home-screen / PWA icon:
+ * Tidings brand mark. Matches the v0.22.5 home-screen / PWA icon:
  *   - rounded square in Tidings amber (#F59E0B — the Gathered "T" chip),
  *     or white in `inverse`
- *   - three concentric sound-wave arcs, white on amber, no speaker
+ *   - three white sound-wave curves emanating outward; quadratic Bezier
+ *     arcs that fan outward (not nested half-circles), so the glyph
+ *     clearly reads as sound rather than a target
  *
- * The speaker cone the previous design carried is gone — the user wants
- * just the three lines that represent sound. The "Tidings" wordmark
- * continues to appear as adjacent text wherever the logo is used.
+ * The wordmark "Tidings" continues to appear as adjacent text wherever
+ * the logo is used.
  */
 export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
   const isInverse = variant === 'inverse'
@@ -30,8 +31,7 @@ export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
     flexShrink: 0,
   }
   const glyph = Math.round(size * 0.82)
-  // viewBox 0..64; arcs anchored at x=22, centered vertically at y=32.
-  // Same geometry the rasterized icon uses, just scaled down 1/8.
+  // viewBox 0..64; same geometry the rasterized icon uses, scaled down 1/8.
   return (
     <span style={containerStyle} className={className}>
       <svg
@@ -43,24 +43,24 @@ export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
         aria-label="Tidings"
       >
         <path
-          d="M22 25.75 A 6.25 6.25 0 0 1 22 38.25"
+          d="M22.5 26.875 Q27.5 32 22.5 37.125"
           fill="none"
           stroke={fg}
-          strokeWidth={4.25}
+          strokeWidth={4}
           strokeLinecap="round"
         />
         <path
-          d="M22 18.875 A 13.125 13.125 0 0 1 22 45.125"
+          d="M20 20 Q40 32 20 44"
           fill="none"
           stroke={fg}
-          strokeWidth={4.25}
+          strokeWidth={4}
           strokeLinecap="round"
         />
         <path
-          d="M22 12 A 20 20 0 0 1 22 52"
+          d="M17.5 13.125 Q52.5 32 17.5 50.875"
           fill="none"
           stroke={fg}
-          strokeWidth={4.25}
+          strokeWidth={4}
           strokeLinecap="round"
         />
       </svg>

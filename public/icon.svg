@@ -1,11 +1,15 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <rect width="512" height="512" rx="116" fill="#F59E0B"/>
-      <!-- Three concentric sound-wave arcs, no speaker. Centered in the
-           square. White on amber. -->
-      <path d="M176 206 A 50 50 0 0 1 176 306"
-            fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
-      <path d="M176 151 A 105 105 0 0 1 176 361"
-            fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
-      <path d="M176 96 A 160 160 0 0 1 176 416"
-            fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
+      <!-- Three sound-wave curves emanating outward (no speaker).
+           Quadratic Bezier arcs that fan outward — apex points
+           progressively further right (220, 320, 420) and the start /
+           end anchors stagger left so each successive curve is bigger
+           AND further along the trajectory. Clear visual gap between
+           arcs so the design reads as sound waves, not a target. -->
+      <path d="M180 215 Q220 256 180 297"
+            fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
+      <path d="M160 160 Q320 256 160 352"
+            fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
+      <path d="M140 105 Q420 256 140 407"
+            fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
     </svg>

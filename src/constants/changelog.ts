@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.4'
+export const VERSION = '0.22.5'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.5',
+    date: '2026-05-19',
+    changes: [
+      'Tidings glyph redrawn as real sound waves. The previous version used three full half-circle arcs that read as nested-target rings instead of sound. The new version uses three quadratic-Bezier curves that fan outward — each apex progressively further right (220, 320, 420 in viewBox coords) so the curves clearly emanate from a virtual source on the left. Stroke is thicker; arcs are bigger; clear visual gap between them.',
+      'Manifest icons drop "purpose": "any maskable" — that flag was telling iOS "do not transform this icon," which is why Tidings stayed full-color in Tinted (sleep) mode while the other four Gathered apps were rendering as black-and-white. Tidings should now match the suite in Tinted mode after iOS re-caches the icon (remove + re-add to home screen to force).',
+    ],
+  },
   {
     version: '0.22.4',
     date: '2026-05-19',
