@@ -77,7 +77,7 @@ Admins and users in the "Stake" pool see every list regardless of scope.
 ### Creating a custom list
 1. **Lists → New List**.
 2. Name the list, optionally describe it, choose stake or community.
-3. After creating, the list opens — click **+ Add Members** to pick contacts from the chosen database. Search by name, phone, or ward.
+3. After creating, the list opens — click **+ Add Members** to pick contacts from the chosen database. Search by name, phone, and/or ward — the search is token-based, so typing "Miguel Hernandez Hyde Park" matches anyone named Miguel Hernandez in a Hyde Park ward, and middle names/initials don't break the match. Accents are ignored. Click each contact's checkbox to add them; the search bar clears after each pick so you can immediately type the next name. When you're done, click **Add X contacts** to add all of them at once.
 
 ### Editing or deleting a custom list
 - Open any custom list and click the pencil icon to rename or change its description.

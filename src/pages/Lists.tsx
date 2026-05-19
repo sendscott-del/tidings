@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -66,6 +66,7 @@ export default function Lists() {
   const [pickerContacts, setPickerContacts] = useState<PickerContact[]>([])
   const [pickerLoading, setPickerLoading] = useState(false)
   const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set())
+  const pickerSearchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadLists()
@@ -259,9 +260,14 @@ export default function Lists() {
 
   function togglePickerContact(id: string) {
     const next = new Set(pickerSelected)
-    if (next.has(id)) next.delete(id)
+    const wasSelected = next.has(id)
+    if (wasSelected) next.delete(id)
     else next.add(id)
     setPickerSelected(next)
+    if (!wasSelected) {
+      setPickerSearch('')
+      pickerSearchRef.current?.focus()
+    }
   }
 
   async function handleAddSelected() {
@@ -306,12 +312,17 @@ export default function Lists() {
   }
 
   const pickerFiltered = useMemo(() => {
-    const q = pickerSearch.trim().toLowerCase()
-    if (!q) return pickerContacts.slice(0, 200)
+    const normalize = (s: string) =>
+      s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    const tokens = normalize(pickerSearch).split(/\s+/).filter(Boolean)
+    if (tokens.length === 0) return pickerContacts.slice(0, 200)
     return pickerContacts
-      .filter((c) =>
-        `${c.first_name} ${c.last_name} ${c.phone} ${c.unit_name || ''}`.toLowerCase().includes(q)
-      )
+      .filter((c) => {
+        const haystack = normalize(
+          `${c.first_name} ${c.last_name} ${c.phone} ${c.unit_name || ''}`
+        )
+        return tokens.every((t) => haystack.includes(t))
+      })
       .slice(0, 200)
   }, [pickerContacts, pickerSearch])
 

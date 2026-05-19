@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.19.3'
+export const VERSION = '0.20.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.20.0',
+    date: '2026-05-18',
+    changes: [
+      'Lists member picker: search now uses token matching instead of one-big-substring matching. Typing "Miguel Hernandez" matches "Miguel A. Hernandez" (middle names/initials no longer break the search), and you can append a ward name like "Miguel Hernandez Hyde Park" to scope the result. Search is also accent-insensitive now, so "garcia" finds "García".',
+      'Lists member picker: clicking a checkbox clears the search bar and refocuses the input so you can immediately type the next name. Multi-select still works — the checked count stays visible at the top, and "Add X contacts" inserts all of them at once. Unchecking does NOT clear the search (so you can correct a mis-click without losing your place).',
+    ],
+  },
   {
     version: '0.19.3',
     date: '2026-05-10',
