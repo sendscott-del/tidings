@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.5'
+export const VERSION = '0.22.6'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.6',
+    date: '2026-05-19',
+    changes: [
+      'Tidings glyph redesigned as a fanfare bugle pointing up-right at ~20°. Mouthpiece on the lower-left, body, flared bell on the upper-right — reads as "declare glad tidings of great joy" (D&C 31:3). Updated everywhere: home-screen / PWA icons (icon-192, icon-512, apple-touch-icon, favicon, public/icon.svg) and the in-app TidingsLogo SVG used in headers, login card, and the sidebar.',
+    ],
+  },
   {
     version: '0.22.5',
     date: '2026-05-19',

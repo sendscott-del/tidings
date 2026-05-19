@@ -1,15 +1,18 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <rect width="512" height="512" rx="116" fill="#F59E0B"/>
-      <!-- Three sound-wave curves emanating outward (no speaker).
-           Quadratic Bezier arcs that fan outward — apex points
-           progressively further right (220, 320, 420) and the start /
-           end anchors stagger left so each successive curve is bigger
-           AND further along the trajectory. Clear visual gap between
-           arcs so the design reads as sound waves, not a target. -->
-      <path d="M180 215 Q220 256 180 297"
-            fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
-      <path d="M160 160 Q320 256 160 352"
-            fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
-      <path d="M140 105 Q420 256 140 407"
-            fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
+      <!-- Fanfare bugle / horn pointing up-right at ~20°. Reads as
+           "declare glad tidings" without the literal speaker. -->
+      <g fill="#FFFFFF" transform="rotate(-20 256 256)">
+        <!-- Mouthpiece bowl -->
+        <ellipse cx="84" cy="256" rx="24" ry="28"/>
+        <!-- Body tube -->
+        <rect x="100" y="232" width="222" height="48" rx="12"/>
+        <!-- Bell — flared cone with bold rim -->
+        <path d="M322 212
+                 L 446 120
+                 Q 460 120 460 134
+                 L 460 378
+                 Q 460 392 446 392
+                 L 322 300 Z"/>
+      </g>
     </svg>
