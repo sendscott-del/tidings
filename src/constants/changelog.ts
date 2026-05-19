@@ -4,9 +4,24 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.20.2'
+export const VERSION = '0.21.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.21.0',
+    date: '2026-05-18',
+    changes: [
+      'Suite consistency pass (5/5): the "Tidings" wordmark is now in the sidebar only — the duplicate wordmark in the old navy top bar is gone. The top sub-bar above the content has been re-purposed for the scripture banner and the EN/ES toggle, which now follow you onto every screen.',
+      'Scripture banner: "Your tongue shall be loosed, and you shall declare glad tidings of great joy." — D&C 31:3.',
+      'Tab title and PWA install label are now just "Tidings" (the <title> was "Tidings — Stake Communications").',
+      'PWA manifest theme_color, background_color, and index.html theme-color meta changed from navy (#1B3A6B) to Tidings amber (#F59E0B) so the home-screen browser chrome and PWA install background match the Gathered "T" chip.',
+      '"Admin" renamed to "Settings" in the sidebar (EN: Settings, ES: Configuración). The internal Users / Budgets / Settings sub-tabs are unchanged.',
+      'Demo mode is no longer a top-bar button. The toggle was moved into Settings → Settings sub-tab — matches the suite-wide rule that demo lives behind Settings.',
+      'New User Guide route (/guide) — structured prose covering what Tidings does, roles, where to start, and language behavior. Linked from the sidebar bottom rail.',
+      'New Release Notes route (/release-notes) — version-by-version changelog reader. Linked from the sidebar bottom rail.',
+      'Mobile pass: bottom nav rows tightened, content padding lifted on mobile (`p-4` → `sm:p-6`). The deep mobile rebuild flagged for Tidings is still to come; this is a first polish pass.',
+    ],
+  },
   {
     version: '0.20.2',
     date: '2026-05-18',

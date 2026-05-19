@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
+import { useDemoMode } from '../contexts/DemoModeContext'
 
 interface AppUser {
   id: string
@@ -48,6 +49,7 @@ const SIGNATURE_PRESETS = [
 export default function Admin() {
   const { appUser } = useAuth()
   const { toast } = useToast()
+  const { demoMode, setDemoMode } = useDemoMode()
   const [tab, setTab] = useState<'users' | 'budgets' | 'settings'>('users')
   const [users, setUsers] = useState<AppUser[]>([])
   const [invites, setInvites] = useState<PendingInvite[]>([])
@@ -577,17 +579,42 @@ export default function Admin() {
       )}
 
       {tab === 'settings' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-lg font-medium text-slate-900 mb-4">Settings</h2>
-          <p className="text-sm text-slate-500">
-            Twilio credentials and app settings are configured via Supabase Edge Function secrets.
-            Use <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">supabase secrets set</code> to configure:
-          </p>
-          <ul className="mt-3 space-y-1 text-sm text-slate-600">
-            <li><code className="bg-slate-100 px-1 py-0.5 rounded text-xs">TWILIO_ACCOUNT_SID</code></li>
-            <li><code className="bg-slate-100 px-1 py-0.5 rounded text-xs">TWILIO_AUTH_TOKEN</code></li>
-            <li><code className="bg-slate-100 px-1 py-0.5 rounded text-xs">TWILIO_FROM_NUMBER</code></li>
-          </ul>
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-medium text-slate-900">Demo mode</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  When demo mode is on, Tidings runs against in-memory fixtures
+                  instead of the live Twilio + Supabase stack. Use it to walk
+                  someone through the app without sending real messages.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDemoMode(!demoMode)}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium border whitespace-nowrap ${
+                  demoMode
+                    ? 'border-amber-400 bg-amber-50 text-amber-800'
+                    : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {demoMode ? 'Exit demo mode' : 'Enable demo mode'}
+              </button>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <h2 className="text-lg font-medium text-slate-900 mb-4">Twilio configuration</h2>
+            <p className="text-sm text-slate-500">
+              Twilio credentials and app settings are configured via Supabase Edge Function secrets.
+              Use <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">supabase secrets set</code> to configure:
+            </p>
+            <ul className="mt-3 space-y-1 text-sm text-slate-600">
+              <li><code className="bg-slate-100 px-1 py-0.5 rounded text-xs">TWILIO_ACCOUNT_SID</code></li>
+              <li><code className="bg-slate-100 px-1 py-0.5 rounded text-xs">TWILIO_AUTH_TOKEN</code></li>
+              <li><code className="bg-slate-100 px-1 py-0.5 rounded text-xs">TWILIO_FROM_NUMBER</code></li>
+            </ul>
+          </div>
         </div>
       )}
     </div>

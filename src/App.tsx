@@ -19,6 +19,8 @@ import Community from './pages/Community'
 import History from './pages/History'
 import Admin from './pages/Admin'
 import Profile from './pages/Profile'
+import Guide from './pages/Guide'
+import ReleaseNotes from './pages/ReleaseNotes'
 
 export default function App() {
   return (
@@ -49,6 +51,8 @@ export default function App() {
               <Route path="history" element={<History />} />
               <Route path="admin" element={<Admin />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="guide" element={<Guide />} />
+              <Route path="release-notes" element={<ReleaseNotes />} />
             </Route>
           </Routes>
           </ToastProvider>

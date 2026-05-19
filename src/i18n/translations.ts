@@ -2,6 +2,8 @@ export const translations = {
   en: {
     // App
     'app.name': 'Tidings',
+    'app.scripture': 'Your tongue shall be loosed, and you shall declare glad tidings of great joy.',
+    'app.scriptureRef': 'D&C 31:3',
     'app.loading': 'Loading…',
 
     // Auth
@@ -41,7 +43,7 @@ export const translations = {
     'nav.compose': 'Compose',
     'nav.inbox': 'Inbox',
     'nav.history': 'History',
-    'nav.admin': 'Admin',
+    'nav.admin': 'Settings',
     'nav.signOut': 'Sign Out',
 
     // Header menu
@@ -74,6 +76,8 @@ export const translations = {
   es: {
     // App
     'app.name': 'Tidings',
+    'app.scripture': 'Tu lengua será desatada y declararás las gratas nuevas de gran gozo.',
+    'app.scriptureRef': 'D&C 31:3',
     'app.loading': 'Cargando…',
 
     // Auth
@@ -113,7 +117,7 @@ export const translations = {
     'nav.compose': 'Redactar',
     'nav.inbox': 'Bandeja',
     'nav.history': 'Historial',
-    'nav.admin': 'Administración',
+    'nav.admin': 'Configuración',
     'nav.signOut': 'Cerrar Sesión',
 
     // Header menu

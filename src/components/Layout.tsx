@@ -6,7 +6,6 @@ import { supabase } from '../lib/supabase'
 import type { TranslationKey } from '../i18n/translations'
 import { TidingsLogo } from './icons/TidingsLogo'
 import AppSwitcher from './AppSwitcher'
-import { useDemoMode } from '../contexts/DemoModeContext'
 
 interface NavItem {
   to: string
@@ -25,9 +24,6 @@ const navItems: NavItem[] = [
 ]
 
 const adminItem: NavItem = { to: '/admin', labelKey: 'nav.admin', icon: 'shield' }
-// Tidings is on its own Supabase project, so it can't host /admin/gather
-// directly (cross-project writes need additional plumbing). Steward hosts
-// the canonical version; we open it in a new tab for super admins.
 const GATHER_ADMIN_URL = 'https://stewards-indeed.vercel.app/admin/gather'
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
@@ -52,7 +48,6 @@ export default function Layout() {
   const { appUser, signOut } = useAuth()
   const navigate = useNavigate()
   const { t, lang, setLang } = useLanguage()
-  const { demoMode, setDemoMode } = useDemoMode()
   const [unreadInbox, setUnreadInbox] = useState(0)
 
   async function handleSignOut() {
@@ -62,16 +57,8 @@ export default function Layout() {
 
   useEffect(() => {
     if (!appUser?.id) return
-    if (demoMode) {
-      // Demo: hardcoded unread count matching the fixture inbox (2 unread).
-      setUnreadInbox(2)
-      return
-    }
     let active = true
     async function fetchUnread() {
-      // Use read_by (matches Dashboard + Inbox). Both columns are set together
-      // by markAsRead, but standardizing on the same column avoids any future
-      // drift if a row is updated outside the app.
       const { count } = await supabase
         .from('inbound_messages')
         .select('id', { count: 'exact', head: true })
@@ -83,116 +70,141 @@ export default function Layout() {
     function onFocus() { fetchUnread() }
     window.addEventListener('focus', onFocus)
     return () => { active = false; clearInterval(interval); window.removeEventListener('focus', onFocus) }
-  }, [appUser?.id, demoMode])
+  }, [appUser?.id])
 
   const items = appUser?.role === 'admin' ? [...navItems, adminItem] : navItems
   const badgeFor = (to: string) => (to === '/inbox' ? unreadInbox : 0)
+  const scripture = t('app.scripture')
+  const scriptureRef = t('app.scriptureRef')
 
   return (
     <div className="min-h-screen bg-slate-50">
       <AppSwitcher />
-      {/* Per-app brand stripe — same amber the Gathered "T" chip uses,
-          so Tidings's identity follows through into the chrome. */}
+      {/* Per-app brand stripe — same amber the Gathered "T" chip uses. */}
       <div className="h-[3px] w-full bg-tidings-primary" aria-hidden="true" />
-      {/* Top bar */}
-      <header className="bg-tidings-chrome text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <TidingsLogo size={32} />
-            <span className="text-lg font-semibold tracking-tight">Tidings</span>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <Link
-              to="/profile"
-              className="text-sm text-slate-300 hover:text-white truncate max-w-[8rem] sm:max-w-none"
-              title={t('menu.myProfile')}
-              aria-label={t('menu.myProfile')}
-            >
-              {appUser?.full_name || appUser?.email}
-            </Link>
-            <div className="flex items-center gap-1 text-xs">
-              <button
-                onClick={() => setLang('en')}
-                className={`px-1.5 py-0.5 rounded ${lang === 'en' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
-                aria-label={t('menu.languageEnglish')}
-                aria-pressed={lang === 'en'}
-              >
-                EN
-              </button>
-              <span className="text-slate-600">·</span>
-              <button
-                onClick={() => setLang('es')}
-                className={`px-1.5 py-0.5 rounded ${lang === 'es' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
-                aria-label={t('menu.languageSpanish')}
-                aria-pressed={lang === 'es'}
-              >
-                ES
-              </button>
-            </div>
-            {appUser?.role === 'admin' && (
-              <a
-                href={GATHER_ADMIN_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded border border-slate-600 text-slate-400 hover:text-white"
-                title="Manage user access across all Gather apps (opens in Steward)"
-              >
-                Gather
-              </a>
-            )}
+      {/* Suite-wide top sub-bar: scripture (left) + EN/ES + profile + sign out
+          on the right. Replaces the old navy top bar that duplicated the
+          "Tidings" wordmark (now lives in the sidebar header). */}
+      <div className="w-full bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 py-1.5 flex items-center gap-3">
+          <div className="flex-1 min-w-0 text-[11px] text-slate-500 truncate text-center md:text-left">
+            <span className="italic">&ldquo;{scripture}&rdquo;</span>{' '}
+            <span className="text-slate-400 not-italic">{scriptureRef}</span>
+          </div>
+          <div className="flex items-center gap-1 text-[11px] font-semibold tracking-wide select-none">
             <button
-              type="button"
-              onClick={() => setDemoMode(!demoMode)}
-              className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded border ${demoMode ? 'border-amber-300 text-amber-300' : 'border-slate-600 text-slate-400 hover:text-white'}`}
-              title={demoMode ? 'Demo mode is on — click to exit' : 'Enable demo mode'}
+              onClick={() => setLang('en')}
+              aria-pressed={lang === 'en'}
+              aria-label={t('menu.languageEnglish')}
+              className={lang === 'en' ? 'text-tidings-primary' : 'text-slate-400 hover:text-slate-600'}
             >
-              Demo
+              EN
             </button>
+            <span className="text-slate-300">|</span>
             <button
-              onClick={handleSignOut}
-              className="text-sm text-slate-400 hover:text-white transition-colors"
+              onClick={() => setLang('es')}
+              aria-pressed={lang === 'es'}
+              aria-label={t('menu.languageSpanish')}
+              className={lang === 'es' ? 'text-tidings-primary' : 'text-slate-400 hover:text-slate-600'}
             >
-              {t('nav.signOut')}
+              ES
             </button>
           </div>
+          <Link
+            to="/profile"
+            className="hidden sm:inline-block text-xs text-slate-500 hover:text-slate-800 truncate max-w-[10rem]"
+            title={t('menu.myProfile')}
+          >
+            {appUser?.full_name || appUser?.email}
+          </Link>
+          {appUser?.role === 'admin' && (
+            <a
+              href={GATHER_ADMIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-slate-300 text-slate-500 hover:text-slate-800"
+              title="Manage user access across all Gather apps (opens in Steward)"
+            >
+              Gather
+            </a>
+          )}
+          <button
+            onClick={handleSignOut}
+            className="text-xs text-slate-500 hover:text-slate-800"
+          >
+            {t('nav.signOut')}
+          </button>
         </div>
-      </header>
+      </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <nav className="w-56 min-h-[calc(100vh-3.5rem)] bg-white border-r border-slate-200 hidden md:block">
-          <ul className="py-4 space-y-0.5">
+      <div className="md:flex">
+        {/* Sidebar — single brand header at the top, primary nav, and a
+            bottom rail for the User Guide + Release Notes. Mirrors Glean. */}
+        <aside
+          className="hidden md:flex md:flex-col md:flex-shrink-0 sticky top-0 h-screen text-white"
+          style={{ width: 224, background: '#0F172A' }}
+        >
+          <div className="px-5 pt-6 pb-8 flex items-center gap-2.5">
+            <TidingsLogo size={28} />
+            <div className="text-xl font-bold tracking-tight leading-none">Tidings</div>
+          </div>
+          <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto">
             {items.map((item) => {
               const badge = badgeFor(item.to)
               return (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={item.to === '/'}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'text-slate-900 bg-slate-100 border-r-2 border-amber-500'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`
-                    }
-                  >
-                    <NavIcon name={item.icon} />
-                    <span className="flex-1">{t(item.labelKey)}</span>
-                    {badge > 0 && (
-                      <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold">
-                        {badge > 99 ? '99+' : badge}
-                      </span>
-                    )}
-                  </NavLink>
-                </li>
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-colors ${
+                      isActive
+                        ? 'bg-white/15 text-white'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white'
+                    }`
+                  }
+                >
+                  <NavIcon name={item.icon} />
+                  <span className="flex-1">{t(item.labelKey)}</span>
+                  {badge > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-tidings-primary text-white text-[11px] font-semibold">
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
+                </NavLink>
               )
             })}
-          </ul>
-        </nav>
+          </nav>
+          <div className="px-2 pb-5 mt-2 space-y-0.5 border-t border-white/10 pt-3">
+            <NavLink
+              to="/guide"
+              className={({ isActive }) =>
+                `block px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                  isActive
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/60 hover:bg-white/10 hover:text-white'
+                }`
+              }
+            >
+              User guide
+            </NavLink>
+            <NavLink
+              to="/release-notes"
+              className={({ isActive }) =>
+                `block px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                  isActive
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/60 hover:bg-white/10 hover:text-white'
+                }`
+              }
+            >
+              Release notes
+            </NavLink>
+          </div>
+        </aside>
 
-        {/* Mobile bottom nav */}
+        {/* Mobile bottom nav. Slimmer rows, larger tap targets. */}
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-50">
           <ul className="flex justify-around py-2">
             {items.slice(0, 6).map((item) => {
@@ -203,8 +215,8 @@ export default function Layout() {
                     to={item.to}
                     end={item.to === '/'}
                     className={({ isActive }) =>
-                      `flex flex-col items-center gap-0.5 text-xs relative ${
-                        isActive ? 'text-amber-600' : 'text-slate-400'
+                      `flex flex-col items-center gap-0.5 text-[11px] relative px-2 py-1 ${
+                        isActive ? 'text-tidings-primary' : 'text-slate-500'
                       }`
                     }
                   >
@@ -224,8 +236,7 @@ export default function Layout() {
           </ul>
         </nav>
 
-        {/* Main content */}
-        <main className="flex-1 p-6 pb-20 md:pb-6">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 pb-20 md:pb-6">
           <div className="max-w-5xl mx-auto">
             <Outlet />
           </div>
