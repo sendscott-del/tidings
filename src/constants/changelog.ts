@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.20.0'
+export const VERSION = '0.20.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.20.1',
+    date: '2026-05-18',
+    changes: [
+      'Fixed: deleting a list with zero members appeared to succeed but the list stayed. Root cause was a row-level security policy on the lists DELETE path whose USING clause referenced list_members in a way that empty lists could not satisfy — Postgres silently returned zero affected rows and Supabase reported success. Replaced the direct delete with a SECURITY DEFINER RPC (delete_list) that enforces permissions explicitly inside the function: admins and Stake-pool users can delete any custom list; ward senders can delete only ward-scoped lists matching their own ward. Auto-lists remain non-deletable (they would just be rebuilt on the next LCR import). The frontend falls back to the old direct-delete path with silent-fail detection until the migration is applied, so the deploy is safe to ship before running the migration.',
+      'Action needed: open Supabase SQL editor for the Tidings project and run the contents of supabase/migrations/20260518000000_delete_list_rpc.sql once. Until that is applied, the app falls back to direct delete and will show a clear "blocked by row-level policy" toast on the failing case instead of the previous silent success.',
+    ],
+  },
   {
     version: '0.20.0',
     date: '2026-05-18',

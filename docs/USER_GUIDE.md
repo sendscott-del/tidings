@@ -81,7 +81,7 @@ Admins and users in the "Stake" pool see every list regardless of scope.
 
 ### Editing or deleting a custom list
 - Open any custom list and click the pencil icon to rename or change its description.
-- Click the trash icon on the list card (or in the slide-over) to delete. Members are not deleted, just removed from the list.
+- Click the trash icon on the list card to delete. Members are not deleted, just removed from the list. Empty lists (zero members) can be deleted the same as populated lists.
 
 Auto-lists cannot be edited or deleted — re-import the CSV if you need them refreshed.
 

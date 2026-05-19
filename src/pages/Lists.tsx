@@ -218,11 +218,34 @@ export default function Lists() {
     if (!confirmDelete) return
     const id = confirmDelete.id
     setConfirmDelete(null)
-    const { error } = await supabase.from('lists').delete().eq('id', id)
-    if (error) {
-      toast(`Failed to delete: ${error.message}`, 'error')
+
+    const rpc = await supabase.rpc('delete_list', { p_list_id: id })
+    const rpcMissing =
+      rpc.error &&
+      (rpc.error.code === 'PGRST202' ||
+        /Could not find the function|function .* does not exist/i.test(rpc.error.message))
+
+    if (rpcMissing) {
+      const fallback = await supabase.from('lists').delete().eq('id', id).select('id')
+      if (fallback.error) {
+        toast(`Failed to delete: ${fallback.error.message}`, 'error')
+        return
+      }
+      if (!fallback.data || fallback.data.length === 0) {
+        toast(
+          'Delete was silently blocked by a row-level policy. Apply the delete_list migration and retry.',
+          'error',
+        )
+        return
+      }
+    } else if (rpc.error) {
+      toast(`Failed to delete: ${rpc.error.message}`, 'error')
+      return
+    } else if (rpc.data === 0) {
+      toast('List was not found (already deleted).', 'error')
       return
     }
+
     toast('List deleted', 'success')
     if (selectedList?.id === id) setSelectedList(null)
     await loadLists()
