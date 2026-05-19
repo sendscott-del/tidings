@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <rect width="512" height="512" rx="116" fill="#F59E0B"/>
+      <!-- Speech bubble: rounded rectangle with a tail dropping bottom-left.
+           Two-way SMS — the app's whole reason for being. -->
+      <path d="M96 144
+               Q96 96 144 96
+               L368 96
+               Q416 96 416 144
+               L416 296
+               Q416 344 368 344
+               L224 344
+               L144 416
+               L176 344
+               L144 344
+               Q96 344 96 296 Z"
+            fill="#FFFFFF"/>
+      <circle cx="200" cy="220" r="22" fill="#F59E0B"/>
+      <circle cx="256" cy="220" r="22" fill="#F59E0B"/>
+      <circle cx="312" cy="220" r="22" fill="#F59E0B"/>
+    </svg>

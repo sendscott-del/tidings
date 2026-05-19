@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.21.0'
+export const VERSION = '0.21.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.21.1',
+    date: '2026-05-18',
+    changes: [
+      'Home-screen / PWA icon redesigned: amber background (matching the Gathered "T" chip) with a white speech-bubble-and-three-dots glyph replacing the dark-on-black "T" letter. The speech bubble reads as "two-way SMS" at a glance. Part of the cross-app icon refresh — each app\'s icon is now its brand color + its glyph.',
+      'icon-192.png, icon-512.png, apple-touch-icon.png, and favicon.png regenerated from a single public/icon.svg.',
+    ],
+  },
   {
     version: '0.21.0',
     date: '2026-05-18',
