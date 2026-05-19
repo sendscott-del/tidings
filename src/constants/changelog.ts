@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.9'
+export const VERSION = '0.22.10'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.10',
+    date: '2026-05-19',
+    changes: [
+      'Tidings icon replaced with the user-supplied trumpet artwork: amber rounded square with a white herald trumpet (bell upper-right, vertical pill loop in the middle, mouthpiece lower-left). After ~8 hand-coded SVG iterations couldn\'t match the organic curves of the reference, the actual reference PNG is now the source of truth. Stored at public/icon-source.png (1600x1600) and resized into icon-192, icon-512, apple-touch-icon, and favicon. The in-app TidingsLogo component now renders the same PNG via <img> so the header / login / sidebar mark matches the home-screen icon exactly.',
+    ],
+  },
   {
     version: '0.22.9',
     date: '2026-05-19',
