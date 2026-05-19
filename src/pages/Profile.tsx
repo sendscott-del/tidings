@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
@@ -220,6 +221,28 @@ export default function Profile() {
           {savingPassword ? 'Saving…' : 'Update password'}
         </button>
       </form>
+
+      {/* Nav overflow — the mobile bottom-nav can only fit six pages, so
+          everything else (History, Settings, Guide, Release Notes) is
+          surfaced here. Desktop users have these in the sidebar already;
+          mobile users need a path that isn't "type the URL." */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2 md:hidden">
+        <h2 className="text-base font-medium text-slate-900 mb-1">More</h2>
+        <Link to="/history" className="block text-sm text-tidings-primary hover:underline">
+          History
+        </Link>
+        {appUser?.role === 'admin' && (
+          <Link to="/admin" className="block text-sm text-tidings-primary hover:underline">
+            Settings
+          </Link>
+        )}
+        <Link to="/guide" className="block text-sm text-tidings-primary hover:underline">
+          User guide
+        </Link>
+        <Link to="/release-notes" className="block text-sm text-tidings-primary hover:underline">
+          Release notes
+        </Link>
+      </div>
     </div>
   )
 }

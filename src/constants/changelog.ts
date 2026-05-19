@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.0'
+export const VERSION = '0.22.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.1',
+    date: '2026-05-19',
+    changes: [
+      'Mobile-reachability fix for History, Settings, User Guide, and Release Notes. These pages live in the sidebar bottom rail, which is hidden on phones — so mobile users had no link to reach them after the v0.21.0 layout refactor. Added: a "More" section on /profile (mobile-only) that links to all four; the profile link in the top sub-bar is now visible at every breakpoint (was hidden below sm:) so /profile itself is reachable on phones.',
+    ],
+  },
   {
     version: '0.22.0',
     date: '2026-05-18',

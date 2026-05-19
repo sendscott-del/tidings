@@ -113,7 +113,7 @@ export default function Layout() {
           </div>
           <Link
             to="/profile"
-            className="hidden sm:inline-block text-xs text-slate-500 hover:text-slate-800 truncate max-w-[10rem]"
+            className="text-xs text-slate-500 hover:text-slate-800 truncate max-w-[6rem] sm:max-w-[10rem]"
             title={t('menu.myProfile')}
           >
             {appUser?.full_name || appUser?.email}
