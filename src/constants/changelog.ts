@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.8'
+export const VERSION = '0.22.9'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.9',
+    date: '2026-05-19',
+    changes: [
+      'Tidings glyph redesigned to match the user\'s reference: a coiled trumpet with a pill / stadium loop in the middle (the trumpet\'s coiled tubing), a smooth lead pipe curving up to a flared bell at the upper-right, and a small mouthpiece bowl on the left of the loop. All smooth curves, white on amber. Updated in PWA icons (icon-192, icon-512, apple-touch-icon, favicon, public/icon.svg) and the in-app TidingsLogo SVG.',
+    ],
+  },
   {
     version: '0.22.8',
     date: '2026-05-19',

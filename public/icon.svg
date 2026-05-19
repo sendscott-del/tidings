@@ -1,35 +1,24 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <rect width="512" height="512" rx="116" fill="#F59E0B"/>
-      <!-- Herald / fanfare trumpet, mirrored so the bell points up-left
-           and the J-hook + mouthpiece sit on the lower-right.
-           Construction: trumpet drawn horizontally (bell on right,
-           mouthpiece on left), then transformed by:
-             matrix(-1 0 0 1 512 0)  - flip horizontally around x=256
-             rotate(30 256 256)       - tilt bell up
-           (SVG applies right-to-left, so flip first, then rotate.) -->
-      <g transform="rotate(30 256 256) matrix(-1 0 0 1 512 0)" fill="#FFFFFF">
-        <!-- Bell -->
-        <path d="M 340 218
-                 L 472 132
-                 Q 488 132 488 148
-                 L 488 364
-                 Q 488 380 472 380
-                 L 340 294 Z"/>
-        <!-- Body tube -->
-        <rect x="150" y="232" width="196" height="22" rx="4"/>
-        <!-- J-hook — single rounded U below the body. Stroked so the
-             inner amber shows through, making the tube reading clear. -->
-        <path d="M 156 254
-                 L 156 282
-                 Q 156 306 180 306
-                 L 256 306
-                 Q 282 306 282 282
-                 L 282 254"
-              fill="none"
-              stroke="#FFFFFF"
-              stroke-width="22"
-              stroke-linejoin="round"/>
-        <!-- Mouthpiece bowl at the top of the J's right leg -->
-        <ellipse cx="282" cy="244" rx="14" ry="16"/>
+      <!-- Coiled trumpet matching the user's reference:
+           1) pill/stadium loop in the middle (the coiled tubing)
+           2) smooth curving lead pipe from the loop up to the bell
+           3) flared bell at the upper-right with a rim
+           4) mouthpiece bulb on the left of the loop
+           All smooth curves, white on amber. -->
+      <!-- 1. Pill loop -->
+      <rect x="100" y="290" width="240" height="70" rx="35"
+            fill="none" stroke="#FFFFFF" stroke-width="30"/>
+      <!-- 2. Lead pipe up to the bell -->
+      <path d="M 318 305 C 350 280 355 240 350 200"
+            stroke="#FFFFFF" stroke-width="30" fill="none"
+            stroke-linecap="round"/>
+      <!-- 3. Bell with a soft rim, rotated to point up-right -->
+      <g transform="rotate(-40 360 180)">
+        <path d="M 340 165 L 470 130 Q 488 130 488 148 L 488 212
+                 Q 488 230 470 230 L 340 195 Z" fill="#FFFFFF"/>
+        <ellipse cx="488" cy="180" rx="8" ry="52" fill="#FFFFFF"/>
       </g>
+      <!-- 4. Mouthpiece bowl on the left -->
+      <ellipse cx="78" cy="325" rx="18" ry="22" fill="#FFFFFF"/>
     </svg>

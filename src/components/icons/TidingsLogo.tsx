@@ -5,15 +5,13 @@ interface Props {
 }
 
 /**
- * Tidings brand mark. Matches the v0.22.8 home-screen / PWA icon:
- *   - rounded square in Tidings amber (#F59E0B — the Gathered "T" chip),
- *     or white in `inverse`
- *   - white herald / fanfare trumpet with the bell pointing up-LEFT
- *     and the J-hook + mouthpiece on the lower-right
+ * Tidings brand mark. Matches the v0.22.9 home-screen / PWA icon:
+ *   - rounded square in Tidings amber (#F59E0B), or white in `inverse`
+ *   - coiled trumpet: pill loop in the middle, smooth lead pipe up to
+ *     a flared bell at the upper-right, mouthpiece bulb on the left
  *
- * Construction mirrors the rasterized icon: trumpet drawn horizontally
- * with bell on the right and mouthpiece on the left, then flipped
- * around x=32 and rotated +30° to lift the bell up-left.
+ * Geometry mirrors the rasterized icon, scaled 1/8 to fit a 0..64
+ * viewBox.
  */
 export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
   const isInverse = variant === 'inverse'
@@ -41,37 +39,40 @@ export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
         xmlns="http://www.w3.org/2000/svg"
         aria-label="Tidings"
       >
-        <g
-          transform="rotate(30 32 32) matrix(-1 0 0 1 64 0)"
-          fill={fg}
-        >
-          {/* Bell */}
+        {/* Pill loop */}
+        <rect
+          x="12.5"
+          y="36.25"
+          width="30"
+          height="8.75"
+          rx="4.375"
+          fill="none"
+          stroke={fg}
+          strokeWidth="3.75"
+        />
+        {/* Lead pipe up to the bell */}
+        <path
+          d="M 39.75 38.125 C 43.75 35 44.375 30 43.75 25"
+          stroke={fg}
+          strokeWidth="3.75"
+          fill="none"
+          strokeLinecap="round"
+        />
+        {/* Bell, rotated to point up-right */}
+        <g transform="rotate(-40 45 22.5)">
           <path
-            d="M 42.5 27.25
-               L 59 16.5
-               Q 61 16.5 61 18.5
-               L 61 45.5
-               Q 61 47.5 59 47.5
-               L 42.5 36.75 Z"
+            d="M 42.5 20.625
+               L 58.75 16.25
+               Q 61 16.25 61 18.5
+               L 61 26.5
+               Q 61 28.75 58.75 28.75
+               L 42.5 24.375 Z"
+            fill={fg}
           />
-          {/* Body tube */}
-          <rect x="18.75" y="29" width="24.5" height="2.75" rx="0.5" />
-          {/* J-hook */}
-          <path
-            d="M 19.5 31.75
-               L 19.5 35.25
-               Q 19.5 38.25 22.5 38.25
-               L 32 38.25
-               Q 35.25 38.25 35.25 35.25
-               L 35.25 31.75"
-            fill="none"
-            stroke={fg}
-            strokeWidth="2.75"
-            strokeLinejoin="round"
-          />
-          {/* Mouthpiece bowl */}
-          <ellipse cx="35.25" cy="30.5" rx="1.75" ry="2" />
+          <ellipse cx="61" cy="22.5" rx="1" ry="6.5" fill={fg} />
         </g>
+        {/* Mouthpiece bowl on the left */}
+        <ellipse cx="9.75" cy="40.625" rx="2.25" ry="2.75" fill={fg} />
       </svg>
     </span>
   )
