@@ -1,33 +1,11 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <rect width="512" height="512" rx="116" fill="#F59E0B"/>
-      <!-- Speaker (cone) with sound waves to the right — the original
-           Tidings glyph. White on amber. -->
-      <!-- Speaker body: small rectangle on the left, then a cone flaring
-           up + down to the right edge. -->
-      <path d="M120 216
-               L184 216
-               L264 144
-               L264 368
-               L184 296
-               L120 296 Z"
-            fill="#FFFFFF"
-            stroke="#FFFFFF"
-            stroke-width="8"
-            stroke-linejoin="round"/>
-      <!-- Three sound-wave arcs to the right, increasing radius -->
-      <path d="M300 200 Q336 256 300 312"
-            fill="none"
-            stroke="#FFFFFF"
-            stroke-width="22"
-            stroke-linecap="round"/>
-      <path d="M340 160 Q400 256 340 352"
-            fill="none"
-            stroke="#FFFFFF"
-            stroke-width="22"
-            stroke-linecap="round"/>
-      <path d="M380 120 Q464 256 380 392"
-            fill="none"
-            stroke="#FFFFFF"
-            stroke-width="22"
-            stroke-linecap="round"/>
+      <!-- Three concentric sound-wave arcs, no speaker. Centered in the
+           square. White on amber. -->
+      <path d="M176 206 A 50 50 0 0 1 176 306"
+            fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
+      <path d="M176 151 A 105 105 0 0 1 176 361"
+            fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
+      <path d="M176 96 A 160 160 0 0 1 176 416"
+            fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
     </svg>
