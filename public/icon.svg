@@ -1,24 +1,35 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <rect width="512" height="512" rx="116" fill="#F59E0B"/>
-      <!-- Trumpet at ~20° fanfare angle, with three visible valve
-           casings on the body so the silhouette can't be confused with
-           a plunger or bugle. Mouthpiece on lower-left, bell flared
-           upper-right. White on amber. -->
-      <g fill="#FFFFFF" transform="rotate(-20 256 256)">
-        <!-- Mouthpiece bowl -->
-        <ellipse cx="88" cy="256" rx="22" ry="26"/>
+      <!-- Herald / fanfare trumpet, mirrored so the bell points up-left
+           and the J-hook + mouthpiece sit on the lower-right.
+           Construction: trumpet drawn horizontally (bell on right,
+           mouthpiece on left), then transformed by:
+             matrix(-1 0 0 1 512 0)  - flip horizontally around x=256
+             rotate(30 256 256)       - tilt bell up
+           (SVG applies right-to-left, so flip first, then rotate.) -->
+      <g transform="rotate(30 256 256) matrix(-1 0 0 1 512 0)" fill="#FFFFFF">
+        <!-- Bell -->
+        <path d="M 340 218
+                 L 472 132
+                 Q 488 132 488 148
+                 L 488 364
+                 Q 488 380 472 380
+                 L 340 294 Z"/>
         <!-- Body tube -->
-        <rect x="100" y="244" width="200" height="24" rx="6"/>
-        <!-- Three valve casings — the visual cue that says "trumpet" -->
-        <rect x="150" y="208" width="20" height="40" rx="5"/>
-        <rect x="184" y="208" width="20" height="40" rx="5"/>
-        <rect x="218" y="208" width="20" height="40" rx="5"/>
-        <!-- Bell — flared cone with rounded rim -->
-        <path d="M300 226
-                 L 432 138
-                 Q 446 138 446 152
-                 L 446 360
-                 Q 446 374 432 374
-                 L 300 286 Z"/>
+        <rect x="150" y="232" width="196" height="22" rx="4"/>
+        <!-- J-hook — single rounded U below the body. Stroked so the
+             inner amber shows through, making the tube reading clear. -->
+        <path d="M 156 254
+                 L 156 282
+                 Q 156 306 180 306
+                 L 256 306
+                 Q 282 306 282 282
+                 L 282 254"
+              fill="none"
+              stroke="#FFFFFF"
+              stroke-width="22"
+              stroke-linejoin="round"/>
+        <!-- Mouthpiece bowl at the top of the J's right leg -->
+        <ellipse cx="282" cy="244" rx="14" ry="16"/>
       </g>
     </svg>

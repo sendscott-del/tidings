@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.7'
+export const VERSION = '0.22.8'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.8',
+    date: '2026-05-19',
+    changes: [
+      'Tidings glyph redesigned as a herald / fanfare trumpet: long straight tube, a J-hook at the mouthpiece end, and a bold flared bell. No valves, no banner. The trumpet is mirrored so the bell points up-LEFT and the mouthpiece sits on the lower-right. White on amber. Updated in PWA icons (icon-192, icon-512, apple-touch-icon, favicon, public/icon.svg) and the in-app TidingsLogo SVG.',
+    ],
+  },
   {
     version: '0.22.7',
     date: '2026-05-19',
