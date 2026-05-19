@@ -232,10 +232,7 @@ export default function Lists() {
         return
       }
       if (!fallback.data || fallback.data.length === 0) {
-        toast(
-          'Delete was silently blocked by a row-level policy. Apply the delete_list migration and retry.',
-          'error',
-        )
+        toast('Delete returned no rows. The list may already be gone — refresh to confirm.', 'error')
         return
       }
     } else if (rpc.error) {

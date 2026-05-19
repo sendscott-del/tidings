@@ -4,15 +4,22 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.20.1'
+export const VERSION = '0.20.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.20.2',
+    date: '2026-05-18',
+    changes: [
+      'List delete path is now an explicit SECURITY DEFINER RPC (public.delete_list) instead of a direct DELETE. The RPC returns a row count so the client can distinguish "deleted" / "not found" / "not permitted" instead of treating "policy declined" the same as "successful delete of a row that was already gone." Permission semantics match the existing row-level policy (role in admin/sender). Migration applied live to the Tidings Supabase project.',
+      'Honesty note on v0.20.1: the original "deletes silently blocked on empty lists" diagnosis was wrong. Empirically the row-level policy is permissive for admins regardless of member count; an end-to-end test under the user\'s RLS context deleted an empty list successfully. The RPC path is still worth keeping because it gives the client a real row count to act on, but the misleading "blocked by row-level policy" fallback toast has been softened to a neutral "Delete returned no rows. The list may already be gone — refresh to confirm."',
+    ],
+  },
   {
     version: '0.20.1',
     date: '2026-05-18',
     changes: [
-      'Fixed: deleting a list with zero members appeared to succeed but the list stayed. Root cause was a row-level security policy on the lists DELETE path whose USING clause referenced list_members in a way that empty lists could not satisfy — Postgres silently returned zero affected rows and Supabase reported success. Replaced the direct delete with a SECURITY DEFINER RPC (delete_list) that enforces permissions explicitly inside the function: admins and Stake-pool users can delete any custom list; ward senders can delete only ward-scoped lists matching their own ward. Auto-lists remain non-deletable (they would just be rebuilt on the next LCR import). The frontend falls back to the old direct-delete path with silent-fail detection until the migration is applied, so the deploy is safe to ship before running the migration.',
-      'Action needed: open Supabase SQL editor for the Tidings project and run the contents of supabase/migrations/20260518000000_delete_list_rpc.sql once. Until that is applied, the app falls back to direct delete and will show a clear "blocked by row-level policy" toast on the failing case instead of the previous silent success.',
+      'Replaced direct list-delete with a SECURITY DEFINER RPC (delete_list) and a frontend fallback path. Initially shipped to fix what was believed to be a silent RLS failure on empty lists — see 0.20.2 for the corrected post-mortem.',
     ],
   },
   {

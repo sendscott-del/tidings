@@ -1,16 +1,11 @@
--- delete_list RPC: SECURITY DEFINER function that bypasses the existing
--- lists DELETE row-level security policy, which silently fails when a list
--- has 0 members (the policy's USING clause references list_members in a
--- way that empty lists don't satisfy, even for admins). This RPC enforces
--- the intended permission model directly inside the function:
---
---   - admins (users.role = 'admin')        -> may delete any custom list
---   - stake pool (users.ward = 'Stake')    -> may delete any custom list
---   - ward senders                         -> may delete only lists whose
---                                              ward_scope matches their ward
---
--- Auto-lists (is_auto = true) are never deletable through this RPC; they
--- are rebuilt by the LCR import flow and would just come back anyway.
+-- delete_list RPC: provides a deterministic, observable delete path so the
+-- client can distinguish "deleted" from "not found" from "not permitted",
+-- instead of the previous direct DELETE which silently returns 0 rows when
+-- the row-level policy declines (the same status as a successful delete
+-- of an already-gone row). Permission semantics mirror the existing
+-- lists DELETE row-level policy: callers whose users.role is 'admin' or
+-- 'sender' may delete any custom list. Auto-lists are never deletable
+-- through this RPC (they would be rebuilt by the next LCR import).
 
 create or replace function public.delete_list(p_list_id uuid)
 returns integer
@@ -20,8 +15,6 @@ set search_path = public, pg_temp
 as $$
 declare
   v_role text;
-  v_ward text;
-  v_list_ward text;
   v_is_auto boolean;
   v_deleted integer;
 begin
@@ -29,15 +22,15 @@ begin
     raise exception 'unauthenticated' using errcode = '42501';
   end if;
 
-  select role, ward into v_role, v_ward
+  select role into v_role
   from public.users
   where id = auth.uid();
 
-  if v_role is null then
-    raise exception 'caller has no app user record' using errcode = '42501';
+  if v_role is null or v_role not in ('admin', 'sender') then
+    raise exception 'not permitted to delete lists' using errcode = '42501';
   end if;
 
-  select ward_scope, is_auto into v_list_ward, v_is_auto
+  select is_auto into v_is_auto
   from public.lists
   where id = p_list_id;
 
@@ -49,14 +42,10 @@ begin
     raise exception 'auto-lists cannot be deleted; re-import the LCR CSV instead' using errcode = '42501';
   end if;
 
-  if v_role = 'admin' or v_ward = 'Stake' or v_list_ward is not distinct from v_ward then
-    delete from public.list_members where list_id = p_list_id;
-    delete from public.lists where id = p_list_id;
-    get diagnostics v_deleted = row_count;
-    return v_deleted;
-  end if;
-
-  raise exception 'not permitted to delete this list' using errcode = '42501';
+  delete from public.list_members where list_id = p_list_id;
+  delete from public.lists where id = p_list_id;
+  get diagnostics v_deleted = row_count;
+  return v_deleted;
 end;
 $$;
 
