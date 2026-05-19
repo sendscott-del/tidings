@@ -411,7 +411,7 @@ export default function Compose() {
   if (result) {
     return (
       <div className="max-w-xl">
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
               <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -540,7 +540,7 @@ export default function Compose() {
       )}
 
       {!replyTo && step === 'database' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-medium text-slate-900">Choose Database</h2>
           <div className="grid grid-cols-2 gap-3">
             {(['stake', 'community'] as const).map((db) => (
@@ -562,7 +562,7 @@ export default function Compose() {
       )}
 
       {!replyTo && step === 'recipients' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-medium text-slate-900">Select Lists</h2>
           {lists.length === 0 ? (
             <p className="text-slate-500 text-sm">No lists available for {database} database.</p>
@@ -623,7 +623,7 @@ export default function Compose() {
       )}
 
       {step === 'message' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-medium text-slate-900">Write Message</h2>
 
           <div>
@@ -709,7 +709,7 @@ export default function Compose() {
 
           {!isMms && smsCount >= 2 && willReceive > 0 && !suggestion && (
             <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-sm">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <p className="font-medium text-violet-900">
                     This message is {smsCount} segments per recipient.
@@ -838,7 +838,7 @@ export default function Compose() {
       )}
 
       {step === 'confirm' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-medium text-slate-900">Confirm & Send</h2>
 
           <div className="space-y-3 text-sm">

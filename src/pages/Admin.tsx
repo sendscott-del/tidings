@@ -580,8 +580,8 @@ export default function Admin() {
 
       {tab === 'settings' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-start justify-between gap-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-medium text-slate-900">Demo mode</h2>
                 <p className="text-sm text-slate-500 mt-1">
@@ -603,7 +603,7 @@ export default function Admin() {
               </button>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
             <h2 className="text-lg font-medium text-slate-900 mb-4">Twilio configuration</h2>
             <p className="text-sm text-slate-500">
               Twilio credentials and app settings are configured via Supabase Edge Function secrets.

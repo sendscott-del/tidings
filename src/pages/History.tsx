@@ -260,7 +260,7 @@ export default function History() {
         <div className="fixed inset-0 z-[110] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setSelected(null)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Delivery Details</h2>
               <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -269,7 +269,7 @@ export default function History() {
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="bg-slate-50 rounded-lg p-3 mb-4">
                 <p className="text-sm text-slate-900">{selected.body}</p>
               </div>

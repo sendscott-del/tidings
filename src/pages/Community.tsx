@@ -410,7 +410,7 @@ export default function Community() {
         <div className="fixed inset-0 z-[110] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowImport(false)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Import Community CSV</h2>
                 <p className="text-xs text-slate-500">
@@ -424,7 +424,7 @@ export default function Community() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               {importError && (
                 <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{importError}</div>
               )}

@@ -511,7 +511,7 @@ export default function Lists() {
         <div className="fixed inset-0 z-[110] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setSelectedList(null)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-start justify-between">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 {editing ? (
                   <div className="space-y-2">
@@ -615,7 +615,7 @@ export default function Lists() {
         <div className="fixed inset-0 z-[115] flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowPicker(false)} />
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-slate-900">Add Members</h2>
                 <button onClick={() => setShowPicker(false)} className="text-slate-400 hover:text-slate-600">
@@ -636,7 +636,7 @@ export default function Lists() {
               </p>
             </div>
 
-            <div className="px-6 py-4">
+            <div className="px-4 sm:px-6 py-4">
               {pickerLoading ? (
                 <p className="text-slate-400 text-center py-4">Loading contacts...</p>
               ) : pickerFiltered.length === 0 ? (
@@ -671,7 +671,7 @@ export default function Lists() {
               )}
             </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-3 flex gap-2">
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 px-4 sm:px-6 py-3 flex gap-2">
               <button
                 onClick={handleAddSelected}
                 disabled={pickerSelected.size === 0}

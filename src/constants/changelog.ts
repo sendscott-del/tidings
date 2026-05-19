@@ -4,9 +4,19 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.21.1'
+export const VERSION = '0.22.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.0',
+    date: '2026-05-18',
+    changes: [
+      'Mobile polish pass across Tidings\' core pages — the deeper rebuild flagged in the v0.21.0 release notes. Cards and slide-over sheets that were always p-6 now drop to p-4 at <640px so content fields and tap targets actually fit a phone-width column. Touched: Compose (five card sections), Admin Settings (demo toggle row + Twilio card), Lists (list detail header / member-picker header / picker body / sticky footer), Community (CSV import sheet header + body), History (delivery-details sheet header + body).',
+      'Compose segment-warning row ("This message is N segments per recipient · Suggest shorter") now stacks vertically on mobile instead of cramming the suggest button next to the explanatory text.',
+      'Admin → Settings → Demo mode toggle row now stacks vertically on narrow screens so the description and the Enable / Exit button each get full width.',
+      'Mobile-friendly inputs that already had responsive treatment (Dashboard stat grid, Inbox filter row, Community contacts table) were verified — no further changes needed.',
+    ],
+  },
   {
     version: '0.21.1',
     date: '2026-05-18',
