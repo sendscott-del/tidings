@@ -5,15 +5,14 @@ interface Props {
 }
 
 /**
- * Tidings brand mark. Matches the v0.21.1 home-screen / PWA icon:
+ * Tidings brand mark. Matches the v0.22.3 home-screen / PWA icon:
  *   - rounded square in Tidings amber (#F59E0B — the Gathered "T" chip),
  *     or white in `inverse`
- *   - white speech bubble with three dots — reads as "two-way SMS" at a
- *     glance, no letter
+ *   - white speaker with three sound-wave arcs — the original Tidings
+ *     glyph the user requested we return to
  *
- * The white-"T" letterform that used to live here is gone; the suite-wide
- * convention is now "brand color + per-app glyph," with the "Tidings"
- * wordmark appearing as adjacent text wherever the logo is used.
+ * The "Tidings" wordmark continues to appear as adjacent text wherever
+ * the logo is used.
  */
 export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
   const isInverse = variant === 'inverse'
@@ -30,8 +29,6 @@ export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
     border: isInverse ? '1px solid #E5E7EB' : 'none',
     flexShrink: 0,
   }
-  // Glyph fills most of the container — the speech bubble dominates the
-  // square the same way the home-screen icon does.
   const glyph = Math.round(size * 0.78)
   return (
     <span style={containerStyle} className={className}>
@@ -43,24 +40,19 @@ export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
         xmlns="http://www.w3.org/2000/svg"
         aria-label="Tidings"
       >
-        {/* Rounded bubble with a tail dropping bottom-left. */}
+        {/* Speaker cone — small rectangle on the left, flaring up + down
+            to a vertical edge on the right. */}
         <path
-          d="M10 16
-             Q10 10 16 10
-             L48 10
-             Q54 10 54 16
-             L54 38
-             Q54 44 48 44
-             L26 44
-             L16 54
-             L20 44
-             L16 44
-             Q10 44 10 38 Z"
+          d="M15 27 L23 27 L33 18 L33 46 L23 37 L15 37 Z"
           fill={fg}
+          stroke={fg}
+          strokeWidth={1}
+          strokeLinejoin="round"
         />
-        <circle cx="22" cy="27" r="3" fill={containerBg} />
-        <circle cx="32" cy="27" r="3" fill={containerBg} />
-        <circle cx="42" cy="27" r="3" fill={containerBg} />
+        {/* Three sound-wave arcs, increasing radius. */}
+        <path d="M37.5 25 Q42 32 37.5 39" fill="none" stroke={fg} strokeWidth={2.8} strokeLinecap="round" />
+        <path d="M42.5 20 Q50 32 42.5 44" fill="none" stroke={fg} strokeWidth={2.8} strokeLinecap="round" />
+        <path d="M47.5 15 Q58 32 47.5 49" fill="none" stroke={fg} strokeWidth={2.8} strokeLinecap="round" />
       </svg>
     </span>
   )

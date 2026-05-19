@@ -1,20 +1,33 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <rect width="512" height="512" rx="116" fill="#F59E0B"/>
-      <!-- Speech bubble: rounded rectangle with a tail dropping bottom-left.
-           Two-way SMS — the app's whole reason for being. -->
-      <path d="M96 144
-               Q96 96 144 96
-               L368 96
-               Q416 96 416 144
-               L416 296
-               Q416 344 368 344
-               L224 344
-               L144 416
-               L176 344
-               L144 344
-               Q96 344 96 296 Z"
-            fill="#FFFFFF"/>
-      <circle cx="200" cy="220" r="22" fill="#F59E0B"/>
-      <circle cx="256" cy="220" r="22" fill="#F59E0B"/>
-      <circle cx="312" cy="220" r="22" fill="#F59E0B"/>
+      <!-- Speaker (cone) with sound waves to the right — the original
+           Tidings glyph. White on amber. -->
+      <!-- Speaker body: small rectangle on the left, then a cone flaring
+           up + down to the right edge. -->
+      <path d="M120 216
+               L184 216
+               L264 144
+               L264 368
+               L184 296
+               L120 296 Z"
+            fill="#FFFFFF"
+            stroke="#FFFFFF"
+            stroke-width="8"
+            stroke-linejoin="round"/>
+      <!-- Three sound-wave arcs to the right, increasing radius -->
+      <path d="M300 200 Q336 256 300 312"
+            fill="none"
+            stroke="#FFFFFF"
+            stroke-width="22"
+            stroke-linecap="round"/>
+      <path d="M340 160 Q400 256 340 352"
+            fill="none"
+            stroke="#FFFFFF"
+            stroke-width="22"
+            stroke-linecap="round"/>
+      <path d="M380 120 Q464 256 380 392"
+            fill="none"
+            stroke="#FFFFFF"
+            stroke-width="22"
+            stroke-linecap="round"/>
     </svg>

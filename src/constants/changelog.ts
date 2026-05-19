@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.2'
+export const VERSION = '0.22.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.3',
+    date: '2026-05-19',
+    changes: [
+      'Tidings glyph returns to the original speaker-with-sound-waves design. The amber background is unchanged; the speech-bubble-with-three-dots is replaced everywhere — the home-screen / PWA icon (icon-192, icon-512, apple-touch-icon, favicon, public/icon.svg) and the in-app TidingsLogo SVG component used in headers, login, and the sidebar.',
+    ],
+  },
   {
     version: '0.22.2',
     date: '2026-05-19',
