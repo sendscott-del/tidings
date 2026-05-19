@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.1'
+export const VERSION = '0.22.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.2',
+    date: '2026-05-19',
+    changes: [
+      'In-app TidingsLogo updated to match the v0.21.1 home-screen icon. The rounded square is now Tidings amber (#F59E0B) instead of navy, and the white-"T" letterform has been replaced by a white speech-bubble-with-three-dots glyph. The "Tidings" wordmark continues to appear as adjacent text wherever the logo renders, so brand recognition isn\'t lost.',
+    ],
+  },
   {
     version: '0.22.1',
     date: '2026-05-19',
