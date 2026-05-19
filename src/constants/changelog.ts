@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.6'
+export const VERSION = '0.22.7'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.7',
+    date: '2026-05-19',
+    changes: [
+      'Tidings glyph swapped to the trumpet-with-valves design (option C from the preview round). v0.22.6 was the no-valve bugle, which read as a plunger silhouette. The new version adds three valve casings on top of the body so the icon is unambiguously a trumpet. Tilted up-right at ~20° to keep the fanfare feel. Updated in PWA icons (icon-192, icon-512, apple-touch-icon, favicon, public/icon.svg) and the in-app TidingsLogo SVG.',
+    ],
+  },
   {
     version: '0.22.6',
     date: '2026-05-19',

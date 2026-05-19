@@ -5,15 +5,15 @@ interface Props {
 }
 
 /**
- * Tidings brand mark. Matches the v0.22.6 home-screen / PWA icon:
+ * Tidings brand mark. Matches the v0.22.7 home-screen / PWA icon:
  *   - rounded square in Tidings amber (#F59E0B — the Gathered "T" chip),
  *     or white in `inverse`
- *   - white fanfare bugle pointing up-right at ~20° — mouthpiece on
- *     the lower-left, body, flared bell on the upper-right. Reads as
- *     "declare glad tidings" (D&C 31:3).
+ *   - white trumpet at ~20° with three visible valve casings on the body
+ *   - mouthpiece lower-left, bell flared upper-right — reads as
+ *     "declare glad tidings of great joy" (D&C 31:3)
  *
- * Geometry mirrors the rasterized icon, just scaled 1/8 to fit a
- * 0..64 viewBox.
+ * Geometry mirrors the rasterized icon, scaled 1/8 to fit a 0..64
+ * viewBox.
  */
 export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
   const isInverse = variant === 'inverse'
@@ -43,17 +43,21 @@ export function TidingsLogo({ size = 44, variant = 'mark', className }: Props) {
       >
         <g fill={fg} transform="rotate(-20 32 32)">
           {/* Mouthpiece bowl */}
-          <ellipse cx="10.5" cy="32" rx="3" ry="3.5" />
+          <ellipse cx="11" cy="32" rx="2.75" ry="3.25" />
           {/* Body tube */}
-          <rect x="12.5" y="29" width="27.75" height="6" rx="1.5" />
+          <rect x="12.5" y="30.5" width="25" height="3" rx="0.75" />
+          {/* Three valve casings */}
+          <rect x="18.75" y="26" width="2.5" height="5" rx="0.625" />
+          <rect x="23" y="26" width="2.5" height="5" rx="0.625" />
+          <rect x="27.25" y="26" width="2.5" height="5" rx="0.625" />
           {/* Bell flared up-right */}
           <path
-            d="M40.25 26.5
-               L 55.75 15
-               Q 57.5 15 57.5 16.75
-               L 57.5 47.25
-               Q 57.5 49 55.75 49
-               L 40.25 37.5 Z"
+            d="M37.5 28.25
+               L 54 17.25
+               Q 55.75 17.25 55.75 19
+               L 55.75 45
+               Q 55.75 46.75 54 46.75
+               L 37.5 35.75 Z"
           />
         </g>
       </svg>
