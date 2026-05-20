@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.10'
+export const VERSION = '0.22.11'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.11',
+    date: '2026-05-19',
+    changes: [
+      'Favicon (browser tab + Chrome bookmark bar) now matches the trumpet home-screen icon. The old favicon.svg still rendered the navy / white-T design from before the icon refresh; since Chrome prefers SVG favicons, the bookmark bar kept showing that stale glyph. Deleted favicon.svg and updated index.html to reference the regenerated favicon.png (the 64px version of the trumpet artwork).',
+    ],
+  },
   {
     version: '0.22.10',
     date: '2026-05-19',
