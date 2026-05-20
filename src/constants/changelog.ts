@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.11'
+export const VERSION = '0.22.12'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.22.12',
+    date: '2026-05-19',
+    changes: [
+      'Cache-busted favicon links in index.html (added ?v=2 query strings). Chrome maintains a separate favicon cache that ignores normal page refreshes, so users were still seeing the pre-trumpet icon in their bookmark bar even after v0.22.11 redeployed the correct favicon.png. The ?v=2 makes Chrome treat it as a new file and fetch fresh.',
+    ],
+  },
   {
     version: '0.22.11',
     date: '2026-05-19',
