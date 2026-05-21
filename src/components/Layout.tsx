@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import type { TranslationKey } from '../i18n/translations'
 import { TidingsLogo } from './icons/TidingsLogo'
 import AppSwitcher from './AppSwitcher'
+import SuggestionFAB from './SuggestionFAB'
 
 interface NavItem {
   to: string
@@ -242,6 +243,7 @@ export default function Layout() {
           </div>
         </main>
       </div>
+      <SuggestionFAB />
     </div>
   )
 }

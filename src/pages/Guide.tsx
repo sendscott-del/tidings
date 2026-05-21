@@ -80,6 +80,17 @@ export default function Guide() {
         </p>
       </Section>
 
+      <Section title="Suggest an enhancement">
+        <p>
+          Look for the small <strong>amber lightbulb</strong> in the bottom-right
+          corner of every screen (above the mobile tab bar). Tap it, type what
+          you&apos;d change or what felt clunky, and hit <strong>Send</strong>.
+          Your name, email, and the page you were on are attached automatically
+          — suggestions go straight to Scott and into a shared tracker so you
+          can be told later when an idea was implemented.
+        </p>
+      </Section>
+
       <Section title="Language">
         <p>
           The EN / ES toggle in the top bar switches the interface and

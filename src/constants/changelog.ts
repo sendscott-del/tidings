@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.22.12'
+export const VERSION = '0.23.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.23.0',
+    date: '2026-05-20',
+    changes: [
+      'Suggestion FAB added — an amber lightbulb in the bottom-right corner of every signed-in screen (above the mobile tab bar). Tap it to send a free-form idea or friction note. Submissions POST to a shared `submit-suggestion` edge function on the Gathered Supabase project (Tidings lives on its own project, but this call deliberately crosses over so all of the suite — Tidings, Glean, Steward, Knit, Magnify — feeds one inbox). The submitter\'s name, email, user id, and current page URL are captured automatically when signed in. Each submission writes a row to `public.app_suggestions` for triage (open → in_progress → implemented / declined) and emails Scott via Resend.',
+    ],
+  },
   {
     version: '0.22.12',
     date: '2026-05-19',
