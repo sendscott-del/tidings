@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.23.0'
+export const VERSION = '0.23.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.23.1',
+    date: '2026-05-20',
+    changes: [
+      'Suggestion FAB copy trimmed — removed the "Goes straight to Scott." line under the prompt so the modal stays focused on the question itself.',
+    ],
+  },
   {
     version: '0.23.0',
     date: '2026-05-20',
