@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.25.1'
+export const VERSION = '0.25.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.25.2',
+    date: '2026-05-22',
+    changes: [
+      'Role grants made in Tidings now sync to the shared `gather_user_roles` table automatically. Mechanism: a Postgres trigger on `tidings_user_roles` fires the new `sync-roles-to-shared` edge function on every INSERT / UPDATE / DELETE, which uses the shared project\'s service-role key to call `gather_grant_role_service` / `gather_revoke_role_service`. The result is that a role you assign in Tidings\' Edit User screen lights up in Glean\'s `/admin/roles` (and every other Gathered app that reads `gather_user_roles`) within seconds. The v0.24.1 caveat about local-only writes is now retired. **One-time setup needed**: set the `SHARED_SUPABASE_SERVICE_ROLE_KEY` secret on the Tidings Supabase project (it\'s the service-role JWT for `isogetmvnpimcmouakeg`). Until that\'s set, the trigger fires but the edge function returns 503 and the sync is a no-op.',
+    ],
+  },
   {
     version: '0.25.1',
     date: '2026-05-22',
