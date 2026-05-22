@@ -77,14 +77,25 @@ DROP POLICY IF EXISTS list_shares_read ON public.list_shares;
 CREATE POLICY list_shares_read ON public.list_shares
   FOR SELECT TO authenticated USING (true);
 
+-- IMPORTANT: this is split into per-command (INSERT, DELETE) rather than FOR ALL.
+-- A FOR ALL policy also applies to SELECT, and the USING clause's EXISTS on `lists`
+-- triggers the lists SELECT policy, which does EXISTS back on list_shares, causing
+-- "infinite recursion detected in policy for relation lists". Per-command policies
+-- only run for that command and avoid the loop.
 DROP POLICY IF EXISTS list_shares_admin_or_creator_write ON public.list_shares;
-CREATE POLICY list_shares_admin_or_creator_write ON public.list_shares
-  FOR ALL TO authenticated
-  USING (
+DROP POLICY IF EXISTS list_shares_admin_or_creator_insert ON public.list_shares;
+DROP POLICY IF EXISTS list_shares_admin_or_creator_delete ON public.list_shares;
+
+CREATE POLICY list_shares_admin_or_creator_insert ON public.list_shares
+  FOR INSERT TO authenticated
+  WITH CHECK (
     public.get_user_role() = 'admin'
     OR EXISTS (SELECT 1 FROM public.lists l WHERE l.id = list_id AND l.created_by = auth.uid())
-  )
-  WITH CHECK (
+  );
+
+CREATE POLICY list_shares_admin_or_creator_delete ON public.list_shares
+  FOR DELETE TO authenticated
+  USING (
     public.get_user_role() = 'admin'
     OR EXISTS (SELECT 1 FROM public.lists l WHERE l.id = list_id AND l.created_by = auth.uid())
   );

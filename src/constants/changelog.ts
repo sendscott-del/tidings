@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.25.0'
+export const VERSION = '0.25.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.25.1',
+    date: '2026-05-22',
+    changes: [
+      'Hotfix — Lists page was returning zero results (even the auto-lists like Relief Society, Elders Quorum, all ward rosters disappeared) because the list_shares RLS write policy was declared FOR ALL. FOR ALL applies to SELECT too, and its USING clause did EXISTS on lists, which triggered the lists SELECT policy → which does EXISTS on list_shares → loop. Postgres threw "infinite recursion detected in policy for relation lists" and the client silently returned []. Split the write policy into per-command INSERT and DELETE so SELECT on list_shares only hits the simple read-all policy. No data was lost; lists were intact in the database the whole time. The custom lists from before v0.24.0 (Test, Bishops, High Council, Devin Pope, Stake Council) also had their created_by backfilled to Scott so they\'re no longer orphaned.',
+    ],
+  },
   {
     version: '0.25.0',
     date: '2026-05-22',
