@@ -145,7 +145,7 @@ function rowToContact(cells: Cells): ParsedContact | { skip: string } {
   const { first, last } = parseName(cells.name)
   if (!first && !last) return { skip: 'No name' }
 
-  const { birth_month, birth_day } = parseBirthDate(cells.birth)
+  const { birth_month, birth_day, is_adult } = parseBirthDate(cells.birth)
   const classAssignment = parseClassAssignment(cells.class)
   const hasChildren = parseYesNo(cells.haschildren)
   const isEndowed = parseYesNo(cells.endowed)
@@ -190,6 +190,7 @@ function rowToContact(cells: Cells): ParsedContact | { skip: string } {
     priesthood,
     gender,
     callings,
+    is_adult,
   }
 }
 

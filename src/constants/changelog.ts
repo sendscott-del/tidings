@@ -4,9 +4,22 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.27.0'
+export const VERSION = '0.28.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.28.0',
+    date: '2026-05-22',
+    changes: [
+      '**Auto-list overhaul.** Added a `Stake — High Councilors` list covering the stake presidency, stake clerk, stake executive secretary, and high councilors (excluding any "Assistant" clerks/secretaries). Added per-ward `<Ward> — Bishops` (just the bishop) and `<Ward> — Bishopric` (bishop + counselors + ward clerk + ward exec sec, no assistants). Extended every presidency list (Stake — Elders Quorum / Relief Society / Primary / Sunday School / Young Women Presidencies) to also include the org\'s Secretary and Assistant Secretary — Ministering Secretary is intentionally excluded since it\'s a different role. `Stake — Bishoprics` now also includes ward clerks and ward exec secretaries across all wards.',
+      'Men/Women lists are now **18+ only** at both stake and ward scope. Added an `is_adult` boolean to the contacts schema; it\'s computed at parse time from the birth year and the year itself is still not stored anywhere (privacy posture preserved).',
+      '**Opted-out contacts are excluded from auto-lists entirely** — they\'re no longer just filtered at send time. If someone re-opts-in, they\'ll reappear on the next import.',
+      '**Removed legacy stake-wide lists** (Relief Society, Elders Quorum, Young Women, Primary, Households with Children). These weren\'t in your spec and the per-ward equivalents cover the use case. If you want any of them back, let me know.',
+      '**Lists page UX**: search box for filtering by list name; the All/Stake/Community toggle becomes a two-option **Stake / Ward** vs **Community** toggle (church-directory lists live under Stake/Ward); the ward dropdown gains a **Stake-wide only** option; auto-generated lists are now marked with a sparkle ✦ icon and custom lists with a pencil icon, so the two are visually distinct at a glance.',
+      '**Compose page recipient picker** got the same search + ward filter as the Lists page, so you can find one of ~115 lists without scrolling.',
+      'Renamed the sidebar **Stake → Church Directory** and **Community → Community Directory**.',
+    ],
+  },
   {
     version: '0.27.0',
     date: '2026-05-22',

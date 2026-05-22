@@ -10,6 +10,7 @@ interface ListOption {
   name: string
   database: string
   is_auto: boolean
+  ward_scope: string | null
   member_count: number
 }
 
@@ -55,6 +56,9 @@ export default function Compose() {
   )
   const [lists, setLists] = useState<ListOption[]>([])
   const [selectedListIds, setSelectedListIds] = useState<string[]>([])
+  const [listSearch, setListSearch] = useState('')
+  const [listWardFilter, setListWardFilter] = useState<string>('') // '' = all, 'stake-wide' = ward_scope is null, else ward name
+  const [wardOptions, setWardOptions] = useState<string[]>([])
   const [recipientCount, setRecipientCount] = useState(0)
   const [optedOutCount, setOptedOutCount] = useState(0)
   const [body, setBody] = useState('')
@@ -70,6 +74,13 @@ export default function Compose() {
   useEffect(() => {
     if (!replyTo) loadLists()
   }, [database])
+
+  useEffect(() => {
+    if (replyTo) return
+    supabase.from('ward_budgets').select('ward_name').order('ward_name').then(({ data }) => {
+      setWardOptions((data || []).map((r: { ward_name: string }) => r.ward_name).filter((w: string) => w !== 'Stake'))
+    })
+  }, [replyTo])
 
   useEffect(() => {
     if (appUser?.ward) loadBudget(appUser.ward)
@@ -561,34 +572,75 @@ export default function Compose() {
         </div>
       )}
 
-      {!replyTo && step === 'recipients' && (
+      {!replyTo && step === 'recipients' && (() => {
+        const visibleLists = lists
+          .filter((l) => {
+            if (!listWardFilter) return true
+            if (listWardFilter === 'stake-wide') return l.ward_scope === null
+            return l.ward_scope === listWardFilter
+          })
+          .filter((l) => !listSearch.trim() || l.name.toLowerCase().includes(listSearch.trim().toLowerCase()))
+        return (
         <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-medium text-slate-900">Select Lists</h2>
           {lists.length === 0 ? (
             <p className="text-slate-500 text-sm">No lists available for {database} database.</p>
           ) : (
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {lists.map((list) => (
-                <label
-                  key={list.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedListIds.includes(list.id) ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedListIds.includes(list.id)}
-                    onChange={() => toggleList(list.id)}
-                    className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                  />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-slate-900">{list.name}</span>
-                    {list.is_auto && <span className="text-xs text-slate-400 ml-1">(auto)</span>}
-                  </div>
-                  <span className="text-sm text-slate-500">{list.member_count} {list.member_count === 1 ? 'member' : 'members'}</span>
-                </label>
-              ))}
-            </div>
+            <>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  value={listSearch}
+                  onChange={(e) => setListSearch(e.target.value)}
+                  placeholder="Search lists…"
+                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white flex-1 min-w-[12rem]"
+                />
+                {database === 'stake' && wardOptions.length > 0 && (
+                  <select
+                    value={listWardFilter}
+                    onChange={(e) => setListWardFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white"
+                  >
+                    <option value="">All wards + stake-wide</option>
+                    <option value="stake-wide">Stake-wide only</option>
+                    {wardOptions.map((w) => (
+                      <option key={w} value={w}>{w}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                Showing {visibleLists.length} of {lists.length} {lists.length === 1 ? 'list' : 'lists'}
+              </p>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {visibleLists.length === 0 ? (
+                  <p className="text-slate-500 text-sm py-4 text-center">No lists match your filter.</p>
+                ) : (
+                  visibleLists.map((list) => (
+                  <label
+                    key={list.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedListIds.includes(list.id) ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedListIds.includes(list.id)}
+                      onChange={() => toggleList(list.id)}
+                      className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-slate-900">{list.name}</span>
+                      {list.is_auto && <span className="text-xs text-amber-600 ml-1" title="Auto-generated">✦</span>}
+                      {list.ward_scope && (
+                        <span className="text-xs text-emerald-700 ml-1.5">· {list.ward_scope}</span>
+                      )}
+                    </div>
+                    <span className="text-sm text-slate-500">{list.member_count} {list.member_count === 1 ? 'member' : 'members'}</span>
+                  </label>
+                  ))
+                )}
+              </div>
+            </>
           )}
 
           {recipientCount > 0 && (
@@ -620,7 +672,8 @@ export default function Compose() {
             </button>
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {step === 'message' && (
         <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">

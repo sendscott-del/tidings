@@ -26,6 +26,7 @@ export interface ParsedContact {
   priesthood: 'Aaronic' | 'Melchizedek' | 'Unordained' | null
   gender: 'M' | 'F' | null
   callings: string[]
+  is_adult: boolean
 }
 
 export interface ParseResult {
@@ -79,16 +80,28 @@ const MONTH_TO_NUM: Record<string, number> = {
   jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
 }
 
-// "29 Jan 1992" → { birth_month: 1, birth_day: 29 }. Year discarded.
-export function parseBirthDate(raw: string): { birth_month: number | null; birth_day: number | null } {
+// "29 Jan 1992" → { birth_month: 1, birth_day: 29, is_adult: true }.
+// Year is parsed only to derive is_adult (18+), then discarded — never stored.
+export function parseBirthDate(raw: string): { birth_month: number | null; birth_day: number | null; is_adult: boolean } {
   const trimmed = (raw || '').trim()
-  if (!trimmed || trimmed === '-') return { birth_month: null, birth_day: null }
+  if (!trimmed || trimmed === '-') return { birth_month: null, birth_day: null, is_adult: false }
   const match = trimmed.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/)
-  if (!match) return { birth_month: null, birth_day: null }
+  if (!match) return { birth_month: null, birth_day: null, is_adult: false }
   const day = parseInt(match[1], 10)
   const month = MONTH_TO_NUM[match[2].toLowerCase()]
-  if (!month || !day || day < 1 || day > 31) return { birth_month: null, birth_day: null }
-  return { birth_month: month, birth_day: day }
+  const year = parseInt(match[3], 10)
+  if (!month || !day || day < 1 || day > 31) return { birth_month: null, birth_day: null, is_adult: false }
+
+  // Compute is_adult (18+) as of today, with birthday-not-yet adjustment.
+  const now = new Date()
+  const ty = now.getUTCFullYear()
+  const tm = now.getUTCMonth() + 1
+  const td = now.getUTCDate()
+  let age = ty - year
+  if (month > tm || (month === tm && day > td)) age -= 1
+  const is_adult = age >= 18
+
+  return { birth_month: month, birth_day: day, is_adult }
 }
 
 // "Relief Society, New Member Gospel Doctrine(F)" → ["Relief Society", "New Member Gospel Doctrine"]
@@ -211,9 +224,9 @@ export function parseCSV(file: File): Promise<ParseResult> {
           const primaryMember = org.includes('primary') || ageGroup === 'Child'
 
           // v0.26.0 — new columns
-          const { birth_month, birth_day } = birthDateCol
+          const { birth_month, birth_day, is_adult } = birthDateCol
             ? parseBirthDate(row[birthDateCol] || '')
-            : { birth_month: null, birth_day: null }
+            : { birth_month: null, birth_day: null, is_adult: false }
           const classAssignment = classAssignCol ? parseClassAssignment(row[classAssignCol] || '') : []
           const isEndowed = endowedCol ? parseYesNo(row[endowedCol] || '') : false
           const isReturnedMissionary = returnedMissCol ? parseYesNo(row[returnedMissCol] || '') : false
@@ -248,6 +261,7 @@ export function parseCSV(file: File): Promise<ParseResult> {
             priesthood,
             gender,
             callings,
+            is_adult,
           })
         })
 

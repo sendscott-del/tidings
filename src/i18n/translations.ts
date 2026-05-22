@@ -37,8 +37,8 @@ export const translations = {
 
     // Layout / nav
     'nav.dashboard': 'Dashboard',
-    'nav.stake': 'Stake',
-    'nav.community': 'Community',
+    'nav.stake': 'Church Directory',
+    'nav.community': 'Community Directory',
     'nav.lists': 'Lists',
     'nav.compose': 'Compose',
     'nav.inbox': 'Inbox',
@@ -111,8 +111,8 @@ export const translations = {
 
     // Layout / nav
     'nav.dashboard': 'Inicio',
-    'nav.stake': 'Estaca',
-    'nav.community': 'Comunidad',
+    'nav.stake': 'Directorio de la Iglesia',
+    'nav.community': 'Directorio de la Comunidad',
     'nav.lists': 'Listas',
     'nav.compose': 'Redactar',
     'nav.inbox': 'Bandeja',

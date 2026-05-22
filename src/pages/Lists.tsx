@@ -79,8 +79,11 @@ export default function Lists() {
   const { appUser } = useAuth()
   const [lists, setLists] = useState<List[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'stake' | 'community'>('all')
-  const [wardFilter, setWardFilter] = useState<string>('') // '' = all wards (including stake-wide)
+  // Two-option toggle: 'stake' (the church directory — stake + ward lists) vs 'community'.
+  const [filter, setFilter] = useState<'stake' | 'community'>('stake')
+  // Ward filter: '' = no filter, 'stake-wide' = only ward_scope IS NULL, otherwise the ward name.
+  const [wardFilter, setWardFilter] = useState<string>('')
+  const [listSearch, setListSearch] = useState('')
   const [selectedList, setSelectedList] = useState<List | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
@@ -440,8 +443,13 @@ export default function Lists() {
   }, [pickerContacts, pickerSearch])
 
   const filtered = lists
-    .filter((l) => filter === 'all' || l.database === filter)
-    .filter((l) => !wardFilter || l.ward_scope === wardFilter)
+    .filter((l) => l.database === filter)
+    .filter((l) => {
+      if (!wardFilter) return true
+      if (wardFilter === 'stake-wide') return l.ward_scope === null
+      return l.ward_scope === wardFilter
+    })
+    .filter((l) => !listSearch.trim() || l.name.toLowerCase().includes(listSearch.trim().toLowerCase()))
 
   if (loading) {
     return <div className="text-slate-400 py-8 text-center">Loading lists...</div>
@@ -453,31 +461,41 @@ export default function Lists() {
         <h1 className="text-2xl font-semibold text-slate-900">Lists</h1>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex bg-slate-100 rounded-lg p-0.5">
-            {(['all', 'stake', 'community'] as const).map((f) => (
+            {([
+              { key: 'stake' as const,     label: 'Stake / Ward' },
+              { key: 'community' as const, label: 'Community' },
+            ]).map((f) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize ${
-                  filter === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  filter === f.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {f}
+                {f.label}
               </button>
             ))}
           </div>
-          {(isAdmin || isStakePool) && wardOptions.length > 0 && (
+          {(isAdmin || isStakePool) && filter === 'stake' && wardOptions.length > 0 && (
             <select
               value={wardFilter}
               onChange={(e) => setWardFilter(e.target.value)}
               className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white"
-              title="Filter to one ward's lists"
+              title="Filter to one ward's lists, or just the stake-wide ones"
             >
-              <option value="">All wards</option>
+              <option value="">All wards + stake-wide</option>
+              <option value="stake-wide">Stake-wide only</option>
               {wardOptions.map((w) => (
                 <option key={w} value={w}>{w}</option>
               ))}
             </select>
           )}
+          <input
+            value={listSearch}
+            onChange={(e) => setListSearch(e.target.value)}
+            placeholder="Search lists…"
+            className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white w-44"
+          />
           <button
             onClick={() => setShowCreate(true)}
             className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700"
@@ -573,14 +591,32 @@ export default function Lists() {
             >
               <div onClick={() => viewMembers(list)} className="flex-1 cursor-pointer">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-slate-900 font-medium">{list.name}</span>
-                  {list.is_auto && (
-                    <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">(auto)</span>
+                  {list.is_auto ? (
+                    <span
+                      className="text-amber-500"
+                      title="Auto-generated from the directory import — membership rebuilds on every import"
+                      aria-label="Auto-generated list"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M10 1.5a.75.75 0 01.7.48l1.6 4.2 4.2 1.6a.75.75 0 010 1.4l-4.2 1.6-1.6 4.2a.75.75 0 01-1.4 0l-1.6-4.2-4.2-1.6a.75.75 0 010-1.4l4.2-1.6 1.6-4.2A.75.75 0 0110 1.5z" />
+                      </svg>
+                    </span>
+                  ) : (
+                    <span
+                      className="text-slate-400"
+                      title="Custom list — created by hand"
+                      aria-label="Custom list"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.674 3 21l1.326-4.5L16.862 4.487z" />
+                      </svg>
+                    </span>
                   )}
+                  <span className="text-slate-900 font-medium">{list.name}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${
                     list.database === 'stake' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
                   }`}>
-                    {list.database}
+                    {list.database === 'stake' ? 'church' : 'community'}
                   </span>
                   {list.ward_scope && (
                     <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
