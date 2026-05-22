@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.25.2'
+export const VERSION = '0.25.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.25.3',
+    date: '2026-05-22',
+    changes: [
+      'New service-role RPC `gather_tidings_contacts_for_sync()` exposes the contacts directory (id, full_name, phone, email, unit_name, callings, opted_out + the org-presence booleans) for Glean and Knit to ingest. EXECUTE is GRANTed only to `service_role`, so it can\'t be invoked from a browser session. Glean\'s new "Sync from Tidings" admin button calls it; Knit will too in a coming release.',
+    ],
+  },
   {
     version: '0.25.2',
     date: '2026-05-22',
