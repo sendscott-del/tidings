@@ -4,6 +4,7 @@ import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useDemoMode } from '../contexts/DemoModeContext'
+import { matchesAllTokens } from '../lib/search'
 
 interface ListOption {
   id: string
@@ -579,7 +580,7 @@ export default function Compose() {
             if (listWardFilter === 'stake-wide') return l.ward_scope === null
             return l.ward_scope === listWardFilter
           })
-          .filter((l) => !listSearch.trim() || l.name.toLowerCase().includes(listSearch.trim().toLowerCase()))
+          .filter((l) => matchesAllTokens(l.name, listSearch))
         return (
         <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-medium text-slate-900">Select Lists</h2>

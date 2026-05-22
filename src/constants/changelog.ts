@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.28.1'
+export const VERSION = '0.28.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.28.2',
+    date: '2026-05-22',
+    changes: [
+      'Search is now **token-based and accent-insensitive** everywhere. Typing "Devin Pope" finds "Devin Garrett Pope" (each token only needs to appear *somewhere* in the row, not as a contiguous substring), and typing "cruz" finds "Crúz". Applied to: Church Directory browse, Lists name search, the Add Members picker on a custom list, the recipient picker on Compose, and the Inbox search. New shared helper `src/lib/search.ts` (`matchesAllTokens`) so all five surfaces behave identically.',
+    ],
+  },
   {
     version: '0.28.1',
     date: '2026-05-22',

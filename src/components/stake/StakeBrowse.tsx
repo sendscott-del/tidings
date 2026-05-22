@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, fetchAll } from '../../lib/supabase'
+import { matchesAllTokens } from '../../lib/search'
 
 interface Contact {
   id: string
@@ -39,11 +40,8 @@ export default function StakeBrowse() {
   }
 
   const filtered = contacts.filter((c) => {
-    const matchesSearch =
-      !search ||
-      `${c.first_name} ${c.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-      (c.phone || '').includes(search) ||
-      (c.email || '').toLowerCase().includes(search.toLowerCase())
+    const haystack = `${c.first_name || ''} ${c.last_name || ''} ${c.phone || ''} ${c.email || ''} ${c.unit_name || ''}`
+    const matchesSearch = matchesAllTokens(haystack, search)
     const matchesWard = !wardFilter || c.unit_name === wardFilter
     return matchesSearch && matchesWard
   })

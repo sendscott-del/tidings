@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { matchesAllTokens } from '../lib/search'
 import { useAuth } from '../contexts/AuthContext'
 import { useDemoMode } from '../contexts/DemoModeContext'
 import { TIDINGS_DEMO_INBOX } from '../lib/demoData'
@@ -138,14 +139,13 @@ export default function Inbox() {
   }
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
     const fromTs = dateFrom ? new Date(dateFrom).getTime() : null
     const toTs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null
     return messages.filter((m) => {
       if (showUnreadOnly && m.read_by) return false
-      if (q) {
-        const hay = `${m.contact_name || ''} ${m.from_phone} ${m.body}`.toLowerCase()
-        if (!hay.includes(q)) return false
+      if (search.trim()) {
+        const hay = `${m.contact_name || ''} ${m.from_phone} ${m.body}`
+        if (!matchesAllTokens(hay, search)) return false
       }
       if (fromTs && new Date(m.received_at).getTime() < fromTs) return false
       if (toTs && new Date(m.received_at).getTime() > toTs) return false

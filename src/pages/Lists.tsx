@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
+import { matchesAllTokens } from '../lib/search'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 interface List {
@@ -428,18 +429,10 @@ export default function Lists() {
   }
 
   const pickerFiltered = useMemo(() => {
-    const normalize = (s: string) =>
-      s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    const tokens = normalize(pickerSearch).split(/\s+/).filter(Boolean)
-    if (tokens.length === 0) return pickerContacts.slice(0, 200)
-    return pickerContacts
-      .filter((c) => {
-        const haystack = normalize(
-          `${c.first_name} ${c.last_name} ${c.phone} ${c.unit_name || ''}`
-        )
-        return tokens.every((t) => haystack.includes(t))
-      })
-      .slice(0, 200)
+    const matches = pickerContacts.filter((c) =>
+      matchesAllTokens(`${c.first_name} ${c.last_name} ${c.phone} ${c.unit_name || ''}`, pickerSearch)
+    )
+    return matches.slice(0, 200)
   }, [pickerContacts, pickerSearch])
 
   const filtered = lists
@@ -449,7 +442,7 @@ export default function Lists() {
       if (wardFilter === 'stake-wide') return l.ward_scope === null
       return l.ward_scope === wardFilter
     })
-    .filter((l) => !listSearch.trim() || l.name.toLowerCase().includes(listSearch.trim().toLowerCase()))
+    .filter((l) => matchesAllTokens(l.name, listSearch))
 
   if (loading) {
     return <div className="text-slate-400 py-8 text-center">Loading lists...</div>
