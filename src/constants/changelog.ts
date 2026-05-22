@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.23.1'
+export const VERSION = '0.24.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.24.0',
+    date: '2026-05-22',
+    changes: [
+      'Gathered suite foundation (DB-only this release; UI lands in 0.24.1). New `contacts.callings text[]` column lets the suite record which callings a contact holds, so Glean can auto-grant access to anyone serving in a Bishopric / EQ Presidency / RS Presidency / Welfare Specialist. New `lists.created_by` column makes custom lists private to their creator unless explicitly shared. New `list_shares` table records per-list share grants (by individual user OR by role). New local mirror `tidings_user_roles` reflects the shared `gather_user_roles` assignments for fast RLS without cross-project lookups. Lists / list_members / messages / inbound_messages RLS rewritten: you can only see a list (and the messages sent to it) if you created it, you\'re admin, you\'re explicitly shared on it, or you hold a role it was shared with. Auto-lists (the per-ward and per-organization rosters) stay visible to all signed-in users.',
+    ],
+  },
   {
     version: '0.23.1',
     date: '2026-05-20',
