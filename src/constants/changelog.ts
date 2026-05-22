@@ -4,9 +4,20 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.25.3'
+export const VERSION = '0.26.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.26.0',
+    date: '2026-05-22',
+    changes: [
+      'Stake directory import now accepts the LCR 12-column landscape PDF in addition to CSV — drop the PDF on the Stake → Import tab and Tidings parses it client-side via pdfjs-dist (Mozilla\'s PDF.js, coordinate-based column extraction). The downstream preview/confirm/import flow is unchanged; CSV imports still work exactly as before.',
+      'Auto-list catalog significantly expanded. Every contact import now (re)builds, in addition to the 7 existing stake-wide lists and per-ward catch-alls: **7 new stake-wide leadership lists** (Bishoprics, Elders Quorum Presidencies, Relief Society Presidencies, Primary Presidencies, Sunday School Presidencies, Ward Mission Leaders, Young Women Presidencies), **2 new stake-wide gender lists** (Men, Women), and **10 new per-ward lists** (Primary Teachers, Parents, Endowed Members, Returned Missionaries, Single Members, Men, Women, Aaronic Priesthood, Melchizedek Priesthood, Birthdays This Month). New lists are named with prefixes — `Stake — <Name>` for stake-wide, `<Ward> — <Name>` for ward-scoped. Existing flat-named lists keep their names.',
+      'Birthday lists rotate automatically on the 1st of each month via a new `pg_cron` schedule (`tidings-birthday-rotation`, 06:01 UTC) that re-runs the per-ward "Birthdays This Month" rebuild based on `birth_month`. The list also refreshes on every import.',
+      'Schema: added `birth_month`, `birth_day`, `class_assignment text[]`, `is_endowed`, `is_returned_missionary`, `is_single`, `priesthood` (Aaronic/Melchizedek/Unordained), and `gender` (M/F) columns to `contacts`. Birth year is intentionally not stored — only month and day, so the rolling lists work but DOB-level data stays out of the database.',
+      'Deferred for a follow-up: a `ClassAssignment`-derived per-ward list family (would create ~100 additional lists; held until the new lists prove out in real use) and an Attending Seminary list (column not yet in the LCR report).',
+    ],
+  },
   {
     version: '0.25.3',
     date: '2026-05-22',

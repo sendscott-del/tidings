@@ -72,6 +72,35 @@ export default function Guide() {
         </ol>
       </Section>
 
+      <Section title="Importing the directory (CSV or PDF)">
+        <p>
+          The <strong>Stake → Import</strong> tab accepts either a CSV or the
+          12-column landscape PDF that LCR exports. The expected columns are
+          PreferredName, Unit, BirthDate, Callings, ClassAssignment,
+          HasChildren, IndividualPhone, IsEndowed, IsReturnedMissionary,
+          IsSingle, Gender, and Priesthood. Print the LCR custom report in{' '}
+          <strong>landscape</strong> orientation so all 12 columns survive.
+        </p>
+        <p>
+          When you drop a file, Tidings shows a preview with three counts —
+          how many contacts will be <strong>added</strong>,{' '}
+          <strong>updated</strong>, and <strong>removed</strong>. Anyone
+          missing from the import is <strong>hard-deleted</strong>, along with
+          their list memberships, so the directory always mirrors the report.
+          Birth year is intentionally discarded — only month and day are
+          stored.
+        </p>
+        <p>
+          On confirm, Tidings rebuilds the auto-list catalog: existing
+          flat-named lists (Aaronic Priesthood, Relief Society, etc.) plus
+          the new prefixed sets — <code>Stake — Bishoprics</code>,{' '}
+          <code>Stake — Men</code>,{' '}
+          <code>Hyde Park 1st Ward — Endowed Members</code>,{' '}
+          <code>Moraine Valley Ward — Birthdays This Month</code>, and so on.
+          Birthday lists also rotate on the 1st of each month automatically.
+        </p>
+      </Section>
+
       <Section title="Settings">
         <p>
           Settings (formerly "Admin") holds Users, Budgets, and the deeper
