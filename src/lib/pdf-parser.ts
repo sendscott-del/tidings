@@ -1,9 +1,9 @@
 // Client-side parser for the LCR 12-column landscape "Tidings Export" PDF.
-// Uses pdfjs-dist with coordinate-based text extraction to reconstruct rows
-// and assign each text item to a column based on x-position.
-//
-// Output shape matches CSV parser's ParseResult so StakeImport can branch by
-// file extension and feed the same downstream pipeline.
+// Uses pdfjs-dist with coordinate-based text extraction. The report layout
+// renders each contact across 3-5 visual lines (~5pt apart), with ~12-18pt
+// gaps between contacts. We cluster items by vertical proximity into
+// per-contact "records," then bucket each record's items by x into columns
+// using empirically-measured column bounds.
 
 import {
   type ParseResult,
@@ -17,29 +17,10 @@ import {
   parsePriesthoodOffice,
 } from './csv-parser'
 
-// pdfjs-dist v5 ships ESM modules; the worker is loaded as a URL via Vite's
-// `?url` query so the bundler emits it as a separate asset.
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist'
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 GlobalWorkerOptions.workerSrc = workerUrl
-
-// Expected header tokens from the landscape report. Used to derive column
-// x-positions from page 1 dynamically — survives small layout shifts.
-const HEADER_TOKENS = [
-  'PreferredName',
-  'Unit',
-  'BirthDate',
-  'Callings',
-  'ClassAssignment',
-  'HasChildren',
-  'IndividualPhone',
-  'IsEndowed',
-  'Is ReturnedMissionary',
-  'IsSingle',
-  'Gender',
-  'Priesthood',
-] as const
 
 type ColKey =
   | 'name'
@@ -55,148 +36,107 @@ type ColKey =
   | 'gender'
   | 'priesthood'
 
+type Cells = Record<ColKey, string>
+
 const COL_KEYS: ColKey[] = [
   'name', 'unit', 'birth', 'callings', 'class', 'haschildren',
   'phone', 'endowed', 'rm', 'single', 'gender', 'priesthood',
 ]
 
+// Measured from the actual LCR landscape export (page size 792 × 612 pt).
+// Each entry is the x-coordinate where that column STARTS. The next entry
+// (or +∞) is the implicit end.
+const COLUMN_X_STARTS: Record<ColKey, number> = {
+  name: 25,
+  unit: 95,
+  birth: 145,
+  callings: 185,
+  class: 285,
+  haschildren: 355,
+  phone: 405,
+  endowed: 485,
+  rm: 540,
+  single: 605,
+  gender: 650,
+  priesthood: 695,
+}
+
 interface TextItem {
   str: string
   x: number
-  y: number
+  y: number       // PDF y (origin at bottom) — we convert to top-down for grouping
+  pageHeight: number
 }
 
-interface ColumnBounds {
-  key: ColKey
-  xStart: number   // left edge (inclusive)
-  xEnd: number     // right edge (exclusive)
+function toTop(it: TextItem): number {
+  return it.pageHeight - it.y
 }
 
-interface RawRow {
-  cells: Record<ColKey, string>
-  hasDate: boolean // birth-date present → marks the start of a new contact
-  yMin: number     // top of the row group (for ordering)
+function colKeyForX(x: number): ColKey | null {
+  let chosen: ColKey | null = null
+  for (const key of COL_KEYS) {
+    if (x >= COLUMN_X_STARTS[key]) chosen = key
+  }
+  return chosen
 }
 
 const BIRTH_DATE_RE = /^\d{1,2}\s+[A-Z][a-z]{2}\s+\d{4}$/
 
-// Group text items into visual rows by y-coordinate (within tolerance).
-function groupByRow(items: TextItem[], yTolerance = 3): TextItem[][] {
-  const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x)
-  const rows: TextItem[][] = []
+// Words that show up only in page headers/footers/title — drop records that
+// contain ONLY these tokens.
+const STRUCTURAL_TOKENS = new Set([
+  'tidings', 'description', 'search', 'group', 'by', 'unit', 'edit', 'report',
+  'preferred', 'name', 'birth', 'date', '(1', '1990)', 'callings', 'class',
+  'assignment', 'has', 'children', 'individual', 'phone', 'is', 'endowed',
+  'returned', 'missionary', 'single', 'gender', 'priesthood', 'count:',
+])
+
+// Cluster sorted items into records by vertical gap. Within a record the
+// line-to-line gap is ~5pt; between records ~12-18pt. A threshold of 9pt
+// separates them cleanly.
+function clusterIntoRecords(items: TextItem[]): TextItem[][] {
+  if (items.length === 0) return []
+  const sorted = [...items].sort((a, b) => toTop(a) - toTop(b) || a.x - b.x)
+  const records: TextItem[][] = []
   let current: TextItem[] = []
-  let lastY = Number.NaN
+  let lastTop = Number.NEGATIVE_INFINITY
 
   for (const item of sorted) {
-    if (Number.isNaN(lastY) || Math.abs(item.y - lastY) <= yTolerance) {
+    const t = toTop(item)
+    if (current.length === 0 || t - lastTop <= 9) {
       current.push(item)
-      lastY = Number.isNaN(lastY) ? item.y : lastY
     } else {
-      if (current.length > 0) rows.push(current)
+      records.push(current)
       current = [item]
-      lastY = item.y
     }
+    lastTop = t
   }
-  if (current.length > 0) rows.push(current)
-  return rows
+  if (current.length > 0) records.push(current)
+  return records
 }
 
-// Derive column x-bounds from a row that contains the header tokens.
-function deriveColumnBounds(headerRow: TextItem[]): ColumnBounds[] | null {
-  // Find x-position of each expected header token. Tokens may be split across
-  // items; we accept the leftmost item whose string starts with the token's
-  // first word.
-  const xStarts: number[] = []
-  const headerFirstWords = HEADER_TOKENS.map((t) => t.split(/\s+/)[0].toLowerCase())
-
-  for (const firstWord of headerFirstWords) {
-    const match = headerRow.find((it) => it.str.toLowerCase().startsWith(firstWord))
-    if (!match) return null
-    xStarts.push(match.x)
-  }
-
-  // Sort to be safe (header tokens should be in left-to-right order already)
-  const sortedStarts = [...xStarts].sort((a, b) => a - b)
-  const bounds: ColumnBounds[] = sortedStarts.map((x, i) => ({
-    key: COL_KEYS[i],
-    xStart: x - 2, // small left margin
-    xEnd: i < sortedStarts.length - 1 ? sortedStarts[i + 1] - 2 : Number.POSITIVE_INFINITY,
-  }))
-  return bounds
-}
-
-// Static fallback bounds, derived from sample inspection of the landscape
-// "Tidings Export.pdf". Used only if dynamic detection on page 1 fails.
-// These x-values are page coordinates in PDF points (1/72 in).
-// Tuned to the 12-column landscape layout — order matches COL_KEYS.
-const FALLBACK_BOUNDS: ColumnBounds[] = (() => {
-  const xs = [10, 130, 235, 290, 380, 485, 545, 625, 670, 730, 765, 800]
-  return xs.map((x, i) => ({
-    key: COL_KEYS[i],
-    xStart: x,
-    xEnd: i < xs.length - 1 ? xs[i + 1] : Number.POSITIVE_INFINITY,
-  }))
-})()
-
-// Bucket text items into columns by x-position.
-function bucketRow(items: TextItem[], bounds: ColumnBounds[]): Record<ColKey, string> {
-  const cells: Record<ColKey, string> = {
+function bucketIntoColumns(record: TextItem[]): Cells {
+  const cells: Cells = {
     name: '', unit: '', birth: '', callings: '', class: '', haschildren: '',
     phone: '', endowed: '', rm: '', single: '', gender: '', priesthood: '',
   }
-  // Order items left-to-right within the row for stable string concat.
-  const ordered = [...items].sort((a, b) => a.x - b.x)
+  // Sort by (top asc, x asc) so within-column text concatenates in reading order.
+  const ordered = [...record].sort((a, b) => toTop(a) - toTop(b) || a.x - b.x)
   for (const item of ordered) {
-    const col = bounds.find((b) => item.x >= b.xStart && item.x < b.xEnd)
-    if (!col) continue
-    if (cells[col.key]) cells[col.key] += ' '
-    cells[col.key] += item.str
+    const key = colKeyForX(item.x)
+    if (!key) continue
+    if (cells[key]) cells[key] += ' '
+    cells[key] += item.str
   }
-  // Collapse internal whitespace
   for (const k of COL_KEYS) cells[k] = cells[k].replace(/\s+/g, ' ').trim()
   return cells
 }
 
-async function extractAllItems(pdf: PDFDocumentProxy): Promise<TextItem[][]> {
-  const perPage: TextItem[][] = []
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum)
-    const content = await page.getTextContent()
-    const items: TextItem[] = content.items
-      .map((it: any) => {
-        if (!it.str || !it.transform) return null
-        const x = it.transform[4]
-        const y = it.transform[5]
-        return { str: it.str as string, x, y }
-      })
-      .filter((x): x is TextItem => x !== null && x.str.trim().length > 0)
-    perPage.push(items)
-  }
-  return perPage
+function isStructuralOnly(record: TextItem[]): boolean {
+  return record.every((it) => STRUCTURAL_TOKENS.has(it.str.toLowerCase()))
 }
 
-// Reassemble multi-line cells: a row begins when its birth-date cell matches
-// the date pattern. Subsequent rows without a date merge into the previous
-// contact's wrapping cells (name, unit, callings).
-function mergeContinuations(rows: RawRow[]): RawRow[] {
-  const merged: RawRow[] = []
-  for (const row of rows) {
-    if (row.hasDate) {
-      merged.push(row)
-    } else if (merged.length > 0) {
-      const prev = merged[merged.length - 1]
-      const append = (a: string, b: string) => (a && b ? `${a} ${b}` : a || b)
-      prev.cells.name = append(prev.cells.name, row.cells.name)
-      prev.cells.unit = append(prev.cells.unit, row.cells.unit)
-      prev.cells.callings = append(prev.cells.callings, row.cells.callings)
-      prev.cells.class = append(prev.cells.class, row.cells.class)
-    }
-    // If no prior row, drop continuation lines (header artifacts).
-  }
-  return merged
-}
-
-function rowToContact(cells: Record<ColKey, string>): ParsedContact | { skip: string } {
+function rowToContact(cells: Cells): ParsedContact | { skip: string } {
   const rawPhone = cells.phone
   if (!rawPhone) return { skip: 'No phone number' }
   const phone = normalizePhone(rawPhone)
@@ -233,7 +173,7 @@ function rowToContact(cells: Record<ColKey, string>): ParsedContact | { skip: st
     household_id: '',
     unit_name: cells.unit,
     sex: gender === 'M' ? 'Male' : gender === 'F' ? 'Female' : '',
-    age_group: birth_month != null && birth_day != null ? 'Adult' : 'Adult',
+    age_group: 'Adult',
     has_children: hasChildren,
     melchizedek,
     relief_society: reliefSociety,
@@ -256,50 +196,47 @@ function rowToContact(cells: Record<ColKey, string>): ParsedContact | { skip: st
 export async function parsePDF(file: File): Promise<ParseResult> {
   const buffer = await file.arrayBuffer()
   const pdf = await getDocument({ data: buffer }).promise
-  const perPage = await extractAllItems(pdf)
 
-  // Detect column bounds from page 1's header row, fall back to static layout.
-  let bounds: ColumnBounds[] | null = null
-  if (perPage.length > 0) {
-    const page1Rows = groupByRow(perPage[0])
-    // Look for a row containing "PreferredName" — that's the header line.
-    const headerRow = page1Rows.find((r) =>
-      r.some((it) => it.str.toLowerCase().includes('preferredname'))
-    )
-    if (headerRow) bounds = deriveColumnBounds(headerRow)
-  }
-  if (!bounds) bounds = FALLBACK_BOUNDS
+  // Extract items page by page; cluster within each page (records don't span pages).
+  const allRecords: Cells[] = []
 
-  const rawRows: RawRow[] = []
-  for (const items of perPage) {
-    const visualRows = groupByRow(items)
-    for (const visualRow of visualRows) {
-      const cells = bucketRow(visualRow, bounds)
-      // Skip header / footer / "Count: N" / page-number rows
-      const allText = Object.values(cells).join(' ').toLowerCase()
-      if (!cells.name && !cells.unit && !cells.birth) continue
-      if (allText.includes('preferredname') || allText.startsWith('count:')) continue
-      if (allText.includes('group by unit') || allText.includes('edit report')) continue
-      rawRows.push({
-        cells,
-        hasDate: BIRTH_DATE_RE.test(cells.birth),
-        yMin: visualRow[0].y,
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum)
+    const viewport = page.getViewport({ scale: 1 })
+    const pageHeight = viewport.height
+    const content = await page.getTextContent()
+
+    const items: TextItem[] = content.items
+      .map((it: any) => {
+        if (!it.str || !it.transform) return null
+        const x = it.transform[4] as number
+        const y = it.transform[5] as number
+        const str = (it.str as string).trim()
+        if (!str) return null
+        return { str, x, y, pageHeight }
       })
+      .filter((x): x is TextItem => x !== null)
+
+    const recordGroups = clusterIntoRecords(items)
+    for (const group of recordGroups) {
+      if (isStructuralOnly(group)) continue
+      const cells = bucketIntoColumns(group)
+      // Drop records that don't contain a date — they're header/footer/orphans.
+      if (!BIRTH_DATE_RE.test(cells.birth)) continue
+      allRecords.push(cells)
     }
   }
 
-  const merged = mergeContinuations(rawRows)
-
   const contacts: ParsedContact[] = []
   const skipped: ParseResult['skipped'] = []
-  merged.forEach((row, i) => {
-    const result = rowToContact(row.cells)
+  allRecords.forEach((cells, i) => {
+    const result = rowToContact(cells)
     if ('skip' in result) {
-      skipped.push({ row: i + 1, reason: result.skip, data: row.cells as unknown as Record<string, string> })
+      skipped.push({ row: i + 1, reason: result.skip, data: cells as unknown as Record<string, string> })
     } else {
       contacts.push(result)
     }
   })
 
-  return { contacts, skipped, totalRows: merged.length }
+  return { contacts, skipped, totalRows: allRecords.length }
 }

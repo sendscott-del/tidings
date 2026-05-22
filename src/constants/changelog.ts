@@ -11,6 +11,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: '0.26.1',
     date: '2026-05-22',
     changes: [
+      'PDF import hotfix — the v0.26.0 PDF parser was returning 0 rows because each contact in the LCR landscape report renders across 3-5 visual lines (~5pt apart) and the parser treated each visual line as a separate row, splitting the BirthDate cell ("4 May" on one line, "2000" on the next) so the date-anchor regex never matched. Plus the column x-bounds were guesses that didn\'t match the actual layout. Rewrote the parser to cluster items by vertical proximity (line gaps ≤9pt = same record, larger = new record) and re-bucket text into columns using the actual measured x-coordinates from the report.',
       'gather_tidings_contacts_for_sync RPC switched from RETURNS TABLE to RETURNS jsonb (returning a single jsonb_agg array). PostgREST silently caps SETOF/TABLE-returning RPCs at db-max-rows (default 1000), which was truncating the cross-app member sync to 1000 of the ~3,244 contacts. A jsonb return value isn\'t a result set, so the cap doesn\'t apply. Edge function consumers (Glean and Knit syncs) don\'t need code changes — the response body shape is identical. After the fix the weekly Glean sync correctly inserted all 3,244 contacts into `glean_members`.',
     ],
   },
