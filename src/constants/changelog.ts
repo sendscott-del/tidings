@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.28.0'
+export const VERSION = '0.28.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.28.1',
+    date: '2026-05-22',
+    changes: [
+      'Cleanup — dropped the legacy `sex` text column from `contacts`. The new `gender` column (M/F) added in v0.26.0 is the authoritative source; `sex` had been unused by the new auto-list logic since then. Parsers (CSV and PDF) no longer write to it. The ClassAssignment-derived per-ward lists and the Attending Seminary list — both previously flagged as "deferred" — are officially out of scope and will not be built.',
+    ],
+  },
   {
     version: '0.28.0',
     date: '2026-05-22',

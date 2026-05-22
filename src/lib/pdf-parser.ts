@@ -172,7 +172,6 @@ function rowToContact(cells: Cells): ParsedContact | { skip: string } {
     email: '',
     household_id: '',
     unit_name: cells.unit,
-    sex: gender === 'M' ? 'Male' : gender === 'F' ? 'Female' : '',
     age_group: 'Adult',
     has_children: hasChildren,
     melchizedek,

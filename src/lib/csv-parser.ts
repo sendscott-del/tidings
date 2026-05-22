@@ -7,7 +7,6 @@ export interface ParsedContact {
   email: string
   household_id: string
   unit_name: string
-  sex: string
   age_group: string
   has_children: boolean
   melchizedek: boolean
@@ -156,7 +155,6 @@ export function parseCSV(file: File): Promise<ParseResult> {
         const emailCol = findColumn(headers, ['Email', 'Individual Email', 'Email Address', 'E-mail'])
         const householdCol = findColumn(headers, ['Household ID', 'HouseholdID', 'Household'])
         const unitCol = findColumn(headers, ['Unit Name', 'Unit', 'Ward', 'Ward Name'])
-        const sexCol = findColumn(headers, ['Sex'])
         const ageCol = findColumn(headers, ['Age', 'Individual Age'])
         const childrenCol = findColumnContaining(headers, 'children')
         const priesthoodCol = findColumn(headers, ['Priesthood Office', 'Priesthood', 'Priesthoodoffice'])
@@ -209,7 +207,6 @@ export function parseCSV(file: File): Promise<ParseResult> {
           const email = (emailCol ? row[emailCol] : '').trim()
           const householdId = (householdCol ? row[householdCol] : '').trim()
           const unitName = (unitCol ? row[unitCol] : '').trim()
-          const sex = (sexCol ? row[sexCol] : '').trim()
           const ageGroup = ageCol ? parseAge((row[ageCol] || '').trim()) : 'Adult'
           const hasChildren = childrenCol ? parseYesNo(row[childrenCol] || '') : false
 
@@ -243,7 +240,6 @@ export function parseCSV(file: File): Promise<ParseResult> {
             email,
             household_id: householdId,
             unit_name: unitName,
-            sex,
             age_group: ageGroup,
             has_children: hasChildren,
             melchizedek,
