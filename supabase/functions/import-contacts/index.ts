@@ -22,6 +22,17 @@ async function fetchAll<T>(
   return all;
 }
 
+// Composite identity key — phone alone is NOT unique (household members share
+// phones, 229+ duplicate-phone groups in the live stake). Using just phone
+// caused ON CONFLICT DO UPDATE batches to fail silently with "cannot affect
+// row a second time" whenever a household had 2+ members in the batch.
+function contactKey(c: { first_name?: string; last_name?: string; phone?: string }): string {
+  const fn = (c.first_name || '').trim().toLowerCase();
+  const ln = (c.last_name || '').trim().toLowerCase();
+  const ph = (c.phone || '').trim();
+  return `${ln}|${fn}|${ph}`;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -66,23 +77,44 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const existing = await fetchAll<{ id: string; phone: string }>(() =>
-      supabase.from("contacts").select("id, phone")
-    );
-    const existingByPhone = new Map(existing.map((c) => [c.phone, c.id]));
-    const incomingPhones = new Set(contacts.map((c: any) => c.phone));
+    // Dedup incoming by composite key — if the parser yields exact dupes
+    // (same first+last+phone), keep only the first occurrence so the
+    // ON CONFLICT (id) DO UPDATE doesn't try to update the same row twice.
+    const incomingByKey = new Map<string, any>();
+    let incomingDupes = 0;
+    for (const c of contacts) {
+      const k = contactKey(c);
+      if (incomingByKey.has(k)) {
+        incomingDupes++;
+        continue;
+      }
+      incomingByKey.set(k, c);
+    }
 
-    let added = 0;
-    let updated = 0;
-    let removed = 0;
+    // Build existing key→ids map. There can be DB rows with duplicate keys
+    // too (legacy data); keep an array of ids per key.
+    const existing = await fetchAll<{ id: string; phone: string; first_name: string; last_name: string }>(() =>
+      supabase.from("contacts").select("id, phone, first_name, last_name")
+    );
+    const existingByKey = new Map<string, string[]>();
+    for (const e of existing) {
+      const k = contactKey(e);
+      const arr = existingByKey.get(k) || [];
+      arr.push(e.id);
+      existingByKey.set(k, arr);
+    }
 
     const toInsert: any[] = [];
     const toUpdate: any[] = [];
+    let added = 0;
+    let updated = 0;
+    let removed = 0;
+    const errorSamples: string[] = [];
 
-    for (const contact of contacts) {
-      const existingId = existingByPhone.get(contact.phone);
-      if (existingId) {
-        toUpdate.push({ ...contact, id: existingId, source_file, updated_at: new Date().toISOString() });
+    for (const [key, contact] of incomingByKey) {
+      const existingIds = existingByKey.get(key);
+      if (existingIds && existingIds.length > 0) {
+        toUpdate.push({ ...contact, id: existingIds[0], source_file, updated_at: new Date().toISOString() });
       } else {
         toInsert.push({ ...contact, source_file });
       }
@@ -91,19 +123,32 @@ Deno.serve(async (req: Request) => {
     for (let i = 0; i < toInsert.length; i += 200) {
       const batch = toInsert.slice(i, i + 200);
       const { error } = await supabase.from("contacts").insert(batch);
-      if (!error) added += batch.length;
+      if (error) {
+        if (errorSamples.length < 3) errorSamples.push(`insert: ${error.message}`);
+      } else {
+        added += batch.length;
+      }
     }
 
     for (let i = 0; i < toUpdate.length; i += 200) {
       const batch = toUpdate.slice(i, i + 200);
       const { error } = await supabase.from("contacts").upsert(batch);
-      if (!error) updated += batch.length;
+      if (error) {
+        if (errorSamples.length < 3) errorSamples.push(`upsert: ${error.message}`);
+      } else {
+        updated += batch.length;
+      }
     }
 
+    // Identify rows to delete: any existing key not in incoming, PLUS any
+    // "extra" legacy duplicate rows beyond the first per key (legacy data
+    // had multiple rows for the same person — collapse to one).
     const toDeleteIds: string[] = [];
-    for (const [phone, id] of existingByPhone) {
-      if (!incomingPhones.has(phone)) {
-        toDeleteIds.push(id);
+    for (const [key, ids] of existingByKey) {
+      if (!incomingByKey.has(key)) {
+        toDeleteIds.push(...ids);
+      } else if (ids.length > 1) {
+        toDeleteIds.push(...ids.slice(1));
       }
     }
     if (toDeleteIds.length > 0) {
@@ -118,7 +163,13 @@ Deno.serve(async (req: Request) => {
     await rebuildAutoLists(supabase);
 
     return new Response(
-      JSON.stringify({ added, updated, removed }),
+      JSON.stringify({
+        added,
+        updated,
+        removed,
+        incoming_dupes_skipped: incomingDupes,
+        errors: errorSamples.length > 0 ? errorSamples : undefined,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -130,17 +181,9 @@ Deno.serve(async (req: Request) => {
 });
 
 // ---------------------------------------------------------------------------
-// Auto-list rebuild — v0.26.0
-//
-// Existing flat-named stake lists (Aaronic Priesthood, Households with
-// Children, etc.) and per-ward catch-all lists keep their previous names for
-// backward compatibility. All new lists added in v0.26.0 use the prefixed
-// naming convention: `Stake — <Name>` for stake-wide, `<Ward> — <Name>` for
-// ward-scoped.
+// Auto-list rebuild — unchanged shape from v0.26.0.
 // ---------------------------------------------------------------------------
 
-// Substring patterns (case-insensitive) for matching leadership callings.
-// Tested against each element of the contact's `callings` text[].
 const LEADERSHIP_PATTERNS: Record<string, RegExp> = {
   bishopric: /\bbishop\b|bishopric\s+(first|second)\s+counselor/i,
   elders_quorum_presidency: /elders\s+quorum\s+(president|first\s+counselor|second\s+counselor)/i,
@@ -167,7 +210,6 @@ async function rebuildAutoLists(supabase: any) {
   );
   if (allContacts.length === 0) return;
 
-  // ----- Existing stake-wide flat-named lists (kept for backward compat) -----
   const legacyStakeLists: { name: string; filter: (c: any) => boolean }[] = [
     { name: "Relief Society", filter: (c) => c.relief_society },
     { name: "Elders Quorum", filter: (c) => c.elders_quorum },
@@ -181,7 +223,6 @@ async function rebuildAutoLists(supabase: any) {
     await rebuildList(supabase, def.name, null, allContacts.filter(def.filter));
   }
 
-  // ----- New stake-wide leadership lists (7) -----
   const stakeLeadership: { name: string; pattern: RegExp }[] = [
     { name: "Stake — Bishoprics", pattern: LEADERSHIP_PATTERNS.bishopric },
     { name: "Stake — Elders Quorum Presidencies", pattern: LEADERSHIP_PATTERNS.elders_quorum_presidency },
@@ -195,12 +236,9 @@ async function rebuildAutoLists(supabase: any) {
     await rebuildList(supabase, def.name, null, allContacts.filter((c) => callingsMatch(c, def.pattern)));
   }
 
-  // ----- New stake-wide gender splits (2) -----
-  // (Stake-wide Aaronic / Melchizedek already covered by the legacy flat names.)
   await rebuildList(supabase, "Stake — Men", null, allContacts.filter((c) => c.gender === 'M'));
   await rebuildList(supabase, "Stake — Women", null, allContacts.filter((c) => c.gender === 'F'));
 
-  // ----- Per-ward lists -----
   const wards = [...new Set(allContacts.map((c: any) => c.unit_name).filter(Boolean))] as string[];
   const currentMonth = new Date(
     new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })
@@ -208,11 +246,8 @@ async function rebuildAutoLists(supabase: any) {
 
   for (const ward of wards) {
     const wardContacts = allContacts.filter((c: any) => c.unit_name === ward);
-
-    // Catch-all ward list (existing pattern, kept)
     await rebuildList(supabase, ward, ward, wardContacts);
 
-    // New ward-scoped lists — all prefixed `<ward> — `
     const perWard: { suffix: string; matching: any[] }[] = [
       { suffix: "Primary Teachers", matching: wardContacts.filter(isPrimaryTeacher) },
       { suffix: "Parents", matching: wardContacts.filter((c) => c.has_children) },

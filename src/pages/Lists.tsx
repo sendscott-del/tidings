@@ -80,6 +80,7 @@ export default function Lists() {
   const [lists, setLists] = useState<List[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'stake' | 'community'>('all')
+  const [wardFilter, setWardFilter] = useState<string>('') // '' = all wards (including stake-wide)
   const [selectedList, setSelectedList] = useState<List | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
@@ -438,7 +439,9 @@ export default function Lists() {
       .slice(0, 200)
   }, [pickerContacts, pickerSearch])
 
-  const filtered = lists.filter((l) => filter === 'all' || l.database === filter)
+  const filtered = lists
+    .filter((l) => filter === 'all' || l.database === filter)
+    .filter((l) => !wardFilter || l.ward_scope === wardFilter)
 
   if (loading) {
     return <div className="text-slate-400 py-8 text-center">Loading lists...</div>
@@ -448,7 +451,7 @@ export default function Lists() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-slate-900">Lists</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex bg-slate-100 rounded-lg p-0.5">
             {(['all', 'stake', 'community'] as const).map((f) => (
               <button
@@ -462,6 +465,19 @@ export default function Lists() {
               </button>
             ))}
           </div>
+          {(isAdmin || isStakePool) && wardOptions.length > 0 && (
+            <select
+              value={wardFilter}
+              onChange={(e) => setWardFilter(e.target.value)}
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white"
+              title="Filter to one ward's lists"
+            >
+              <option value="">All wards</option>
+              {wardOptions.map((w) => (
+                <option key={w} value={w}>{w}</option>
+              ))}
+            </select>
+          )}
           <button
             onClick={() => setShowCreate(true)}
             className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700"
