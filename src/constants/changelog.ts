@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.24.1'
+export const VERSION = '0.25.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.25.0',
+    date: '2026-05-22',
+    changes: [
+      'Custom lists can now be shared. A new Share button (the share-arrow icon next to the pencil) appears on any non-auto list for the list creator and admins. The Share dialog shows everyone the list is currently shared with and lets you add new shares two ways: (1) "By role" — pick from the 19-role catalog (Bishop, Ward Council, Stake Council, etc.) and anyone who holds that role gets access; (2) "By user" — pick a specific Tidings user. Removing a share takes effect immediately. Shares feed the same RLS the previous release wired up, so adding a role-share to a list also opens up the messages sent to that list. Custom lists you create are now stamped with your user id, so you (and only you) see them by default until you share them out.',
+    ],
+  },
   {
     version: '0.24.1',
     date: '2026-05-22',

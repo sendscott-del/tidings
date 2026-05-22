@@ -13,7 +13,46 @@ interface List {
   ward_scope: string | null
   created_at: string
   member_count: number
+  created_by: string | null
 }
+
+interface ListShare {
+  list_id: string
+  scope_type: 'user' | 'role'
+  scope_value: string
+  granted_at: string
+}
+
+interface ShareableUser {
+  id: string
+  full_name: string | null
+  email: string
+}
+
+// Mirror of public.gather_roles_catalog. Kept in sync with the const in
+// Admin.tsx — single source on the shared project, repeated here so the
+// dropdown can render labels without a cross-Supabase call.
+const SUITE_ROLE_OPTIONS: Array<{ key: string; label: string }> = [
+  { key: 'stake_president',           label: 'Stake President' },
+  { key: 'stake_clerk',                label: 'Stake Clerk' },
+  { key: 'sp_1st_counselor',           label: 'Stake Presidency 1st Counselor' },
+  { key: 'sp_2nd_counselor',           label: 'Stake Presidency 2nd Counselor' },
+  { key: 'stake_exec_secretary',       label: 'Stake Executive Secretary' },
+  { key: 'high_councilor',             label: 'High Councilor' },
+  { key: 'hc_missionary_work',         label: 'High Councilor — Missionary Work' },
+  { key: 'hc_welfare_self_reliance',   label: 'High Councilor — Welfare & Self Reliance' },
+  { key: 'community_events_leader',    label: 'Community Events Leader' },
+  { key: 'stake_council',              label: 'Stake Council' },
+  { key: 'bishop',                     label: 'Bishop' },
+  { key: 'bishopric_1st_counselor',    label: 'Bishopric 1st Counselor' },
+  { key: 'bishopric_2nd_counselor',    label: 'Bishopric 2nd Counselor' },
+  { key: 'ward_clerk',                 label: 'Ward Clerk' },
+  { key: 'ward_exec_secretary',        label: 'Ward Executive Secretary' },
+  { key: 'ward_council',               label: 'Ward Council' },
+  { key: 'ward_org_presidency',        label: 'Ward Organization Presidency' },
+  { key: 'ward_mission_leader',        label: 'Ward Mission Leader' },
+  { key: 'ward_member',                label: 'Ward Member' },
+]
 
 interface Member {
   id: string
@@ -67,6 +106,13 @@ export default function Lists() {
   const [pickerLoading, setPickerLoading] = useState(false)
   const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set())
   const pickerSearchRef = useRef<HTMLInputElement>(null)
+
+  // List-sharing state
+  const [showShare, setShowShare] = useState(false)
+  const [shares, setShares] = useState<ListShare[]>([])
+  const [shareUsers, setShareUsers] = useState<ShareableUser[]>([])
+  const [newShareType, setNewShareType] = useState<'user' | 'role'>('role')
+  const [newShareValue, setNewShareValue] = useState<string>('')
 
   useEffect(() => {
     loadLists()
@@ -182,6 +228,7 @@ export default function Lists() {
         database: createForm.database,
         is_auto: false,
         ward_scope: wardScope,
+        created_by: appUser?.id ?? null,
       })
       .select()
       .single()
@@ -194,6 +241,51 @@ export default function Lists() {
     setCreateForm({ name: '', description: '', database: 'stake', ward_scope: '' })
     await loadLists()
     if (data) viewMembers({ ...data, member_count: 0 })
+  }
+
+  async function openShare(list: List) {
+    setSelectedList(list)
+    setShowShare(true)
+    const [sharesRes, usersRes] = await Promise.all([
+      supabase.from('list_shares').select('*').eq('list_id', list.id),
+      supabase.from('users').select('id, full_name, email').order('full_name'),
+    ])
+    setShares((sharesRes.data || []) as ListShare[])
+    setShareUsers((usersRes.data || []) as ShareableUser[])
+    setNewShareType('role')
+    setNewShareValue('')
+  }
+
+  async function addShare() {
+    if (!selectedList || !newShareValue) return
+    const { error } = await supabase.from('list_shares').insert({
+      list_id: selectedList.id,
+      scope_type: newShareType,
+      scope_value: newShareValue,
+      granted_by: appUser?.id ?? null,
+    })
+    if (error) {
+      toast(`Couldn't add share: ${error.message}`, 'error')
+      return
+    }
+    const { data } = await supabase.from('list_shares').select('*').eq('list_id', selectedList.id)
+    setShares((data || []) as ListShare[])
+    setNewShareValue('')
+    toast('Share added', 'success')
+  }
+
+  async function removeShare(s: ListShare) {
+    const { error } = await supabase
+      .from('list_shares')
+      .delete()
+      .eq('list_id', s.list_id)
+      .eq('scope_type', s.scope_type)
+      .eq('scope_value', s.scope_value)
+    if (error) {
+      toast(`Couldn't remove share: ${error.message}`, 'error')
+      return
+    }
+    setShares(shares.filter((x) => !(x.scope_type === s.scope_type && x.scope_value === s.scope_value)))
   }
 
   async function handleSaveEdit() {
@@ -547,6 +639,13 @@ export default function Lists() {
                 )}
               </div>
               <div className="flex items-center gap-2 ml-3">
+                {!selectedList.is_auto && !editing && (isAdmin || selectedList.created_by === appUser?.id) && (
+                  <button onClick={() => openShare(selectedList)} className="text-slate-400 hover:text-slate-600" aria-label="Share list" title="Share">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+                    </svg>
+                  </button>
+                )}
                 {!selectedList.is_auto && !editing && (
                   <button onClick={() => setEditing(true)} className="text-slate-400 hover:text-slate-600" aria-label="Edit list">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -684,6 +783,109 @@ export default function Lists() {
                 className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share modal — admin or list creator only; gated above on the share button */}
+      {showShare && selectedList && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowShare(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-xl shadow-xl">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Share "{selectedList.name}"</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Anyone you add will see this list and any messages sent to it.
+                </p>
+              </div>
+              <button onClick={() => setShowShare(false)} className="text-slate-400 hover:text-slate-600" aria-label="Close">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-4">
+              <div>
+                <p className="text-xs font-medium text-slate-600 mb-2">Currently shared with</p>
+                {shares.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">No shares yet. Only you and admins can see this list.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {shares.map((s) => {
+                      const label =
+                        s.scope_type === 'role'
+                          ? `Role: ${SUITE_ROLE_OPTIONS.find((r) => r.key === s.scope_value)?.label ?? s.scope_value}`
+                          : `User: ${shareUsers.find((u) => u.id === s.scope_value)?.full_name ?? shareUsers.find((u) => u.id === s.scope_value)?.email ?? s.scope_value}`
+                      return (
+                        <div key={`${s.scope_type}-${s.scope_value}`} className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded">
+                          <span className="text-xs text-slate-700">{label}</span>
+                          <button onClick={() => removeShare(s)} className="text-slate-400 hover:text-red-500" aria-label="Remove share">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-slate-200 pt-3 space-y-2">
+                <p className="text-xs font-medium text-slate-600">Add a share</p>
+                <div className="flex bg-slate-100 rounded-md p-0.5 w-fit">
+                  {(['role', 'user'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => { setNewShareType(t); setNewShareValue('') }}
+                      className={`px-3 py-1 text-xs font-medium rounded capitalize ${
+                        newShareType === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                      }`}
+                    >
+                      {t === 'role' ? 'By role' : 'By user'}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={newShareValue}
+                    onChange={(e) => setNewShareValue(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                  >
+                    <option value="">— Pick a {newShareType} —</option>
+                    {newShareType === 'role'
+                      ? SUITE_ROLE_OPTIONS
+                          .filter((r) => !shares.some((s) => s.scope_type === 'role' && s.scope_value === r.key))
+                          .map((r) => <option key={r.key} value={r.key}>{r.label}</option>)
+                      : shareUsers
+                          .filter((u) => !shares.some((s) => s.scope_type === 'user' && s.scope_value === u.id))
+                          .map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.full_name || u.email}
+                            </option>
+                          ))}
+                  </select>
+                  <button
+                    onClick={addShare}
+                    disabled={!newShareValue}
+                    className="px-3 py-2 bg-tidings-primary text-white text-sm font-medium rounded-lg hover:bg-tidings-primary-dark disabled:opacity-50"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setShowShare(false)}
+                className="px-4 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+              >
+                Done
               </button>
             </div>
           </div>
