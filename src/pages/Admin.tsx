@@ -46,6 +46,39 @@ const SIGNATURE_PRESETS = [
   '— Sent by the Primary Presidency',
 ]
 
+// The 19-role suite catalog (mirrors public.gather_roles_catalog on the shared
+// project). Used by Glean, Knit, Magnify, Steward and Tidings to derive per-app
+// access. Tidings stores its own copy of assignments in `tidings_user_roles`
+// for fast RLS; a follow-up release will sync that mirror up to the shared
+// `gather_user_roles` so the other apps see grants made in Tidings.
+type SuiteRoleScope = 'stake' | 'ward'
+interface SuiteRole {
+  key: string
+  label: string
+  scope: SuiteRoleScope
+}
+const SUITE_ROLES: SuiteRole[] = [
+  { key: 'stake_president',           label: 'Stake President',                          scope: 'stake' },
+  { key: 'stake_clerk',                label: 'Stake Clerk',                              scope: 'stake' },
+  { key: 'sp_1st_counselor',           label: 'Stake Presidency 1st Counselor',           scope: 'stake' },
+  { key: 'sp_2nd_counselor',           label: 'Stake Presidency 2nd Counselor',           scope: 'stake' },
+  { key: 'stake_exec_secretary',       label: 'Stake Executive Secretary',                scope: 'stake' },
+  { key: 'high_councilor',             label: 'High Councilor',                           scope: 'stake' },
+  { key: 'hc_missionary_work',         label: 'High Councilor — Missionary Work',         scope: 'stake' },
+  { key: 'hc_welfare_self_reliance',   label: 'High Councilor — Welfare & Self Reliance', scope: 'stake' },
+  { key: 'community_events_leader',    label: 'Community Events Leader',                  scope: 'stake' },
+  { key: 'stake_council',              label: 'Stake Council',                            scope: 'stake' },
+  { key: 'bishop',                     label: 'Bishop',                                   scope: 'ward'  },
+  { key: 'bishopric_1st_counselor',    label: 'Bishopric 1st Counselor',                  scope: 'ward'  },
+  { key: 'bishopric_2nd_counselor',    label: 'Bishopric 2nd Counselor',                  scope: 'ward'  },
+  { key: 'ward_clerk',                 label: 'Ward Clerk',                               scope: 'ward'  },
+  { key: 'ward_exec_secretary',        label: 'Ward Executive Secretary',                 scope: 'ward'  },
+  { key: 'ward_council',               label: 'Ward Council',                             scope: 'ward'  },
+  { key: 'ward_org_presidency',        label: 'Ward Organization Presidency',             scope: 'ward'  },
+  { key: 'ward_mission_leader',        label: 'Ward Mission Leader',                      scope: 'ward'  },
+  { key: 'ward_member',                label: 'Ward Member',                              scope: 'ward'  },
+]
+
 export default function Admin() {
   const { appUser } = useAuth()
   const { toast } = useToast()
@@ -67,7 +100,13 @@ export default function Admin() {
   const [historyOpenFor, setHistoryOpenFor] = useState<string | null>(null)
   const [historyData, setHistoryData] = useState<Record<string, { quarter_label: string; used_cents: number }[]>>({})
 
-  useEffect(() => { loadUsers(); loadInvites(); loadWardOptions() }, [])
+  // Suite-role assignments: per-user mirror of public.tidings_user_roles.
+  // `userRolesByUserId` is the table-view cache; `editingSuiteRoles` is the
+  // working copy for the user currently being edited.
+  const [userRolesByUserId, setUserRolesByUserId] = useState<Record<string, Array<{ role_key: string; ward: string | null }>>>({})
+  const [editingSuiteRoles, setEditingSuiteRoles] = useState<Array<{ role_key: string; ward: string | null }>>([])
+
+  useEffect(() => { loadUsers(); loadInvites(); loadWardOptions(); loadUserRolesMap() }, [])
   useEffect(() => { if (tab === 'budgets') loadBudgets() }, [tab])
 
   if (appUser?.role !== 'admin') {
@@ -214,6 +253,7 @@ export default function Admin() {
           signature: form.signature.trim() || null,
           ward: form.ward || null,
         }).eq('id', editingUser.id)
+        await saveSuiteRolesForUser(editingUser.id)
         toast('User updated', 'success')
       } else {
         await callInviteFn('invite-create', {
@@ -230,8 +270,10 @@ export default function Admin() {
       setShowForm(false)
       setEditingUser(null)
       setForm({ email: '', full_name: '', role: 'sender', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
+      setEditingSuiteRoles([])
       loadUsers()
       loadInvites()
+      loadUserRolesMap()
     } catch (err) {
       setError((err as Error).message)
     }
@@ -242,6 +284,51 @@ export default function Admin() {
     if (userId === appUser?.id) return
     await supabase.from('users').delete().eq('id', userId)
     loadUsers()
+  }
+
+  async function loadUserRolesMap() {
+    const { data } = await supabase.from('tidings_user_roles').select('user_id, role_key, ward')
+    const map: Record<string, Array<{ role_key: string; ward: string | null }>> = {}
+    for (const row of (data || []) as Array<{ user_id: string; role_key: string; ward: string | null }>) {
+      if (!map[row.user_id]) map[row.user_id] = []
+      map[row.user_id].push({ role_key: row.role_key, ward: row.ward })
+    }
+    setUserRolesByUserId(map)
+  }
+
+  function toggleSuiteRole(roleKey: string, scope: SuiteRoleScope) {
+    setEditingSuiteRoles((prev) => {
+      const has = prev.some((r) => r.role_key === roleKey)
+      if (has) return prev.filter((r) => r.role_key !== roleKey)
+      return [...prev, { role_key: roleKey, ward: scope === 'ward' ? (form.ward || null) : null }]
+    })
+  }
+
+  async function saveSuiteRolesForUser(userId: string) {
+    // Diff existing rows against editingSuiteRoles. For each row removed, DELETE.
+    // For each row added or changed (ward updated), upsert.
+    const existing = userRolesByUserId[userId] ?? []
+    const wanted = editingSuiteRoles
+
+    const sameKey = (a: { role_key: string; ward: string | null }, b: { role_key: string; ward: string | null }) =>
+      a.role_key === b.role_key && (a.ward ?? null) === (b.ward ?? null)
+
+    const toDelete = existing.filter((e) => !wanted.some((w) => sameKey(e, w)))
+    const toInsert = wanted.filter((w) => !existing.some((e) => sameKey(e, w)))
+
+    for (const row of toDelete) {
+      await supabase
+        .from('tidings_user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role_key', row.role_key)
+        .filter('ward', row.ward === null ? 'is' : 'eq', row.ward === null ? null : row.ward)
+    }
+    if (toInsert.length > 0) {
+      await supabase
+        .from('tidings_user_roles')
+        .insert(toInsert.map((r) => ({ user_id: userId, role_key: r.role_key, ward: r.ward, granted_by: appUser?.id ?? null })))
+    }
   }
 
   function startEdit(u: AppUser) {
@@ -255,6 +342,7 @@ export default function Admin() {
       signature: u.signature || '',
       ward: u.ward || '',
     })
+    setEditingSuiteRoles(userRolesByUserId[u.id] ?? [])
     setShowForm(true)
   }
 
@@ -334,6 +422,44 @@ export default function Admin() {
                   Can text community contacts
                 </label>
               </div>
+              {editingUser && (
+                <div className="space-y-2 border-t border-slate-200 pt-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600">Suite roles</label>
+                    <p className="text-xs text-slate-500 mt-0.5 mb-2">
+                      One person can hold multiple roles. Stake roles cover the whole stake; ward roles
+                      use this user's assigned ward (set above) for scoping. These also gate which lists
+                      and messages this user can see in Tidings.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {SUITE_ROLES.map((role) => {
+                      const selected = editingSuiteRoles.some((r) => r.role_key === role.key)
+                      const wardWarning = selected && role.scope === 'ward' && !form.ward
+                      return (
+                        <label
+                          key={role.key}
+                          className={`flex items-center gap-2 text-xs rounded-md px-2 py-1.5 border ${
+                            selected ? 'bg-amber-50 border-amber-200 text-slate-900' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => toggleSuiteRole(role.key, role.scope)}
+                            className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                          />
+                          <span className="flex-1">{role.label}</span>
+                          <span className="text-[10px] uppercase tracking-wide text-slate-400">{role.scope}</span>
+                          {wardWarning && (
+                            <span className="text-[10px] text-amber-700" title="Pick a ward above so the role is scoped">⚠</span>
+                          )}
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-slate-600">
                   Signature (appended to every message this user sends)
@@ -430,28 +556,53 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="border-b border-slate-100">
-                      <td className="px-4 py-3 text-slate-900 font-medium">{u.full_name || '—'}</td>
-                      <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">{u.email}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                          u.role === 'sender' ? 'bg-blue-100 text-blue-700' :
-                          'bg-slate-100 text-slate-600'
-                        }`}>{u.role}</span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
-                        {u.ward || <span className="text-amber-600 text-xs">— not set —</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button onClick={() => startEdit(u)} className="text-slate-400 hover:text-slate-600 mr-2">Edit</button>
-                        {u.id !== appUser?.id && (
-                          <button onClick={() => deleteUser(u.id)} className="text-slate-400 hover:text-red-500">Delete</button>
+                  {users.map((u) => {
+                    const roles = userRolesByUserId[u.id] ?? []
+                    return (
+                      <Fragment key={u.id}>
+                        <tr className={roles.length > 0 ? 'border-b-0' : 'border-b border-slate-100'}>
+                          <td className="px-4 py-3 text-slate-900 font-medium">{u.full_name || '—'}</td>
+                          <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">{u.email}</td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                              u.role === 'sender' ? 'bg-blue-100 text-blue-700' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>{u.role}</span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                            {u.ward || <span className="text-amber-600 text-xs">— not set —</span>}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button onClick={() => startEdit(u)} className="text-slate-400 hover:text-slate-600 mr-2">Edit</button>
+                            {u.id !== appUser?.id && (
+                              <button onClick={() => deleteUser(u.id)} className="text-slate-400 hover:text-red-500">Delete</button>
+                            )}
+                          </td>
+                        </tr>
+                        {roles.length > 0 && (
+                          <tr className="border-b border-slate-100">
+                            <td colSpan={5} className="px-4 pb-3 pt-0">
+                              <div className="flex flex-wrap gap-1">
+                                {roles.map((r) => {
+                                  const def = SUITE_ROLES.find((s) => s.key === r.role_key)
+                                  if (!def) return null
+                                  return (
+                                    <span
+                                      key={`${r.role_key}-${r.ward ?? ''}`}
+                                      className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200"
+                                    >
+                                      {def.label}{r.ward ? ` · ${r.ward}` : ''}
+                                    </span>
+                                  )
+                                })}
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  ))}
+                      </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.24.0'
+export const VERSION = '0.24.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.24.1',
+    date: '2026-05-22',
+    changes: [
+      'Admin → Edit User now has a "Suite roles" section. Admins can assign any of the 19 Gathered suite roles to a user — Stake President, Stake Clerk, the two SP counselors, Stake Executive Secretary, six High Council variants, Community Events Leader, Stake Council, Bishop, the two bishopric counselors, Ward Clerk, Ward Executive Secretary, Ward Council, Ward Organization Presidency, Ward Mission Leader, and Ward Member. A single person can hold multiple roles (the spreadsheet pattern). Stake-scoped roles cover the whole stake; ward-scoped roles inherit the user\'s assigned ward (set in the same form) — a small ⚠ flags when you tick a ward role for a user without a ward set. Assignments write to `tidings_user_roles` and immediately feed the new role-scoped RLS — i.e., a Bishop now sees lists shared to `bishop`, a Stake Council member sees lists shared to `stake_council`, etc. The user table on /admin also renders each user\'s current roles as a small badge row under their name so you can scan the roster at a glance.',
+      'NOTE — this release writes role assignments only to Tidings. A follow-up will sync `tidings_user_roles` up to the shared `gather_user_roles` table so Glean / Knit / Magnify / Steward consume the same source of truth. Until then, assigning Scott as "Bishop" in Tidings does not (yet) propagate to the other apps.',
+    ],
+  },
   {
     version: '0.24.0',
     date: '2026-05-22',
