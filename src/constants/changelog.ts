@@ -4,9 +4,24 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.26.1'
+export const VERSION = '0.27.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.27.0',
+    date: '2026-05-22',
+    changes: [
+      "New edge function `gather-send-invite-sms` lets other Gathered apps fire ad-hoc SMS via Tidings' Twilio account. Accepts POST `{ phone, body, audit_tag? }` with `Bearer <INTERNAL_FN_SECRET>` (cross-app shared secret — no per-user JWT needed). Skips ward-budget enforcement and message_logs writes (these are infrequent one-offs from the missionary sheet pull cycle, not stake-wide broadcasts). Powered by the same TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER env vars the existing send-message endpoint uses. Knit's v0.33.0 invite flow calls this for phone-only contacts.",
+    ],
+  },
+  {
+    version: '0.26.2',
+    date: '2026-05-22',
+    changes: [
+      'Critical fix — the previous v0.26.1 PDF import only updated ~100 of ~3,300 contacts. The diff/upsert logic in the `import-contacts` edge function used **phone alone** as the contact identity key, but 229 phone-duplicate groups exist in the stake directory (household members share phones — bishop and wife, parents and kids). With that many duplicates, every batch that contained a household triggered a PostgreSQL `ON CONFLICT DO UPDATE command cannot affect row a second time` error, which the edge function silently swallowed. Switched the matching key to `last_name|first_name|phone` (a composite that uniquely identifies each person even when they share a phone), and made the function surface upsert errors in the response body instead of swallowing them. Also: existing legacy duplicate rows in the DB now get collapsed automatically — the first occurrence per composite key is kept and updated, the rest are deleted.',
+      'Lists page now has a ward filter — stake leaders (Admin or "Stake" pool) can pick a ward from the dropdown next to the Stake/Community toggle to narrow the ~115 auto-lists down to just that ward\'s lists. Choosing a ward also hides stake-wide lists so the view is purely a single-ward roster of lists.',
+    ],
+  },
   {
     version: '0.26.1',
     date: '2026-05-22',
