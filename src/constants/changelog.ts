@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.26.0'
+export const VERSION = '0.26.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.26.1',
+    date: '2026-05-22',
+    changes: [
+      'gather_tidings_contacts_for_sync RPC switched from RETURNS TABLE to RETURNS jsonb (returning a single jsonb_agg array). PostgREST silently caps SETOF/TABLE-returning RPCs at db-max-rows (default 1000), which was truncating the cross-app member sync to 1000 of the ~3,244 contacts. A jsonb return value isn\'t a result set, so the cap doesn\'t apply. Edge function consumers (Glean and Knit syncs) don\'t need code changes — the response body shape is identical. After the fix the weekly Glean sync correctly inserted all 3,244 contacts into `glean_members`.',
+    ],
+  },
   {
     version: '0.26.0',
     date: '2026-05-22',
