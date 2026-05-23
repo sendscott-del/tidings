@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.28.2'
+export const VERSION = '0.28.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.28.3',
+    date: '2026-05-22',
+    changes: [
+      'GATHER header button now points at the canonical Gather page in Glean (https://glean-blue.vercel.app/admin/gather) instead of the old Steward copy. The Gather page consolidated into a single host today so there\'s one place to manage user access across every app; Steward and Knit now redirect there too.',
+    ],
+  },
   {
     version: '0.28.2',
     date: '2026-05-22',
