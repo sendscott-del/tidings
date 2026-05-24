@@ -25,9 +25,10 @@ const navItems: NavItem[] = [
 ]
 
 const adminItem: NavItem = { to: '/admin', labelKey: 'nav.admin', icon: 'shield' }
-// Gather is the canonical cross-app user-access page. It used to live in
-// Steward; consolidated into Glean 2026-05-22 so there's exactly one host.
-const GATHER_ADMIN_URL = 'https://glean-blue.vercel.app/admin/gather'
+// Gather is the canonical cross-app user-access page. It lives in its own
+// standalone deployment at gathered-admin-neon.vercel.app — one host for all
+// five Gathered apps. (Previously lived in Glean, before that in Steward.)
+const GATHER_ADMIN_URL = 'https://gathered-admin-neon.vercel.app/gather'
 
 function NavIcon({ name, className }: { name: string; className?: string }) {
   const icons: Record<string, React.ReactNode> = {

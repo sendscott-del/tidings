@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.28.3'
+export const VERSION = '0.29.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.29.0',
+    date: '2026-05-23',
+    changes: [
+      "GATHER header button now opens https://gathered-admin-neon.vercel.app/gather — the new standalone Gather deployment. Replaces yesterday's pointer at Glean's copy. Same shared gather_user_roles / user_apps / gather_super_admins tables; just one canonical UI across every Gathered app.",
+    ],
+  },
   {
     version: '0.28.3',
     date: '2026-05-22',
