@@ -72,7 +72,7 @@ export default function MobileTabBar({ onMoreClick, moreOpen }: Props) {
         aria-expanded={moreOpen}
         className={`flex flex-col items-center justify-center gap-0.5 min-h-[56px] text-[10px] font-semibold py-1 ${
           moreActive
-            ? 'text-tidings-primary-dark'
+            ? 'text-tidings-primary'
             : 'text-slate-500 hover:text-slate-700'
         }`}
       >
@@ -99,7 +99,7 @@ function Tab({ to, icon, label, end, badge }: TabProps) {
       className={({ isActive }) =>
         `relative flex flex-col items-center justify-center gap-0.5 min-h-[56px] text-[10px] font-semibold py-1 ${
           isActive
-            ? 'text-tidings-primary-dark'
+            ? 'text-tidings-primary'
             : 'text-slate-500 hover:text-slate-700'
         }`
       }

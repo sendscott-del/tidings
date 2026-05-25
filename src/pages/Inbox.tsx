@@ -370,8 +370,12 @@ export default function Inbox() {
                 key={msg.id}
                 onClick={() => markAsRead(msg)}
                 className={`w-full text-left flex items-start gap-3 p-3 bg-white border rounded-lg min-h-[64px] transition-colors hover:bg-slate-50 ${
+                  /* Per spec "one indicator per row": the amber ring on the
+                     avatar + the amber trailing dot already mark unread —
+                     dropped the additional amber bg tint that was a third
+                     signal (visually noisy). */
                   unread
-                    ? 'border-tidings-primary/40 bg-amber-50/40'
+                    ? 'border-tidings-primary/40'
                     : 'border-slate-200'
                 }`}
               >

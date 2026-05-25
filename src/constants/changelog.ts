@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.30.0'
+export const VERSION = '0.30.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.30.1',
+    date: '2026-05-25',
+    changes: [
+      'Mobile tab bar active color realigned to `text-tidings-primary` (was `text-tidings-primary-dark`) — matches the suite token map and the active color used by the rest of the Phase 6 apps.',
+      'Inbox unread rows drop the amber background tint. The amber avatar ring + amber trailing dot already mark unread; the tint was a third signal that violated the spec\'s "one indicator per row" rule and made the unread state read as urgent rather than just unread.',
+    ],
+  },
   {
     version: '0.30.0',
     date: '2026-05-24',
