@@ -7,8 +7,30 @@ import { supabase } from '../lib/supabase'
 const SUBMIT_URL =
   'https://isogetmvnpimcmouakeg.supabase.co/functions/v1/submit-suggestion'
 
-export default function SuggestionFAB() {
-  const [open, setOpen] = useState(false)
+type Props = {
+  // When the parent (Layout) wants to control the modal — e.g. from the
+  // MoreSheet "Suggest an enhancement" row on mobile — it passes
+  // controlledOpen + onControlledClose. The floating bulb button is
+  // hidden on mobile (hidden md:flex) so it never collides with the
+  // bottom tab bar / sticky CTAs.
+  controlledOpen?: boolean
+  onControlledClose?: () => void
+}
+
+export default function SuggestionFAB({
+  controlledOpen,
+  onControlledClose,
+}: Props = {}) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  function setOpen(next: boolean) {
+    if (isControlled) {
+      if (!next) onControlledClose?.()
+    } else {
+      setInternalOpen(next)
+    }
+  }
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
@@ -88,13 +110,15 @@ export default function SuggestionFAB() {
         </div>
       )}
 
+      {/* Floating bulb: desktop only. On mobile the MoreSheet row drives
+          this modal via controlledOpen instead. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Suggest an enhancement"
-        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[100] w-12 h-12 rounded-full bg-tidings-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center opacity-90 hover:opacity-100"
+        className="hidden md:flex fixed bottom-6 right-6 z-[100] w-10 h-10 rounded-full bg-tidings-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-transform items-center justify-center opacity-85 hover:opacity-100"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9 18h6" />
           <path d="M10 22h4" />
           <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z" />

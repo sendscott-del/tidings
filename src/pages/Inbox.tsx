@@ -23,6 +23,37 @@ interface InboundMessage {
   contact_name?: string
 }
 
+type ChipFilter = 'all' | 'unread' | 'stake' | 'community'
+
+// Format a row timestamp as "2m", "18m", "1h", "Yesterday", "Mar 12" — chat-style.
+function formatWhen(iso: string): string {
+  const d = new Date(iso)
+  const now = Date.now()
+  const diff = now - d.getTime()
+  const min = 60 * 1000
+  const hr = 60 * min
+  const day = 24 * hr
+  if (diff < min) return 'now'
+  if (diff < hr) return `${Math.floor(diff / min)}m`
+  if (diff < day) return `${Math.floor(diff / hr)}h`
+  if (diff < 2 * day) return 'Yesterday'
+  if (diff < 7 * day) return `${Math.floor(diff / day)}d`
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+function initialsOf(name: string | undefined, phone: string): string {
+  const trimmed = (name || '').trim()
+  if (trimmed) {
+    const parts = trimmed.split(/\s+/)
+    const first = parts[0]?.[0] || ''
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] || '' : ''
+    return (first + last).toUpperCase() || trimmed.slice(0, 2).toUpperCase()
+  }
+  // No name: show the last 4 digits of the phone so different unknown
+  // numbers don't all collapse to the same avatar.
+  return phone.replace(/[^\d]/g, '').slice(-4) || '?'
+}
+
 export default function Inbox() {
   const { user } = useAuth()
   const { demoMode } = useDemoMode()
@@ -33,8 +64,10 @@ export default function Inbox() {
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
+  const [chip, setChip] = useState<ChipFilter>('all')
 
+  // Loader is declared as a stable callback so the polling effect can
+  // reference it without re-subscribing every render.
   useEffect(() => {
     if (demoMode) {
       // Demo: fixture inbox so trainers can show STOP-handling and reply
@@ -58,20 +91,26 @@ export default function Inbox() {
       setLoading(false)
       return
     }
-    loadMessages()
-  }, [demoMode])
 
-  async function loadMessages() {
-    setLoading(true)
-    const { data } = await supabase
-      .from('inbound_messages')
-      .select('*')
-      .order('received_at', { ascending: false })
-      .limit(500)
+    let alive = true
+    async function loadMessages() {
+      // Pause polling when the tab is backgrounded — don't waste battery
+      // or Supabase quota refreshing rows the user can't see.
+      if (document.hidden) return
+      const { data } = await supabase
+        .from('inbound_messages')
+        .select('*')
+        .order('received_at', { ascending: false })
+        .limit(500)
 
-    if (data) {
-      const stakeIds = data.filter((m) => m.contact_type === 'stake' && m.contact_id).map((m) => m.contact_id!)
-      const communityIds = data.filter((m) => m.contact_type === 'community' && m.contact_id).map((m) => m.contact_id!)
+      if (!alive || !data) return
+
+      const stakeIds = data
+        .filter((m) => m.contact_type === 'stake' && m.contact_id)
+        .map((m) => m.contact_id!)
+      const communityIds = data
+        .filter((m) => m.contact_type === 'community' && m.contact_id)
+        .map((m) => m.contact_id!)
 
       const nameMap: Record<string, string> = {}
 
@@ -95,13 +134,26 @@ export default function Inbox() {
         }
       }
 
-      setMessages(data.map((m) => ({
-        ...m,
-        contact_name: m.contact_id ? nameMap[m.contact_id] || undefined : undefined,
-      })))
+      if (!alive) return
+      setMessages(
+        data.map((m) => ({
+          ...m,
+          contact_name: m.contact_id ? nameMap[m.contact_id] || undefined : undefined,
+        })),
+      )
+      setLoading(false)
     }
-    setLoading(false)
-  }
+
+    setLoading(true)
+    loadMessages()
+    const id = setInterval(loadMessages, 30000)
+    document.addEventListener('visibilitychange', loadMessages)
+    return () => {
+      alive = false
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', loadMessages)
+    }
+  }, [demoMode])
 
   async function markAsRead(msg: InboundMessage) {
     setSelected(msg)
@@ -138,11 +190,21 @@ export default function Inbox() {
     })
   }
 
+  const unreadCount = messages.filter((m) => !m.read_by).length
+  const stakeCount = messages.filter((m) => m.contact_type === 'stake').length
+  const communityCount = messages.filter((m) => m.contact_type === 'community').length
+
   const filtered = useMemo(() => {
     const fromTs = dateFrom ? new Date(dateFrom).getTime() : null
     const toTs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null
     return messages.filter((m) => {
-      if (showUnreadOnly && m.read_by) return false
+      // STOP messages always render (compliance signal — never hide).
+      const isStop = m.is_stop
+      if (!isStop) {
+        if (chip === 'unread' && m.read_by) return false
+        if (chip === 'stake' && m.contact_type !== 'stake') return false
+        if (chip === 'community' && m.contact_type !== 'community') return false
+      }
       if (search.trim()) {
         const hay = `${m.contact_name || ''} ${m.from_phone} ${m.body}`
         if (!matchesAllTokens(hay, search)) return false
@@ -151,9 +213,7 @@ export default function Inbox() {
       if (toTs && new Date(m.received_at).getTime() > toTs) return false
       return true
     })
-  }, [messages, search, dateFrom, dateTo, showUnreadOnly])
-
-  const unreadCount = messages.filter((m) => !m.read_by).length
+  }, [messages, search, dateFrom, dateTo, chip])
 
   // Mirror the unread count to the home-screen icon while the app is open.
   // Push events from the Edge Function update it when the app is closed.
@@ -168,19 +228,102 @@ export default function Inbox() {
   return (
     <div>
       <EnableNotificationsBanner />
-      <div className="flex items-center justify-between mb-6">
+
+      <div className="flex items-center justify-between mb-3 md:mb-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold text-slate-900">Inbox</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-slate-900">Inbox</h1>
           {unreadCount > 0 && (
-            <span className="bg-tidings-primary text-white text-xs font-medium px-2 py-0.5 rounded-full">
+            <span className="bg-tidings-primary-fade text-tidings-primary-dark text-xs font-bold px-2 py-0.5 rounded-full border border-tidings-primary/40">
               {unreadCount} unread
             </span>
           )}
         </div>
       </div>
 
-      {/* Search & filter row */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+      {/* Filter chips. Horizontally scrolling on mobile so they don't wrap.
+          Active chip uses slate chrome (matches the desktop sidebar active
+          treatment); inactive chips are outlined. STOP messages always
+          render in the list regardless of the chip selection — compliance
+          signal must never be hidden. */}
+      <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mb-3 overflow-x-auto">
+        <div className="flex gap-2 min-w-min">
+          <FilterChip active={chip === 'all'} onClick={() => setChip('all')}>
+            All
+          </FilterChip>
+          <FilterChip
+            active={chip === 'unread'}
+            onClick={() => setChip('unread')}
+            count={unreadCount}
+          >
+            Unread
+          </FilterChip>
+          <FilterChip
+            active={chip === 'stake'}
+            onClick={() => setChip('stake')}
+            count={stakeCount}
+          >
+            Stake
+          </FilterChip>
+          <FilterChip
+            active={chip === 'community'}
+            onClick={() => setChip('community')}
+            count={communityCount}
+          >
+            Community
+          </FilterChip>
+        </div>
+      </div>
+
+      {/* Search & date filters — collapsed on mobile, full row on desktop. */}
+      <details className="md:hidden mb-3 bg-white border border-slate-200 rounded-xl">
+        <summary className="px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer flex items-center gap-2">
+          <svg className="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+          </svg>
+          Search &amp; date
+          {(search || dateFrom || dateTo) && (
+            <span className="ml-auto text-[10px] uppercase tracking-wider text-tidings-primary-dark font-bold">
+              Active
+            </span>
+          )}
+        </summary>
+        <div className="px-4 pb-4 space-y-2">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone, or message…"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-tidings-primary focus:border-transparent"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-slate-900"
+              aria-label="From date"
+            />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-slate-900"
+              aria-label="To date"
+            />
+          </div>
+          {(search || dateFrom || dateTo) && (
+            <button
+              onClick={() => { setSearch(''); setDateFrom(''); setDateTo('') }}
+              className="text-sm text-slate-500 hover:text-slate-700"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      </details>
+
+      <div className="hidden md:flex bg-white rounded-xl border border-slate-200 p-4 mb-4 flex-col sm:flex-row gap-3 sm:items-center">
         <input
           type="text"
           value={search}
@@ -202,18 +345,9 @@ export default function Inbox() {
           className="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
           aria-label="To date"
         />
-        <label className="flex items-center gap-2 text-sm text-slate-700 whitespace-nowrap">
-          <input
-            type="checkbox"
-            checked={showUnreadOnly}
-            onChange={(e) => setShowUnreadOnly(e.target.checked)}
-            className="rounded border-slate-300 text-tidings-primary focus:ring-tidings-primary"
-          />
-          Unread only
-        </label>
-        {(search || dateFrom || dateTo || showUnreadOnly) && (
+        {(search || dateFrom || dateTo) && (
           <button
-            onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setShowUnreadOnly(false) }}
+            onClick={() => { setSearch(''); setDateFrom(''); setDateTo('') }}
             className="text-sm text-slate-500 hover:text-slate-700 whitespace-nowrap"
           >
             Clear
@@ -228,45 +362,68 @@ export default function Inbox() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          {filtered.map((msg) => (
-            <div
-              key={msg.id}
-              onClick={() => markAsRead(msg)}
-              className={`flex items-start gap-3 px-5 py-4 border-b border-slate-100 cursor-pointer transition-colors hover:bg-slate-50 ${
-                !msg.read_by ? 'bg-amber-50/50' : ''
-              }`}
-            >
-              <div className="pt-1.5">
-                <div className={`w-2 h-2 rounded-full ${!msg.read_by ? 'bg-tidings-primary' : 'bg-transparent'}`} />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-slate-900 truncate">
-                    {msg.contact_name || msg.from_phone}
-                  </p>
-                  <span className="text-xs text-slate-400 ml-2 whitespace-nowrap">
-                    {new Date(msg.received_at).toLocaleDateString()} {new Date(msg.received_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+        <div className="space-y-2">
+          {filtered.map((msg) => {
+            const unread = !msg.read_by
+            return (
+              <button
+                key={msg.id}
+                onClick={() => markAsRead(msg)}
+                className={`w-full text-left flex items-start gap-3 p-3 bg-white border rounded-lg min-h-[64px] transition-colors hover:bg-slate-50 ${
+                  unread
+                    ? 'border-tidings-primary/40 bg-amber-50/40'
+                    : 'border-slate-200'
+                }`}
+              >
+                <div
+                  className={`shrink-0 w-[38px] h-[38px] rounded-full inline-flex items-center justify-center text-[12px] font-bold ${
+                    unread
+                      ? 'bg-tidings-primary-fade text-tidings-ink ring-2 ring-tidings-primary'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {initialsOf(msg.contact_name, msg.from_phone)}
                 </div>
-                {msg.contact_name && (
-                  <p className="text-xs text-slate-400">{msg.from_phone}</p>
-                )}
-                <p className="text-sm text-slate-600 mt-0.5 truncate">
-                  {msg.media_urls && msg.media_urls.length > 0 && (
-                    <span className="mr-1" aria-label="has image">📷</span>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-sm font-bold truncate flex-1 ${
+                        unread ? 'text-slate-900' : 'text-slate-800'
+                      }`}
+                    >
+                      {msg.contact_name || msg.from_phone}
+                    </span>
+                    <span className="text-[11px] text-slate-500 shrink-0">
+                      {formatWhen(msg.received_at)}
+                    </span>
+                  </div>
+                  <p
+                    className={`text-[13px] mt-1 line-clamp-2 ${
+                      unread ? 'text-slate-900' : 'text-slate-600'
+                    }`}
+                  >
+                    {msg.media_urls && msg.media_urls.length > 0 && (
+                      <span className="mr-1" aria-label="has image">📷</span>
+                    )}
+                    {msg.body || (msg.media_urls && msg.media_urls.length > 0 ? '(image)' : '')}
+                  </p>
+                  {msg.is_stop && (
+                    <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                      STOP
+                    </span>
                   )}
-                  {msg.body || (msg.media_urls && msg.media_urls.length > 0 ? '(image)' : '')}
-                </p>
-                {msg.is_stop && (
-                  <span className="inline-block mt-1 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                    STOP
-                  </span>
+                </div>
+
+                {unread && (
+                  <span
+                    className="mt-2 shrink-0 w-2 h-2 rounded-full bg-tidings-primary"
+                    aria-label="unread"
+                  />
                 )}
-              </div>
-            </div>
-          ))}
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -320,7 +477,7 @@ export default function Inbox() {
             ) : (
               <button
                 onClick={handleReply}
-                className="w-full px-4 py-2.5 bg-tidings-primary text-white text-sm font-medium rounded-lg hover:bg-tidings-primary-dark inline-flex items-center justify-center gap-2"
+                className="w-full px-4 py-2.5 bg-tidings-primary text-white text-sm font-semibold rounded-lg hover:bg-tidings-primary-dark inline-flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
@@ -332,5 +489,36 @@ export default function Inbox() {
         </div>
       )}
     </div>
+  )
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+  count,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+  count?: number
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3.5 py-2 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors ${
+        active
+          ? 'bg-tidings-chrome text-white'
+          : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+      }`}
+    >
+      {children}
+      {count !== undefined && count > 0 && (
+        <span className={`ml-1.5 ${active ? 'text-white/80' : 'text-slate-400'}`}>
+          · {count}
+        </span>
+      )}
+    </button>
   )
 }

@@ -109,10 +109,30 @@ export default function Guide() {
         </p>
       </Section>
 
+      <Section title="On a phone">
+        <p>
+          The mobile bottom bar shows five tabs:{' '}
+          <strong>Dashboard · Compose · Inbox · History · More</strong>.
+          Inbox shows an unread badge so you don't miss replies.
+          The <strong>More</strong> tab opens a sheet with everything else —
+          Stake / Community directories, Lists, Settings, your profile, the
+          user guide, release notes, and the suggestion box. Sign out is at
+          the bottom of that sheet.
+        </p>
+        <p className="mt-2">
+          The <strong>Compose</strong> wizard walks through one step at a time
+          on mobile (database → recipients → message → send) with a sticky
+          progress bar at the top and a sticky Back/Next button at the bottom
+          that shows the recipient count and estimated cost.
+        </p>
+      </Section>
+
       <Section title="Suggest an enhancement">
         <p>
-          Look for the small <strong>amber lightbulb</strong> in the bottom-right
-          corner of every screen (above the mobile tab bar). Tap it, type what
+          On <strong>desktop</strong>, look for the small{' '}
+          <strong>amber lightbulb</strong> in the bottom-right corner of every
+          screen. On <strong>mobile</strong>, open the <strong>More</strong>{' '}
+          tab and tap <strong>Suggest an enhancement</strong>. Type what
           you&apos;d change or what felt clunky, and hit <strong>Send</strong>.
           Your name, email, and the page you were on are attached automatically
           — suggestions go straight to Scott and into a shared tracker so you

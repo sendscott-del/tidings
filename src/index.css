@@ -1,2 +1,107 @@
 @import "tailwindcss";
 @import "./tokens.css";
+
+/* --- Suite-wide mobile fixes (Phase 6) ---------------------
+   Same recipe used by Knit and Glean — only the primary accent
+   variable changes (Tidings = amber, Knit = rose, Glean = sky).
+   Drop-in: do not move into a component file. */
+
+/* Stop iOS Safari from auto-zooming when a form control is focused.
+   16-px minimum font-size on inputs/selects/textareas at mobile widths. */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Safe-area helpers used by the mobile bottom tab bar, sticky CTAs,
+   and any sheet that pins to the bottom edge of the viewport. */
+.safe-bottom {
+  padding-bottom: calc(var(--space-md, 16px) + env(safe-area-inset-bottom));
+}
+.safe-pb-tabbar {
+  /* 64-px tab bar height + safe-area inset (e.g. iPhone home indicator). */
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .safe-pb-tabbar {
+    padding-bottom: 0;
+  }
+}
+
+/* Canonical 44-px tap-target button. Tidings ships two variants:
+   amber default ("k-btn") and slate "send" affordance ("k-btn-slate"). */
+.k-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-md, 10px);
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--color-tidings-primary);
+  color: white;
+  border: 0;
+  transition: opacity 0.15s;
+}
+.k-btn:active {
+  opacity: 0.85;
+}
+.k-btn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.k-btn-slate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-md, 10px);
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--color-tidings-chrome);
+  color: white;
+  border: 0;
+  transition: opacity 0.15s;
+}
+.k-btn-slate:active {
+  opacity: 0.85;
+}
+.k-btn-slate:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.k-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-md, 10px);
+  font-weight: 700;
+  font-size: 14px;
+  background: white;
+  color: var(--color-gray-700);
+  border: 1.5px solid var(--color-gray-200);
+  transition: background-color 0.15s;
+}
+.k-btn-outline:active {
+  background: var(--color-gray-50);
+}
+
+/* Scroll containers leave room for the desktop FAB if one is present. */
+.scroll-pb-fab {
+  scroll-padding-bottom: 80px;
+}
+
+/* Two-line clamp for inbox conversation previews. */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

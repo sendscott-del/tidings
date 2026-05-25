@@ -480,9 +480,39 @@ export default function Compose() {
     ? new Date(budget.quarter_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
     : ''
 
+  // CTA / button helpers used by both the inline desktop buttons and the
+  // mobile sticky CTA. Keeping the logic centralized so the two surfaces
+  // stay in sync (especially the disabled/Next-label rules).
+  const canAdvance =
+    step === 'database' ? true :
+    step === 'recipients' ? selectedListIds.length > 0 :
+    step === 'message' ? !((!body.trim() && media.length === 0) || uploadingMedia || (scheduleEnabled && !scheduledAt)) :
+    !(sending || hardBlock)
+  const nextLabel =
+    step === 'database' ? '' :
+    step === 'recipients' ? 'Write message →' :
+    step === 'message' ? 'Review & send →' :
+    sending ? 'Sending…'
+      : noWardAssigned ? 'No ward'
+      : wouldExceed ? 'Over budget'
+      : scheduleEnabled ? `Schedule ${effectiveRecipientCount}`
+      : `Send ${effectiveRecipientCount}`
+  function handleStepBack() {
+    if (replyTo) { navigate('/inbox'); return }
+    if (step === 'recipients') setStep('database')
+    else if (step === 'message') setStep('recipients')
+    else if (step === 'confirm') setStep('message')
+  }
+  function handleStepNext() {
+    if (step === 'database') setStep('recipients')
+    else if (step === 'recipients') setStep('message')
+    else if (step === 'message') setStep('confirm')
+    else if (step === 'confirm') handleSend()
+  }
+
   return (
-    <div className="max-w-xl">
-      <h1 className="text-2xl font-semibold text-slate-900 mb-6">
+    <div className="max-w-xl pb-[calc(env(safe-area-inset-bottom)+140px)] md:pb-0">
+      <h1 className="text-2xl font-semibold text-slate-900 mb-4 md:mb-6">
         {replyTo ? 'Reply' : 'Compose Message'}
       </h1>
 
@@ -535,20 +565,28 @@ export default function Compose() {
       )}
 
       {!replyTo && (
-        <div className="flex items-center gap-2 mb-6">
-          {(['database', 'recipients', 'message', 'confirm'] as const).map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
-                step === s ? 'bg-tidings-primary text-white' :
-                (['database', 'recipients', 'message', 'confirm'].indexOf(step) > i) ? 'bg-green-500 text-white' :
-                'bg-slate-200 text-slate-500'
-              }`}>
-                {i + 1}
+        <>
+          {/* Desktop stepper — small chip row. Hidden on mobile in favor of
+              the sticky StepperHeader below. */}
+          <div className="hidden md:flex items-center gap-2 mb-6">
+            {(['database', 'recipients', 'message', 'confirm'] as const).map((s, i) => (
+              <div key={s} className="flex items-center gap-2">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
+                  step === s ? 'bg-tidings-primary text-white' :
+                  (['database', 'recipients', 'message', 'confirm'].indexOf(step) > i) ? 'bg-green-500 text-white' :
+                  'bg-slate-200 text-slate-500'
+                }`}>
+                  {i + 1}
+                </div>
+                {i < 3 && <div className="w-8 h-px bg-slate-200" />}
               </div>
-              {i < 3 && <div className="w-8 h-px bg-slate-200" />}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* Mobile sticky stepper. Progress bar in amber; current step shown
+              in slate (chrome); completed steps collapse to a checkmark. */}
+          <MobileStepperHeader step={step} />
+        </>
       )}
 
       {!replyTo && step === 'database' && (
@@ -657,7 +695,9 @@ export default function Compose() {
             </div>
           )}
 
-          <div className="flex gap-3 pt-2">
+          {/* Desktop action buttons — hidden on mobile; mobile uses the
+              sticky CTA at the bottom of the viewport. */}
+          <div className="hidden md:flex gap-3 pt-2">
             <button
               onClick={() => setStep('message')}
               disabled={selectedListIds.length === 0}
@@ -873,7 +913,8 @@ export default function Compose() {
             )}
           </div>
 
-          <div className="flex gap-3 pt-2">
+          {/* Desktop action buttons — mobile uses the sticky CTA. */}
+          <div className="hidden md:flex gap-3 pt-2">
             <button
               onClick={() => setStep('confirm')}
               disabled={(!body.trim() && media.length === 0) || uploadingMedia || (scheduleEnabled && !scheduledAt)}
@@ -965,7 +1006,8 @@ export default function Compose() {
             {finalBody && <p className="text-sm text-slate-900 whitespace-pre-wrap">{finalBody}</p>}
           </div>
 
-          <div className="flex gap-3 pt-2">
+          {/* Desktop action buttons — mobile uses the sticky CTA. */}
+          <div className="hidden md:flex gap-3 pt-2">
             <button
               onClick={handleSend}
               disabled={sending || hardBlock}
@@ -997,6 +1039,110 @@ export default function Compose() {
           </div>
         </div>
       )}
+
+      {/* Mobile sticky CTA — sits above the bottom tab bar.
+          Hidden on desktop (md:+). For the "database" step there's no
+          Next button (selecting a tile auto-advances), so we hide the
+          CTA entirely on that step.
+
+          The CTA is fixed above the 64-px tab bar + safe-area inset
+          so it never overlaps the tab bar; main content has matching
+          bottom padding so the last row isn't covered. */}
+      {step !== 'database' && (
+        <div
+          className="md:hidden fixed left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 shadow-[0_-2px_12px_rgba(15,23,42,0.05)] z-20"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}
+        >
+          {(step === 'recipients' || step === 'message' || step === 'confirm') && willReceive > 0 && (
+            <div className="flex items-baseline gap-2 mb-2 text-[11px] text-slate-500">
+              <span>
+                {willReceive} {willReceive === 1 ? 'recipient' : 'recipients'}
+              </span>
+              <span>·</span>
+              <span>est. ${estimatedCost}</span>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleStepBack}
+              disabled={sending}
+              className="k-btn-outline flex-1"
+            >
+              {replyTo && step === 'message' ? 'Cancel' : 'Back'}
+            </button>
+            <button
+              type="button"
+              onClick={handleStepNext}
+              disabled={!canAdvance}
+              className={step === 'confirm' ? 'k-btn flex-[2] inline-flex items-center justify-center gap-2' : 'k-btn-slate flex-[2]'}
+            >
+              {step === 'confirm' && sending && (
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z" />
+                </svg>
+              )}
+              {nextLabel}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Sticky stepper for the mobile wizard. Sticks to the top of the content
+// area below the (also-sticky) scripture rail. Slate accent for the
+// current step, amber for the progress bar.
+function MobileStepperHeader({ step }: { step: Step }) {
+  const STEPS: { id: Step; label: string }[] = [
+    { id: 'database', label: 'Database' },
+    { id: 'recipients', label: 'Recipients' },
+    { id: 'message', label: 'Message' },
+    { id: 'confirm', label: 'Send' },
+  ]
+  const idx = STEPS.findIndex((s) => s.id === step)
+  const pct = idx < 0 ? 0 : ((idx + 1) / STEPS.length) * 100
+  return (
+    <div className="md:hidden sticky top-[34px] z-10 bg-white border-b border-slate-100 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2.5 mb-3">
+      <div className="flex items-center gap-2">
+        {STEPS.map((s, i) => {
+          const state = i < idx ? 'done' : i === idx ? 'active' : 'pending'
+          return (
+            <div key={s.id} className="flex-1 flex items-center gap-1.5 min-w-0">
+              <span
+                className={`shrink-0 w-[18px] h-[18px] rounded-full inline-flex items-center justify-center text-[10px] font-bold ${
+                  state === 'done'
+                    ? 'bg-tidings-primary text-white'
+                    : state === 'active'
+                      ? 'bg-tidings-chrome text-white'
+                      : 'bg-slate-100 text-slate-400'
+                }`}
+              >
+                {state === 'done' ? '✓' : i + 1}
+              </span>
+              <span
+                className={`text-[9px] font-bold tracking-wider uppercase truncate ${
+                  state === 'done'
+                    ? 'text-tidings-primary-dark'
+                    : state === 'active'
+                      ? 'text-tidings-chrome'
+                      : 'text-slate-400'
+                }`}
+              >
+                {s.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="h-0.5 bg-slate-100 mt-2 overflow-hidden rounded-full">
+        <div
+          className="h-full bg-tidings-primary transition-all duration-200"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   )
 }

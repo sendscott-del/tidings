@@ -45,6 +45,16 @@ export const translations = {
     'nav.history': 'History',
     'nav.admin': 'Settings',
     'nav.signOut': 'Sign Out',
+    'nav.more': 'More',
+    'nav.guide': 'User guide',
+    'nav.releaseNotes': 'Release notes',
+
+    // Mobile "More" sheet
+    'more.directories': 'Directories',
+    'more.workspace': 'Workspace',
+    'more.help': 'Help',
+    'more.suggest': 'Suggest an enhancement',
+    'more.gatherMeta': 'Manage access across all Gather apps',
 
     // Header menu
     'menu.language': 'Language',
@@ -119,6 +129,16 @@ export const translations = {
     'nav.history': 'Historial',
     'nav.admin': 'Configuración',
     'nav.signOut': 'Cerrar Sesión',
+    'nav.more': 'Más',
+    'nav.guide': 'Guía del usuario',
+    'nav.releaseNotes': 'Notas de la versión',
+
+    // Mobile "More" sheet
+    'more.directories': 'Directorios',
+    'more.workspace': 'Espacio',
+    'more.help': 'Ayuda',
+    'more.suggest': 'Sugerir mejora',
+    'more.gatherMeta': 'Administrar acceso en todas las apps de Gather',
 
     // Header menu
     'menu.language': 'Idioma',

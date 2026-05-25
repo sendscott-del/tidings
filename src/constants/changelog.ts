@@ -4,9 +4,21 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.29.0'
+export const VERSION = '0.30.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.30.0',
+    date: '2026-05-24',
+    changes: [
+      '**Mobile + web optimization (Phase 6).** The mobile chrome now matches the rest of the Gathered suite. Bottom tab bar is pared down to five primary tabs — **Dashboard · Compose · Inbox · History · More** — with full labels, 44-px tap targets, an unread badge on Inbox, and proper `env(safe-area-inset-bottom)` padding so it no longer sits under the iPhone home indicator. Stake / Community / Lists / Admin / Profile / User guide / Release notes / Suggest-an-enhancement / Sign out all moved into a new bottom-sheet "More" menu (`src/components/MoreSheet.tsx`).',
+      '**Compose wizard is now one-step-per-view on mobile** with a sticky progress stepper at the top and a sticky Back/Next CTA (count + estimated cost) pinned above the tab bar. Desktop layout is unchanged. Textareas/inputs are 16-px on mobile so iOS Safari no longer auto-zooms on focus.',
+      '**Inbox redesign.** 64-px conversation rows, amber-ring avatar on unread, two-line preview, chat-style relative timestamps ("2m", "1h", "Yesterday"), and a horizontally-scrolling filter row (All · Unread · Stake · Community). `STOP` messages stay visible under every filter — compliance signal is never hidden. Polling now pauses while the tab is backgrounded, saving battery and Supabase quota.',
+      '**Suggestion FAB** is hidden on mobile (used to float over the Compose CTA and the last Inbox row); on mobile the modal opens from the "Suggest an enhancement" row in the More sheet. Desktop FAB shrinks from 12 → 10 and sits in the corner.',
+      'Scripture sub-bar is sticky on mobile so the EN/ES switcher stays reachable on long pages. `<main>` now drives its bottom padding from `env(safe-area-inset-bottom)` instead of a guessed pixel value (new `.safe-pb-tabbar` utility in `src/index.css`).',
+      'New Spanish keys: `Más · Directorios · Espacio · Ayuda · Sugerir mejora · Guía del usuario · Notas de la versión`.',
+    ],
+  },
   {
     version: '0.29.0',
     date: '2026-05-23',
