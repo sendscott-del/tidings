@@ -4,9 +4,20 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.30.1'
+export const VERSION = '0.31.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.31.0',
+    date: '2026-05-30',
+    changes: [
+      '**Twilio rate validation, end-to-end.** SMS and MMS per-unit rates now live in one source of truth — the new `tidings_rate_cache` table — that the Compose preview, the pre-send budget block, and the ward-budget ledger all read from. No more drift between what the UI estimates and what the ledger actually deducts.',
+      '**MMS billing bug fix (retroactive).** The ledger RPCs (`get_ward_usage_cents`, `get_ward_usage_history`) previously charged every message at the per-segment SMS rate regardless of whether it was an MMS. Now they detect MMS via `messages.media_urls` and apply the flat MMS rate. Past quarters recompute under the corrected formula, so historical ward usage numbers will tick up to match what Twilio actually billed.',
+      '**Blended rates from real invoices.** New Edge Function `refresh-twilio-rates` calls Twilio\'s Usage Records API for the trailing 30 days of outbound SMS and MMS, computes a cents-per-message blended rate per channel (which captures 10DLC carrier pass-through fees that the published Pricing API does not surface), and upserts a fresh row to `tidings_rate_cache`. Runs daily at 02:17 America/Chicago via pg_cron + pg_net.',
+      '**Admin → Settings rate panel.** New card shows current SMS and MMS rates with source (`twilio_usage_blended` vs `manual`), sample size, and last-updated timestamp. A "Refresh now" button kicks the edge function on demand using the admin user\'s JWT — no shared secret needed in the browser.',
+      'One-time setup required on the Tidings Supabase project so the daily cron can authenticate: `ALTER DATABASE postgres SET app.tidings_internal_fn_secret = \'<INTERNAL_FN_SECRET>\';` (same value as the existing edge-function env var). Without it the cron is harmless (401 in `cron.job_run_details`) and the Admin button still works.',
+    ],
+  },
   {
     version: '0.30.1',
     date: '2026-05-25',

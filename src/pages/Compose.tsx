@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useDemoMode } from '../contexts/DemoModeContext'
 import { matchesAllTokens } from '../lib/search'
+import { useRates } from '../hooks/useRates'
 
 interface ListOption {
   id: string
@@ -27,7 +28,8 @@ type Step = 'database' | 'recipients' | 'message' | 'confirm'
 const MAX_MEDIA = 3
 const MAX_MEDIA_BYTES = 5 * 1024 * 1024 // 5 MB per image (Twilio MMS limit is ~5 MB total)
 const ACCEPTED_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const CENTS_PER_MMS = 2.0 // US MMS pricing (matches send-message edge fn)
+// SMS and MMS per-unit rates now come from useRates() (tidings_rate_cache),
+// refreshed from Twilio Usage Records by the refresh-twilio-rates edge fn.
 
 interface MediaItem {
   url: string
@@ -43,6 +45,7 @@ export default function Compose() {
   const { toast } = useToast()
   const { appUser } = useAuth()
   const { demoMode } = useDemoMode()
+  const rates = useRates()
   const replyTo = (location.state as { replyTo?: ReplyTarget } | null)?.replyTo
   const signature = (appUser?.signature || '').trim()
 
@@ -406,8 +409,8 @@ export default function Compose() {
   const willReceive = Math.max(0, effectiveRecipientCount - optedOutCount)
   const isMms = media.length > 0
   const projectedCostCents = isMms
-    ? CENTS_PER_MMS * willReceive
-    : smsCount * willReceive * 0.79
+    ? rates.mmsCentsPerMessage * willReceive
+    : smsCount * willReceive * rates.smsCentsPerSegment
   const estimatedCost = (projectedCostCents / 100).toFixed(2)
 
   const pctUsed = budget && budget.budget_cents > 0
@@ -731,7 +734,7 @@ export default function Compose() {
             <div className="flex justify-between mt-1">
               <span className={`text-xs ${!isMms && finalBody.length > 320 ? 'text-red-500 font-medium' : 'text-slate-400'}`}>
                 {isMms
-                  ? `${finalBody.length} chars · MMS — flat ~2¢ per recipient regardless of length`
+                  ? `${finalBody.length} chars · MMS — flat ~${rates.mmsCentsPerMessage.toFixed(2)}¢ per recipient regardless of length`
                   : `${finalBody.length} of 160 chars · ${smsCount} SMS segment${smsCount !== 1 ? 's' : ''}`}
                 {signature && body.trim() && <span className="text-slate-500"> (incl. signature)</span>}
               </span>
@@ -810,7 +813,7 @@ export default function Compose() {
                   </p>
                   <p className="text-xs text-violet-700 mt-0.5">
                     Shortening to 1 segment could save about $
-                    {((smsCount - 1) * willReceive * 0.79 / 100).toFixed(2)} on this send.
+                    {((smsCount - 1) * willReceive * rates.smsCentsPerSegment / 100).toFixed(2)} on this send.
                   </p>
                 </div>
                 <button

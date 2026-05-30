@@ -4,6 +4,15 @@ import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { useDemoMode } from '../contexts/DemoModeContext'
 
+interface RateRow {
+  channel: 'sms' | 'mms'
+  cents_per_unit: string | number
+  source: string
+  sample_size: number | null
+  computed_at: string
+  notes: string | null
+}
+
 interface AppUser {
   id: string
   email: string
@@ -97,6 +106,9 @@ export default function Admin() {
   const [budgets, setBudgets] = useState<WardBudget[]>([])
   const [budgetsLoading, setBudgetsLoading] = useState(false)
   const [budgetEdits, setBudgetEdits] = useState<Record<string, string>>({})
+  const [rates, setRates] = useState<{ sms: RateRow | null; mms: RateRow | null }>({ sms: null, mms: null })
+  const [ratesLoading, setRatesLoading] = useState(false)
+  const [refreshingRates, setRefreshingRates] = useState(false)
   const [historyOpenFor, setHistoryOpenFor] = useState<string | null>(null)
   const [historyData, setHistoryData] = useState<Record<string, { quarter_label: string; used_cents: number }[]>>({})
 
@@ -108,6 +120,7 @@ export default function Admin() {
 
   useEffect(() => { loadUsers(); loadInvites(); loadWardOptions(); loadUserRolesMap() }, [])
   useEffect(() => { if (tab === 'budgets') loadBudgets() }, [tab])
+  useEffect(() => { if (tab === 'settings') loadRates() }, [tab])
 
   if (appUser?.role !== 'admin') {
     return (
@@ -199,6 +212,53 @@ export default function Admin() {
     setBudgets(result)
     setBudgetEdits({})
     setBudgetsLoading(false)
+  }
+
+  async function loadRates() {
+    setRatesLoading(true)
+    const { data } = await supabase
+      .from('tidings_rate_cache')
+      .select('channel, cents_per_unit, source, sample_size, computed_at, notes')
+      .eq('country', 'US')
+      .in('channel', ['sms', 'mms'])
+      .order('computed_at', { ascending: false })
+      .limit(20)
+    const rows = (data || []) as RateRow[]
+    setRates({
+      sms: rows.find((r) => r.channel === 'sms') ?? null,
+      mms: rows.find((r) => r.channel === 'mms') ?? null,
+    })
+    setRatesLoading(false)
+  }
+
+  async function refreshRatesNow() {
+    setRefreshingRates(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/refresh-twilio-rates`
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: '{}',
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`)
+      const skipped = (body?.results || []).filter((r: { skipped_reason?: string }) => r.skipped_reason)
+      if (skipped.length) {
+        toast(`Refreshed with notes: ${skipped.map((r: { channel: string; skipped_reason: string }) => `${r.channel} ${r.skipped_reason}`).join('; ')}`, 'success')
+      } else {
+        toast('Rates refreshed from Twilio Usage Records', 'success')
+      }
+      await loadRates()
+    } catch (err) {
+      toast((err as Error).message, 'error')
+    } finally {
+      setRefreshingRates(false)
+    }
   }
 
   async function toggleHistory(wardName: string) {
@@ -753,6 +813,54 @@ export default function Admin() {
                 {demoMode ? 'Exit demo mode' : 'Enable demo mode'}
               </button>
             </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+              <div>
+                <h2 className="text-lg font-medium text-slate-900">SMS & MMS rates</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Per-unit costs used by the Compose preview and the ward-budget ledger.
+                  Refreshed daily from Twilio Usage Records (last 30 days), so the rate
+                  reflects what Twilio actually billed including 10DLC carrier fees.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={refreshRatesNow}
+                disabled={refreshingRates}
+                className="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+              >
+                {refreshingRates ? 'Refreshing…' : 'Refresh now'}
+              </button>
+            </div>
+            {ratesLoading ? (
+              <p className="text-slate-400 text-sm py-3">Loading rates…</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(['sms', 'mms'] as const).map((channel) => {
+                  const row = rates[channel]
+                  return (
+                    <div key={channel} className="rounded-lg border border-slate-200 p-3">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                          {channel} {channel === 'sms' ? '(per segment)' : '(per message)'}
+                        </span>
+                        <span className="text-lg font-semibold text-slate-900">
+                          {row ? `${Number(row.cents_per_unit).toFixed(4)}¢` : '—'}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500 space-y-0.5">
+                        <div>Source: {row?.source ?? 'no data'}</div>
+                        {row?.sample_size != null && <div>Sample: {row.sample_size} messages</div>}
+                        {row?.computed_at && (
+                          <div>Updated: {new Date(row.computed_at).toLocaleString()}</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
           <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
             <h2 className="text-lg font-medium text-slate-900 mb-4">Twilio configuration</h2>
