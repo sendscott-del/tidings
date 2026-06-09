@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.31.0'
+export const VERSION = '0.32.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.32.0',
+    date: '2026-06-08',
+    changes: [
+      '**New home: https://tidings.gatheredin.app.** Tidings moved to the new Gathered suite domain. The old glad-tidings.vercel.app URL keeps working and 301-redirects here (root and every path), so existing links and shortcuts still work. SMS continues to flow through the Supabase Edge Functions and Twilio exactly as before — the domain move does not touch messaging.',
+      'The App Switcher now links to the *.gatheredin.app addresses for all five Gathered apps. Sign-in and password-reset links build on the current origin and the Tidings auth allow-list was updated to permit the new domain.',
+    ],
+  },
   {
     version: '0.31.0',
     date: '2026-05-30',
