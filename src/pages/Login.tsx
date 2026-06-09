@@ -122,6 +122,10 @@ export default function Login() {
         <p className="text-center text-slate-500 text-xs mt-6">
           &ldquo;Glad tidings of great joy&rdquo; — Luke 2:10
         </p>
+
+        <p className="text-center text-slate-400 text-xs mt-3 max-w-sm mx-auto">
+          Not an official product of, and is not endorsed by, The Church of Jesus Christ of Latter-day Saints.
+        </p>
       </div>
     </div>
   )

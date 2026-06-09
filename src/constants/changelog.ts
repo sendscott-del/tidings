@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.33.0'
+export const VERSION = '0.34.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.34.0',
+    date: '2026-06-09',
+    changes: [
+      'Added the required disclaimer that Tidings is not an official product of, and is not endorsed by, The Church of Jesus Christ of Latter-day Saints, to the sign-in screen.',
+    ],
+  },
   {
     version: '0.33.0',
     date: '2026-06-09',
