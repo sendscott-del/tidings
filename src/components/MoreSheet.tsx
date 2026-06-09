@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../i18n/LanguageContext'
 import { NavIcon } from './icons/NavIcon'
 
-const GATHER_ADMIN_URL = 'https://gathered-admin-neon.vercel.app/gather'
+const GATHER_ADMIN_URL = 'https://gather.gatheredin.app/gather'
 
 type Props = {
   open: boolean

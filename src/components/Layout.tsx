@@ -33,7 +33,7 @@ const adminItem: NavItem = { to: '/admin', labelKey: 'nav.admin', icon: 'shield'
 // Gather is the canonical cross-app user-access page. It lives in its own
 // standalone deployment at gathered-admin-neon.vercel.app — one host for all
 // five Gathered apps. (Previously lived in Glean, before that in Steward.)
-const GATHER_ADMIN_URL = 'https://gathered-admin-neon.vercel.app/gather'
+const GATHER_ADMIN_URL = 'https://gather.gatheredin.app/gather'
 
 export default function Layout() {
   const { appUser, signOut } = useAuth()
