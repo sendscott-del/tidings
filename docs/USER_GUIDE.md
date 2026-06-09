@@ -36,6 +36,8 @@ Tidings does a **full sync**: any phone number in the CSV is added or updated, a
 
 You can manually toggle a contact's opt-out status from their detail panel.
 
+> **Privacy:** the member contact directory (names and phone numbers) is visible only to **Senders** and **Admins** — the leaders who send messages. Accounts without a sending role cannot read the contact list.
+
 ---
 
 ## Community Database

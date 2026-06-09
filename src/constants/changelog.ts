@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.32.0'
+export const VERSION = '0.33.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.33.0',
+    date: '2026-06-09',
+    changes: [
+      '**Contact privacy hardened.** The member contact list (names and phone numbers) is now restricted to leaders who send messages — Admins and Senders. Previously any signed-in account could read the full contact list; now non-sending accounts cannot. This is a behind-the-scenes security tightening with no change for existing admins and senders.',
+      'Added a read-only demo account for the App Store / Google Play review process. It is automatically locked into Demo Mode and, as a non-sending account, cannot see any real contacts or messages — reviewers approve the app against sample data only.',
+    ],
+  },
   {
     version: '0.32.0',
     date: '2026-06-08',

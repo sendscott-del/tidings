@@ -45,6 +45,11 @@ export default function Guide() {
             <Link to="/admin" className="text-tidings-primary font-medium hover:underline">Settings</Link>.
           </li>
         </ul>
+        <p className="mt-3 text-sm text-slate-500">
+          For privacy, the member contact list (names and phone numbers) is
+          visible only to Senders and Admins — the leaders who actually send
+          messages.
+        </p>
       </Section>
 
       <Section title="Where to start">
