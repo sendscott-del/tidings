@@ -26,3 +26,11 @@ dist-ssr
 .vapid-keys.txt
 supabase/.temp/
 .vercel
+
+# Capacitor native build / fastlane
+fastlane/.env
+fastlane/report.xml
+fastlane/Preview.html
+build/
+ios/App/build/
+ios/App/DerivedData/
