@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.34.0'
+export const VERSION = '0.34.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.34.1',
+    date: '2026-06-09',
+    changes: [
+      'Security: updated dependencies to patched versions (React Router advisories). No feature changes.',
+    ],
+  },
   {
     version: '0.34.0',
     date: '2026-06-09',
