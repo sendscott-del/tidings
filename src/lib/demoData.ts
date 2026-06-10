@@ -58,6 +58,71 @@ export const TIDINGS_DEMO_RECENT = [
   },
 ]
 
+// Fake ward names used by ward-filter dropdowns in demo mode (real ward
+// names come from `ward_budgets` and must not leak to demo viewers).
+export const TIDINGS_DEMO_WARDS = ['Demo 1st Ward', 'Demo 2nd Ward']
+
+// Fake recipient lists — same shape as `lists` rows plus the client-joined
+// member_count. Used by the Compose wizard and the Lists page in demo mode
+// so real list names / member counts never appear for demo users.
+export const TIDINGS_DEMO_LISTS = [
+  {
+    id: 'demo-list-001',
+    name: 'Relief Society',
+    description: 'Auto-generated from the demo directory.',
+    database: 'stake',
+    is_auto: true,
+    ward_scope: 'Demo 1st Ward',
+    created_at: isoDaysAgo(60),
+    created_by: null,
+    member_count: 12,
+  },
+  {
+    id: 'demo-list-002',
+    name: 'Elders Quorum',
+    description: 'Auto-generated from the demo directory.',
+    database: 'stake',
+    is_auto: true,
+    ward_scope: 'Demo 1st Ward',
+    created_at: isoDaysAgo(60),
+    created_by: null,
+    member_count: 9,
+  },
+  {
+    id: 'demo-list-003',
+    name: 'Demo Stake Leaders',
+    description: 'Stake-wide leadership list.',
+    database: 'stake',
+    is_auto: false,
+    ward_scope: null,
+    created_at: isoDaysAgo(45),
+    created_by: null,
+    member_count: 5,
+  },
+  {
+    id: 'demo-list-004',
+    name: 'Young Women',
+    description: 'Auto-generated from the demo directory.',
+    database: 'stake',
+    is_auto: true,
+    ward_scope: 'Demo 2nd Ward',
+    created_at: isoDaysAgo(60),
+    created_by: null,
+    member_count: 7,
+  },
+  {
+    id: 'demo-list-005',
+    name: 'Community Event Contacts',
+    description: 'Sign-ups from the demo community open house.',
+    database: 'community',
+    is_auto: false,
+    ward_scope: null,
+    created_at: isoDaysAgo(30),
+    created_by: null,
+    member_count: 6,
+  },
+]
+
 // Fake history entries — same shape as `messages` rows, used by the
 // History page in demo mode.
 export const TIDINGS_DEMO_HISTORY = [

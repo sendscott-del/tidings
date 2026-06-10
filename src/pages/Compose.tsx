@@ -4,6 +4,7 @@ import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useDemoMode } from '../contexts/DemoModeContext'
+import { TIDINGS_DEMO_LISTS, TIDINGS_DEMO_WARDS } from '../lib/demoData'
 import { matchesAllTokens } from '../lib/search'
 import { useRates } from '../hooks/useRates'
 
@@ -77,14 +78,20 @@ export default function Compose() {
 
   useEffect(() => {
     if (!replyTo) loadLists()
-  }, [database])
+  }, [database, demoMode])
 
   useEffect(() => {
     if (replyTo) return
+    if (demoMode) {
+      // Demo: fixture ward names — real ward names from ward_budgets must
+      // not appear in the ward-filter dropdown for demo users.
+      setWardOptions(TIDINGS_DEMO_WARDS)
+      return
+    }
     supabase.from('ward_budgets').select('ward_name').order('ward_name').then(({ data }) => {
       setWardOptions((data || []).map((r: { ward_name: string }) => r.ward_name).filter((w: string) => w !== 'Stake'))
     })
-  }, [replyTo])
+  }, [replyTo, demoMode])
 
   useEffect(() => {
     if (appUser?.ward) loadBudget(appUser.ward)
@@ -226,6 +233,15 @@ export default function Compose() {
   }
 
   async function loadLists() {
+    // Demo: fixture lists only — real list names and member counts must
+    // never render for demo users (App Review walks this wizard).
+    if (demoMode) {
+      setLists(TIDINGS_DEMO_LISTS.filter((l) => l.database === database))
+      setSelectedListIds([])
+      setRecipientCount(0)
+      setOptedOutCount(0)
+      return
+    }
     let query = supabase
       .from('lists')
       .select('id, name, database, is_auto, ward_scope')
@@ -259,6 +275,17 @@ export default function Compose() {
   async function updateRecipientCount(listIds: string[]) {
     if (listIds.length === 0) {
       setRecipientCount(0)
+      setOptedOutCount(0)
+      return
+    }
+
+    // Demo: count from the fixtures — the demo list ids don't exist in the
+    // database, so the real queries below would return zero.
+    if (demoMode) {
+      const total = TIDINGS_DEMO_LISTS
+        .filter((l) => listIds.includes(l.id))
+        .reduce((sum, l) => sum + l.member_count, 0)
+      setRecipientCount(total)
       setOptedOutCount(0)
       return
     }

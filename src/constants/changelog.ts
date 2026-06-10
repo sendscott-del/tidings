@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.35.0'
+export const VERSION = '0.35.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.35.1',
+    date: '2026-06-10',
+    changes: [
+      'Demo mode now fully mocks the recipient lists in Compose (real list names and member counts no longer appear for demo users).',
+    ],
+  },
   {
     version: '0.35.0',
     date: '2026-06-10',

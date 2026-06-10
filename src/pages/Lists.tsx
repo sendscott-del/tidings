@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
+import { useDemoMode } from '../contexts/DemoModeContext'
+import { TIDINGS_DEMO_LISTS, TIDINGS_DEMO_WARDS } from '../lib/demoData'
 import { matchesAllTokens } from '../lib/search'
 import ConfirmDialog from '../components/ConfirmDialog'
 
@@ -78,6 +80,7 @@ interface PickerContact {
 export default function Lists() {
   const { toast } = useToast()
   const { appUser } = useAuth()
+  const { demoMode } = useDemoMode()
   const [lists, setLists] = useState<List[]>([])
   const [loading, setLoading] = useState(true)
   // Two-option toggle: 'stake' (the church directory — stake + ward lists) vs 'community'.
@@ -122,15 +125,27 @@ export default function Lists() {
   useEffect(() => {
     loadLists()
     loadWardOptions()
-  }, [appUser?.ward, appUser?.role])
+  }, [appUser?.ward, appUser?.role, demoMode])
 
   async function loadWardOptions() {
+    // Demo: fixture ward names — real ward names must not leak to demo users.
+    if (demoMode) {
+      setWardOptions(TIDINGS_DEMO_WARDS)
+      return
+    }
     const { data } = await supabase.from('ward_budgets').select('ward_name').order('ward_name')
     setWardOptions((data || []).map((r: { ward_name: string }) => r.ward_name).filter((w: string) => w !== 'Stake'))
   }
 
   async function loadLists() {
     setLoading(true)
+    // Demo: fixture lists only — real list names and member counts must
+    // never render for demo users.
+    if (demoMode) {
+      setLists(TIDINGS_DEMO_LISTS)
+      setLoading(false)
+      return
+    }
     let query = supabase
       .from('lists')
       .select('*')
