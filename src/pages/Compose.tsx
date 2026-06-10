@@ -447,7 +447,9 @@ export default function Compose() {
     ? ((budget.used_cents + projectedCostCents) / budget.budget_cents) * 100
     : 0
   const wouldExceed = budget !== null && projectedCostCents > budget.remaining_cents
-  const noWardAssigned = !appUser?.ward
+  // Demo mode: sends are mocked, so the missing-ward hard block is waived
+  // for the forced-demo reviewer account.
+  const noWardAssigned = !appUser?.ward && !demoMode
   const hardBlock = noWardAssigned || wouldExceed
 
   if (result) {

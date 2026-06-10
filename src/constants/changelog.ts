@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.35.1'
+export const VERSION = '0.35.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.35.2',
+    date: '2026-06-10',
+    changes: [
+      'Demo mode: the missing-ward block on Send is waived for demo users (sends are mocked in demo mode).',
+    ],
+  },
   {
     version: '0.35.1',
     date: '2026-06-10',
