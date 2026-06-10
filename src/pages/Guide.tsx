@@ -40,9 +40,11 @@ export default function Guide() {
             history.
           </li>
           <li>
-            <strong>Admin</strong> — everything a sender can do, plus user
-            management, budget controls, and Twilio settings under{' '}
+            <strong>Admin</strong> — everything a sender can do, plus budget
+            controls and Twilio settings under{' '}
             <Link to="/admin" className="text-tidings-primary font-medium hover:underline">Settings</Link>.
+            User access (invites, roles, removals) is managed centrally in the{' '}
+            <a href="https://gather.gatheredin.app/gather" target="_blank" rel="noopener noreferrer" className="text-tidings-primary font-medium hover:underline">Gather hub</a>.
           </li>
         </ul>
         <p className="mt-3 text-sm text-slate-500">
@@ -109,7 +111,9 @@ export default function Guide() {
       <Section title="Settings">
         <p>
           Settings (formerly "Admin") holds Users, Budgets, and the deeper
-          settings tab. Demo mode (a safe walkthrough that mocks all sends)
+          settings tab. The Users tab is read-only — it shows who has access,
+          while invites, roles, and removals happen in the Gather hub (the tab
+          links there). Demo mode (a safe walkthrough that mocks all sends)
           is enabled from Settings — it is no longer a top-bar button.
         </p>
       </Section>

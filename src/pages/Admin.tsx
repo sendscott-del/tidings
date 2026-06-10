@@ -44,16 +44,8 @@ interface WardBudget {
   quarter_end: string
 }
 
-const SIGNATURE_PRESETS = [
-  '— Sent by Chicago Stake',
-  '— Sent by the Stake Presidency',
-  '— Sent by the Bishopric',
-  '— Sent by the Elders Quorum Presidency',
-  '— Sent by the Relief Society Presidency',
-  '— Sent by the Young Men Presidency',
-  '— Sent by the Young Women Presidency',
-  '— Sent by the Primary Presidency',
-]
+// Gather hub — the single place user access is managed for all five Gathered apps.
+const GATHER_URL = 'https://gather.gatheredin.app/gather'
 
 // The 19-role suite catalog (mirrors public.gather_roles_catalog on the shared
 // project). Used by Glean, Knit, Magnify, Steward and Tidings to derive per-app
@@ -96,13 +88,7 @@ export default function Admin() {
   const [users, setUsers] = useState<AppUser[]>([])
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editingUser, setEditingUser] = useState<AppUser | null>(null)
-  const [form, setForm] = useState({ email: '', full_name: '', role: 'sender', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
   const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [resendingId, setResendingId] = useState<string | null>(null)
-  const [wardOptions, setWardOptions] = useState<string[]>([])
   const [budgets, setBudgets] = useState<WardBudget[]>([])
   const [budgetsLoading, setBudgetsLoading] = useState(false)
   const [budgetEdits, setBudgetEdits] = useState<Record<string, string>>({})
@@ -112,13 +98,11 @@ export default function Admin() {
   const [historyOpenFor, setHistoryOpenFor] = useState<string | null>(null)
   const [historyData, setHistoryData] = useState<Record<string, { quarter_label: string; used_cents: number }[]>>({})
 
-  // Suite-role assignments: per-user mirror of public.tidings_user_roles.
-  // `userRolesByUserId` is the table-view cache; `editingSuiteRoles` is the
-  // working copy for the user currently being edited.
+  // Suite-role assignments: read-only per-user mirror of public.tidings_user_roles.
+  // Assignments are managed in Gather; Tidings only displays them.
   const [userRolesByUserId, setUserRolesByUserId] = useState<Record<string, Array<{ role_key: string; ward: string | null }>>>({})
-  const [editingSuiteRoles, setEditingSuiteRoles] = useState<Array<{ role_key: string; ward: string | null }>>([])
 
-  useEffect(() => { loadUsers(); loadInvites(); loadWardOptions(); loadUserRolesMap() }, [])
+  useEffect(() => { loadUsers(); loadInvites(); loadUserRolesMap() }, [])
   useEffect(() => { if (tab === 'budgets') loadBudgets() }, [tab])
   useEffect(() => { if (tab === 'settings') loadRates() }, [tab])
 
@@ -145,53 +129,6 @@ export default function Admin() {
       .is('revoked_at', null)
       .order('created_at', { ascending: false })
     setInvites(data || [])
-  }
-
-  async function callInviteFn(slug: 'invite-create' | 'invite-resend' | 'invite-revoke', body: Record<string, unknown>) {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('Not authenticated')
-    const resp = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${slug}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(body),
-      }
-    )
-    const data = await resp.json()
-    if (!resp.ok) throw new Error(data.error || `${slug} failed`)
-    return data
-  }
-
-  async function resendInvite(invite_id: string) {
-    setResendingId(invite_id)
-    try {
-      await callInviteFn('invite-resend', { invite_id })
-      toast('Invite resent — new link emailed', 'success')
-      loadInvites()
-    } catch (err) {
-      toast((err as Error).message, 'error')
-    }
-    setResendingId(null)
-  }
-
-  async function revokeInvite(invite_id: string) {
-    if (!confirm('Revoke this invite? The link in their email will stop working.')) return
-    try {
-      await callInviteFn('invite-revoke', { invite_id })
-      toast('Invite revoked', 'success')
-      loadInvites()
-    } catch (err) {
-      toast((err as Error).message, 'error')
-    }
-  }
-
-  async function loadWardOptions() {
-    const { data } = await supabase.from('ward_budgets').select('ward_name').order('ward_name')
-    setWardOptions((data || []).map((r: { ward_name: string }) => r.ward_name))
   }
 
   async function loadBudgets() {
@@ -295,57 +232,6 @@ export default function Admin() {
     loadBudgets()
   }
 
-  async function saveUser() {
-    setError('')
-    setSaving(true)
-
-    try {
-      const permissions = {
-        can_text_stake: form.can_text_stake,
-        can_text_community: form.can_text_community,
-      }
-
-      if (editingUser) {
-        await supabase.from('users').update({
-          full_name: form.full_name,
-          role: form.role,
-          permissions,
-          signature: form.signature.trim() || null,
-          ward: form.ward || null,
-        }).eq('id', editingUser.id)
-        await saveSuiteRolesForUser(editingUser.id)
-        toast('User updated', 'success')
-      } else {
-        await callInviteFn('invite-create', {
-          email: form.email,
-          full_name: form.full_name || null,
-          role: form.role,
-          permissions,
-          signature: form.signature.trim() || null,
-          ward: form.ward || null,
-        })
-        toast(`Invite emailed to ${form.email}`, 'success')
-      }
-
-      setShowForm(false)
-      setEditingUser(null)
-      setForm({ email: '', full_name: '', role: 'sender', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
-      setEditingSuiteRoles([])
-      loadUsers()
-      loadInvites()
-      loadUserRolesMap()
-    } catch (err) {
-      setError((err as Error).message)
-    }
-    setSaving(false)
-  }
-
-  async function deleteUser(userId: string) {
-    if (userId === appUser?.id) return
-    await supabase.from('users').delete().eq('id', userId)
-    loadUsers()
-  }
-
   async function loadUserRolesMap() {
     const { data } = await supabase.from('tidings_user_roles').select('user_id, role_key, ward')
     const map: Record<string, Array<{ role_key: string; ward: string | null }>> = {}
@@ -354,56 +240,6 @@ export default function Admin() {
       map[row.user_id].push({ role_key: row.role_key, ward: row.ward })
     }
     setUserRolesByUserId(map)
-  }
-
-  function toggleSuiteRole(roleKey: string, scope: SuiteRoleScope) {
-    setEditingSuiteRoles((prev) => {
-      const has = prev.some((r) => r.role_key === roleKey)
-      if (has) return prev.filter((r) => r.role_key !== roleKey)
-      return [...prev, { role_key: roleKey, ward: scope === 'ward' ? (form.ward || null) : null }]
-    })
-  }
-
-  async function saveSuiteRolesForUser(userId: string) {
-    // Diff existing rows against editingSuiteRoles. For each row removed, DELETE.
-    // For each row added or changed (ward updated), upsert.
-    const existing = userRolesByUserId[userId] ?? []
-    const wanted = editingSuiteRoles
-
-    const sameKey = (a: { role_key: string; ward: string | null }, b: { role_key: string; ward: string | null }) =>
-      a.role_key === b.role_key && (a.ward ?? null) === (b.ward ?? null)
-
-    const toDelete = existing.filter((e) => !wanted.some((w) => sameKey(e, w)))
-    const toInsert = wanted.filter((w) => !existing.some((e) => sameKey(e, w)))
-
-    for (const row of toDelete) {
-      await supabase
-        .from('tidings_user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('role_key', row.role_key)
-        .filter('ward', row.ward === null ? 'is' : 'eq', row.ward === null ? null : row.ward)
-    }
-    if (toInsert.length > 0) {
-      await supabase
-        .from('tidings_user_roles')
-        .insert(toInsert.map((r) => ({ user_id: userId, role_key: r.role_key, ward: r.ward, granted_by: appUser?.id ?? null })))
-    }
-  }
-
-  function startEdit(u: AppUser) {
-    setEditingUser(u)
-    setForm({
-      email: u.email,
-      full_name: u.full_name || '',
-      role: u.role,
-      can_text_stake: u.permissions?.can_text_stake ?? true,
-      can_text_community: u.permissions?.can_text_community ?? false,
-      signature: u.signature || '',
-      ward: u.ward || '',
-    })
-    setEditingSuiteRoles(userRolesByUserId[u.id] ?? [])
-    setShowForm(true)
   }
 
   return (
@@ -423,140 +259,23 @@ export default function Admin() {
 
       {tab === 'users' && (
         <div>
-          <button onClick={() => {
-            setEditingUser(null)
-            setForm({ email: '', full_name: '', role: 'sender', can_text_stake: true, can_text_community: false, signature: '', ward: '' })
-            setShowForm(true)
-          }} className="mb-4 px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700">
-            Send Invite
-          </button>
-
-          {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
-
-          {showForm && (
-            <div className="bg-white rounded-xl border border-slate-200 p-5 mb-4 space-y-3">
-              <h3 className="text-sm font-medium text-slate-900">{editingUser ? 'Edit User' : 'Send Invite'}</h3>
-              {!editingUser && (
-                <>
-                  <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900" />
-                  <p className="text-xs text-slate-500 -mt-2">
-                    They'll get an email with a link to set their own password and finish signup. Link expires in 7 days.
-                  </p>
-                </>
-              )}
-              <input placeholder="Full name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900" />
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900">
-                <option value="viewer">Viewer</option>
-                <option value="sender">Sender</option>
-                <option value="admin">Admin</option>
-              </select>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">
-                  Ward (budget pool this user draws from)
-                </label>
-                <select value={form.ward} onChange={(e) => setForm({ ...form, ward: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900">
-                  <option value="">— Not assigned (cannot send) —</option>
-                  {wardOptions.map((w) => (
-                    <option key={w} value={w}>{w}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-slate-500 mt-1">
-                  Senders must be assigned to a ward. Use "Stake" for stake-level senders.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input type="checkbox" checked={form.can_text_stake}
-                    onChange={(e) => setForm({ ...form, can_text_stake: e.target.checked })}
-                    className="rounded border-slate-300 text-amber-500 focus:ring-amber-500" />
-                  Can text stake contacts
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input type="checkbox" checked={form.can_text_community}
-                    onChange={(e) => setForm({ ...form, can_text_community: e.target.checked })}
-                    className="rounded border-slate-300 text-amber-500 focus:ring-amber-500" />
-                  Can text community contacts
-                </label>
-              </div>
-              {editingUser && (
-                <div className="space-y-2 border-t border-slate-200 pt-3">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600">Suite roles</label>
-                    <p className="text-xs text-slate-500 mt-0.5 mb-2">
-                      One person can hold multiple roles. Stake roles cover the whole stake; ward roles
-                      use this user's assigned ward (set above) for scoping. These also gate which lists
-                      and messages this user can see in Tidings.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {SUITE_ROLES.map((role) => {
-                      const selected = editingSuiteRoles.some((r) => r.role_key === role.key)
-                      const wardWarning = selected && role.scope === 'ward' && !form.ward
-                      return (
-                        <label
-                          key={role.key}
-                          className={`flex items-center gap-2 text-xs rounded-md px-2 py-1.5 border ${
-                            selected ? 'bg-amber-50 border-amber-200 text-slate-900' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={() => toggleSuiteRole(role.key, role.scope)}
-                            className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                          />
-                          <span className="flex-1">{role.label}</span>
-                          <span className="text-[10px] uppercase tracking-wide text-slate-400">{role.scope}</span>
-                          {wardWarning && (
-                            <span className="text-[10px] text-amber-700" title="Pick a ward above so the role is scoped">⚠</span>
-                          )}
-                        </label>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-600">
-                  Signature (appended to every message this user sends)
-                </label>
-                <textarea
-                  placeholder="e.g. — Sent by the Bishopric"
-                  value={form.signature}
-                  onChange={(e) => setForm({ ...form, signature: e.target.value })}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
-                />
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {SIGNATURE_PRESETS.map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setForm({ ...form, signature: preset })}
-                      className="text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded"
-                    >
-                      {preset.replace('— Sent by ', '')}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-500">
-                  Leave blank for no signature. Two newlines are added automatically before the signature.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={saveUser} disabled={saving || (!editingUser && !form.email)}
-                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50">
-                  {saving ? 'Saving...' : editingUser ? 'Update' : 'Send Invite'}
-                </button>
-                <button onClick={() => { setShowForm(false); setEditingUser(null); setError('') }}
-                  className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
-              </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-blue-900">User access is managed in Gather</p>
+              <p className="text-xs text-blue-800 mt-0.5">
+                Invites, roles, permissions, and removals for all five Gathered apps happen in the Gather hub.
+                This page is read-only.
+              </p>
             </div>
-          )}
+            <a
+              href={GATHER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 whitespace-nowrap text-center"
+            >
+              Open Gather
+            </a>
+          </div>
 
           {invites.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-4">
@@ -570,7 +289,6 @@ export default function Admin() {
                     <th className="text-left px-4 py-2 font-medium text-slate-600">Role</th>
                     <th className="text-left px-4 py-2 font-medium text-slate-600 hidden sm:table-cell">Ward</th>
                     <th className="text-left px-4 py-2 font-medium text-slate-600 hidden md:table-cell">Expires</th>
-                    <th className="text-right px-4 py-2 font-medium text-slate-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -583,18 +301,6 @@ export default function Admin() {
                       <td className="px-4 py-2.5 text-slate-600 hidden sm:table-cell">{inv.ward || '—'}</td>
                       <td className="px-4 py-2.5 text-slate-500 text-xs hidden md:table-cell">
                         {new Date(inv.expires_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => resendInvite(inv.id)}
-                          disabled={resendingId === inv.id}
-                          className="text-slate-500 hover:text-slate-700 mr-3 disabled:opacity-50"
-                        >
-                          {resendingId === inv.id ? 'Resending…' : 'Resend'}
-                        </button>
-                        <button onClick={() => revokeInvite(inv.id)} className="text-slate-400 hover:text-red-500">
-                          Revoke
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -612,7 +318,6 @@ export default function Admin() {
                     <th className="text-left px-4 py-3 font-medium text-slate-600 hidden sm:table-cell">Email</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-600">Role</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-600 hidden md:table-cell">Ward</th>
-                    <th className="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -620,7 +325,7 @@ export default function Admin() {
                     const roles = userRolesByUserId[u.id] ?? []
                     return (
                       <Fragment key={u.id}>
-                        <tr className={roles.length > 0 ? 'border-b-0' : 'border-b border-slate-100'}>
+                        <tr className="border-b-0">
                           <td className="px-4 py-3 text-slate-900 font-medium">{u.full_name || '—'}</td>
                           <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">{u.email}</td>
                           <td className="px-4 py-3">
@@ -633,33 +338,31 @@ export default function Admin() {
                           <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
                             {u.ward || <span className="text-amber-600 text-xs">— not set —</span>}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <button onClick={() => startEdit(u)} className="text-slate-400 hover:text-slate-600 mr-2">Edit</button>
-                            {u.id !== appUser?.id && (
-                              <button onClick={() => deleteUser(u.id)} className="text-slate-400 hover:text-red-500">Delete</button>
-                            )}
+                        </tr>
+                        <tr className="border-b border-slate-100">
+                          <td colSpan={4} className="px-4 pb-3 pt-0">
+                            <div className="flex flex-wrap gap-1">
+                              {u.permissions?.can_text_stake && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200">Can text stake</span>
+                              )}
+                              {u.permissions?.can_text_community && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200">Can text community</span>
+                              )}
+                              {roles.map((r) => {
+                                const def = SUITE_ROLES.find((s) => s.key === r.role_key)
+                                if (!def) return null
+                                return (
+                                  <span
+                                    key={`${r.role_key}-${r.ward ?? ''}`}
+                                    className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200"
+                                  >
+                                    {def.label}{r.ward ? ` · ${r.ward}` : ''}
+                                  </span>
+                                )
+                              })}
+                            </div>
                           </td>
                         </tr>
-                        {roles.length > 0 && (
-                          <tr className="border-b border-slate-100">
-                            <td colSpan={5} className="px-4 pb-3 pt-0">
-                              <div className="flex flex-wrap gap-1">
-                                {roles.map((r) => {
-                                  const def = SUITE_ROLES.find((s) => s.key === r.role_key)
-                                  if (!def) return null
-                                  return (
-                                    <span
-                                      key={`${r.role_key}-${r.ward ?? ''}`}
-                                      className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200"
-                                    >
-                                      {def.label}{r.ward ? ` · ${r.ward}` : ''}
-                                    </span>
-                                  )
-                                })}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
                       </Fragment>
                     )
                   })}
@@ -676,6 +379,7 @@ export default function Admin() {
             Each ward has a quarterly SMS budget in dollars. Usage is computed live from sent messages and
             <strong> resets automatically on Jan 1, Apr 1, Jul 1, and Oct 1</strong>. Senders can't send when their ward is at 100%.
           </div>
+          {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
           {budgetsLoading ? (
             <p className="text-slate-400 text-center py-8">Loading budgets...</p>
           ) : (

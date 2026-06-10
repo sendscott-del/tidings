@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.34.1'
+export const VERSION = '0.35.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.35.0',
+    date: '2026-06-10',
+    changes: [
+      'User access is now managed in one place — the Gather hub. The in-app Users tab is read-only; invites, roles, and removals happen in Gather (invite links continue to work as before).',
+    ],
+  },
   {
     version: '0.34.1',
     date: '2026-06-09',
