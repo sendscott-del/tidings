@@ -492,7 +492,7 @@ export default function Compose() {
                 if (replyTo) navigate('/inbox')
                 else setStep('database')
               }}
-              className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700"
+              className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800"
             >
               {replyTo ? 'Back to Inbox' : 'Compose Another'}
             </button>
@@ -733,7 +733,7 @@ export default function Compose() {
             <button
               onClick={() => setStep('message')}
               disabled={selectedListIds.length === 0}
-              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -950,7 +950,7 @@ export default function Compose() {
             <button
               onClick={() => setStep('confirm')}
               disabled={(!body.trim() && media.length === 0) || uploadingMedia || (scheduleEnabled && !scheduledAt)}
-              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Review
             </button>

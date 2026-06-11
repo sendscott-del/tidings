@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.35.3'
+export const VERSION = '0.36.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.36.0',
+    date: '2026-06-11',
+    changes: [
+      'Refreshed the look so Tidings’ amber runs throughout the app — the sidebar, page headers, and Send/Save buttons now carry a deep amber drawn from the app icon instead of the old slate chrome, with the bright amber kept for accents.',
+    ],
+  },
   {
     version: '0.35.3',
     date: '2026-06-10',

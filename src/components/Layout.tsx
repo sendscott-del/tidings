@@ -143,7 +143,7 @@ export default function Layout() {
             bottom rail for the User Guide + Release Notes. Mirrors Glean. */}
         <aside
           className="hidden md:flex md:flex-col md:flex-shrink-0 sticky top-0 h-screen text-white"
-          style={{ width: 224, background: '#0F172A' }}
+          style={{ width: 224, background: '#78350F' }}
         >
           <div className="px-5 pt-6 pb-8 flex items-center gap-2.5">
             <TidingsLogo size={28} />
@@ -168,7 +168,7 @@ export default function Layout() {
                   <NavIcon name={item.icon} />
                   <span className="flex-1">{t(item.labelKey)}</span>
                   {badge > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-tidings-primary text-tidings-chrome text-[11px] font-bold">
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-tidings-primary text-amber-950 text-[11px] font-bold">
                       {badge > 99 ? '99+' : badge}
                     </span>
                   )}

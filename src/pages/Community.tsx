@@ -257,7 +257,7 @@ export default function Community() {
       {tab === 'buildings' && (
         <div>
           <button onClick={() => setShowBuildingForm(true)}
-            className="mb-4 px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700">
+            className="mb-4 px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800">
             Add Building
           </button>
 
@@ -277,7 +277,7 @@ export default function Community() {
               </div>
               <div className="flex gap-2">
                 <button onClick={saveBuilding} disabled={!form.name}
-                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50">Save</button>
+                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 disabled:opacity-50">Save</button>
                 <button onClick={() => setShowBuildingForm(false)}
                   className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
               </div>
@@ -326,7 +326,7 @@ export default function Community() {
               setContactForm({ first_name: '', last_name: '', phone: '', notes: '', building_id: selectedBuilding || (buildings[0]?.id || '') })
               setEditingContact(null)
               setShowContactForm(true)
-            }} className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700">
+            }} className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800">
               Add Contact
             </button>
             <button
@@ -358,7 +358,7 @@ export default function Community() {
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900" />
               <div className="flex gap-2">
                 <button onClick={saveContact} disabled={!contactForm.phone}
-                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50">
+                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 disabled:opacity-50">
                   {editingContact ? 'Update' : 'Add'}
                 </button>
                 <button onClick={() => { setShowContactForm(false); setEditingContact(null) }}
@@ -452,7 +452,7 @@ export default function Community() {
                   >
                     <p className="text-slate-700 font-medium mb-1">Drop CSV here</p>
                     <p className="text-slate-500 text-sm mb-3">or click to browse</p>
-                    <label className="inline-block px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-700">
+                    <label className="inline-block px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg cursor-pointer hover:bg-amber-800">
                       Choose File
                       <input
                         type="file"
@@ -529,7 +529,7 @@ export default function Community() {
                   </div>
                   <button
                     onClick={() => setShowImport(false)}
-                    className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700"
+                    className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800"
                   >
                     Done
                   </button>

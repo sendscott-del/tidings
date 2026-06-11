@@ -292,7 +292,7 @@ export default function History() {
                     {logs.some((l) => l.status === 'failed' || l.status === 'undelivered') && (
                       <button
                         onClick={exportFailed}
-                        className="text-xs px-3 py-1.5 bg-tidings-chrome text-white rounded-md hover:bg-slate-700"
+                        className="text-xs px-3 py-1.5 bg-tidings-chrome text-white rounded-md hover:bg-amber-800"
                       >
                         Export Failed CSV
                       </button>

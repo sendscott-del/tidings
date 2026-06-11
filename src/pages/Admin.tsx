@@ -271,7 +271,7 @@ export default function Admin() {
               href={GATHER_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 whitespace-nowrap text-center"
+              className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 whitespace-nowrap text-center"
             >
               Open Gather
             </a>
@@ -442,7 +442,7 @@ export default function Admin() {
                               budgetEdits[b.ward_name] !== (b.budget_cents / 100).toFixed(2) && (
                               <button
                                 onClick={() => saveBudget(b.ward_name)}
-                                className="px-3 py-1 bg-tidings-chrome text-white text-xs font-medium rounded hover:bg-slate-700"
+                                className="px-3 py-1 bg-tidings-chrome text-white text-xs font-medium rounded hover:bg-amber-800"
                               >
                                 Save
                               </button>

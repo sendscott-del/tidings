@@ -39,10 +39,13 @@
   --color-steward-primary:      #2563EB;
   --color-steward-primary-dark: #1D4ED8;
   --color-steward-chrome:       #1E3A5F;
-  /* Tidings: amber-500 for primary actions, slate-800 chrome */
+  /* Tidings re-skin: amber-500 stays the bright action/accent color; the
+     chrome (hero headers, sidebar, secondary buttons) moves from slate to a
+     deep burnt-amber so the brand amber runs throughout while still carrying
+     white text. */
   --color-tidings-primary:      #F59E0B;
   --color-tidings-primary-dark: #D97706;
-  --color-tidings-chrome:       #1E293B;
+  --color-tidings-chrome:       #B45309;  /* burnt amber (was slate #1E293B) */
 
   /* ---- Gathered AppSwitcher chrome ---- */
   --color-switcher-chrome:      #1e1b4b;

@@ -85,7 +85,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+            className="w-full py-2.5 bg-tidings-chrome hover:bg-amber-800 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {submitting ? t('auth.signingIn') : t('auth.signIn')}
           </button>

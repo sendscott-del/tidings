@@ -47,7 +47,7 @@ export default function ForgotPassword() {
               <p className="text-sm text-slate-700">{t('auth.resetSent')}</p>
               <Link
                 to="/login"
-                className="block w-full text-center py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white rounded-lg text-sm font-medium min-h-[44px] flex items-center justify-center"
+                className="block w-full text-center py-2.5 bg-tidings-chrome hover:bg-amber-800 text-white rounded-lg text-sm font-medium min-h-[44px] flex items-center justify-center"
               >
                 {t('auth.backToSignIn')}
               </Link>
@@ -75,7 +75,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 bg-tidings-chrome hover:bg-slate-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 min-h-[44px]"
+                className="w-full py-2.5 bg-tidings-chrome hover:bg-amber-800 text-white font-medium rounded-md transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 {submitting ? t('auth.sending') : t('auth.sendResetLink')}
               </button>

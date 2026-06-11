@@ -124,7 +124,7 @@ export default function StakeImport({ onComplete }: Props) {
           </svg>
           <p className="text-slate-700 font-medium mb-1">Drop your LCR CSV or PDF export here</p>
           <p className="text-slate-500 text-sm mb-4">or click to browse</p>
-          <label className="inline-block px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-700 transition-colors">
+          <label className="inline-block px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg cursor-pointer hover:bg-amber-800 transition-colors">
             Choose File
             <input type="file" accept=".csv,.pdf" onChange={handleFileInput} className="hidden" />
           </label>
@@ -170,7 +170,7 @@ export default function StakeImport({ onComplete }: Props) {
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleImport}
-              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
+              className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors"
             >
               Confirm Import
             </button>
@@ -213,7 +213,7 @@ export default function StakeImport({ onComplete }: Props) {
 
           <button
             onClick={onComplete}
-            className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
+            className="px-5 py-2.5 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 transition-colors"
           >
             View Contacts
           </button>
