@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.36.0'
+export const VERSION = '0.36.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.36.1',
+    date: '2026-06-11',
+    changes: [
+      'Warmed the deep chrome (sidebar, headers, Send/Save buttons) toward a more golden amber.',
+    ],
+  },
   {
     version: '0.36.0',
     date: '2026-06-11',

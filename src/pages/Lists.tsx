@@ -506,7 +506,7 @@ export default function Lists() {
           />
           <button
             onClick={() => setShowCreate(true)}
-            className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800"
+            className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-yellow-800"
           >
             New List
           </button>
@@ -569,7 +569,7 @@ export default function Lists() {
             <button
               onClick={handleCreate}
               disabled={!createForm.name.trim()}
-              className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-amber-800 disabled:opacity-50"
+              className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-yellow-800 disabled:opacity-50"
             >
               Create
             </button>
@@ -680,7 +680,7 @@ export default function Lists() {
                       className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
                     />
                     <div className="flex gap-2">
-                      <button onClick={handleSaveEdit} className="px-3 py-1 bg-tidings-chrome text-white text-xs font-medium rounded hover:bg-amber-800">
+                      <button onClick={handleSaveEdit} className="px-3 py-1 bg-tidings-chrome text-white text-xs font-medium rounded hover:bg-yellow-800">
                         Save
                       </button>
                       <button onClick={() => setEditing(false)} className="px-3 py-1 text-slate-600 text-xs border border-slate-300 rounded hover:bg-slate-50">
