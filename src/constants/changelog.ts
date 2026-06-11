@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.35.2'
+export const VERSION = '0.35.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.35.3',
+    date: '2026-06-10',
+    changes: [
+      'Fixed the top suite bar overlapping the iOS status bar / Dynamic Island when installed as a native app (added safe-area top inset).',
+    ],
+  },
   {
     version: '0.35.2',
     date: '2026-06-10',
