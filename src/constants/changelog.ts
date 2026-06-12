@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.37.1'
+export const VERSION = '0.37.2'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.37.2',
+    date: '2026-06-12',
+    changes: [
+      'Scheduled sends now apply the same protections as immediate sends: the permanent opt-out list is honored at fire time, SMS segments are counted correctly (emoji/Unicode and multi-part messages), and the budget check uses the live blended Twilio rate.',
+    ],
+  },
   {
     version: '0.37.1',
     date: '2026-06-12',
