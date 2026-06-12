@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, fetchAll } from '../lib/supabase'
 import { parseCommunityCSV, type CommunityParseResult } from '../lib/community-csv'
 import { useToast } from '../contexts/ToastContext'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -148,11 +148,14 @@ export default function Community() {
       const result = await parseCommunityCSV(file)
       setImportParse(result)
 
-      const { data: existing } = await supabase
-        .from('community_contacts')
-        .select('phone')
-        .eq('building_id', selectedBuilding)
-      const existingSet = new Set((existing || []).map((c) => c.phone))
+      const existing = await fetchAll<{ phone: string }>(() =>
+        supabase
+          .from('community_contacts')
+          .select('phone')
+          .eq('building_id', selectedBuilding)
+          .order('id')
+      )
+      const existingSet = new Set(existing.map((c) => c.phone))
       const incomingSet = new Set(result.contacts.map((c) => c.phone))
 
       const toAdd = result.contacts.filter((c) => !existingSet.has(c.phone)).length
@@ -172,12 +175,15 @@ export default function Community() {
     setImportError('')
 
     try {
-      const { data: existing } = await supabase
-        .from('community_contacts')
-        .select('id, phone')
-        .eq('building_id', selectedBuilding)
+      const existing = await fetchAll<{ id: string; phone: string }>(() =>
+        supabase
+          .from('community_contacts')
+          .select('id, phone')
+          .eq('building_id', selectedBuilding)
+          .order('id')
+      )
       const existingByPhone = new Map<string, string>()
-      for (const c of existing || []) existingByPhone.set(c.phone, c.id)
+      for (const c of existing) existingByPhone.set(c.phone, c.id)
 
       const incomingByPhone = new Map<string, typeof importParse.contacts[number]>()
       for (const c of importParse.contacts) incomingByPhone.set(c.phone, c)
@@ -200,19 +206,23 @@ export default function Community() {
         added += batch.length
       }
 
-      for (const c of importParse.contacts) {
-        const existingId = existingByPhone.get(c.phone)
-        if (!existingId) continue
+      const updates = importParse.contacts
+        .filter((c) => existingByPhone.has(c.phone))
+        .map((c) => ({
+          id: existingByPhone.get(c.phone)!,
+          first_name: c.first_name,
+          last_name: c.last_name,
+          phone: c.phone,
+          building_id: selectedBuilding,
+          notes: c.notes,
+        }))
+      for (let i = 0; i < updates.length; i += 200) {
+        const batch = updates.slice(i, i + 200)
         const { error } = await supabase
           .from('community_contacts')
-          .update({
-            first_name: c.first_name,
-            last_name: c.last_name,
-            notes: c.notes,
-          })
-          .eq('id', existingId)
+          .upsert(batch, { onConflict: 'id' })
         if (error) throw error
-        updated++
+        updated += batch.length
       }
 
       const removeIds: string[] = []
@@ -225,6 +235,14 @@ export default function Community() {
         const { error } = await supabase.from('community_contacts').delete().in('id', batch)
         if (error) throw error
         removed += batch.length
+      }
+
+      // Re-apply opt-out flags from the persistent suppression list so a full
+      // re-sync can't re-enable texts to someone who replied STOP. Non-fatal:
+      // surface failures but don't abort the import.
+      const { error: optOutError } = await supabase.rpc('tidings_apply_opt_out_flags')
+      if (optOutError) {
+        toast(`Imported, but opt-out flags failed to apply: ${optOutError.message}`, 'error')
       }
 
       setImportResult({ added, updated, removed })

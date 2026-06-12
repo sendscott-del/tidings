@@ -41,6 +41,18 @@ function formatWhen(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
+// Only render inbound media that parses as an http(s) URL. Twilio media URLs
+// are always https, so anything else (e.g. a `javascript:` payload) is treated
+// as untrusted and skipped rather than rendered as a link/image.
+function isSafeUrl(u: string): boolean {
+  try {
+    const proto = new URL(u).protocol
+    return proto === 'http:' || proto === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function initialsOf(name: string | undefined, phone: string): string {
   const trimmed = (name || '').trim()
   if (trimmed) {
@@ -97,38 +109,65 @@ export default function Inbox() {
       // Pause polling when the tab is backgrounded — don't waste battery
       // or Supabase quota refreshing rows the user can't see.
       if (document.hidden) return
-      const { data } = await supabase
+      const { data: recent } = await supabase
         .from('inbound_messages')
         .select('*')
         .order('received_at', { ascending: false })
-        .limit(500)
+        .limit(1000)
 
-      if (!alive || !data) return
+      if (!alive || !recent) return
 
-      const stakeIds = data
-        .filter((m) => m.contact_type === 'stake' && m.contact_id)
-        .map((m) => m.contact_id!)
-      const communityIds = data
-        .filter((m) => m.contact_type === 'community' && m.contact_id)
-        .map((m) => m.contact_id!)
+      // The 1000-row cap can still bury an older STOP. STOP is a compliance
+      // signal that must never be hidden, so pull the most recent STOP rows
+      // separately and merge them in, deduping by id.
+      const { data: stops } = await supabase
+        .from('inbound_messages')
+        .select('*')
+        .eq('is_stop', true)
+        .order('received_at', { ascending: false })
+        .limit(100)
+
+      if (!alive) return
+
+      const byId = new Map<string, InboundMessage>()
+      for (const m of recent) byId.set(m.id, m)
+      for (const m of stops || []) if (!byId.has(m.id)) byId.set(m.id, m)
+      const data = [...byId.values()].sort(
+        (a, b) => new Date(b.received_at).getTime() - new Date(a.received_at).getTime(),
+      )
+
+      // Dedupe + chunk contact-id lookups into batches of 200 so the `.in()`
+      // querystring stays small (mirrors the chunking pattern in Compose.tsx).
+      const stakeIds = [
+        ...new Set(
+          data.filter((m) => m.contact_type === 'stake' && m.contact_id).map((m) => m.contact_id!),
+        ),
+      ]
+      const communityIds = [
+        ...new Set(
+          data.filter((m) => m.contact_type === 'community' && m.contact_id).map((m) => m.contact_id!),
+        ),
+      ]
 
       const nameMap: Record<string, string> = {}
 
-      if (stakeIds.length > 0) {
+      for (let i = 0; i < stakeIds.length; i += 200) {
+        const chunk = stakeIds.slice(i, i + 200)
         const { data: contacts } = await supabase
           .from('contacts')
           .select('id, first_name, last_name')
-          .in('id', stakeIds)
+          .in('id', chunk)
         for (const c of contacts || []) {
           nameMap[c.id] = `${c.first_name} ${c.last_name}`
         }
       }
 
-      if (communityIds.length > 0) {
+      for (let i = 0; i < communityIds.length; i += 200) {
+        const chunk = communityIds.slice(i, i + 200)
         const { data: contacts } = await supabase
           .from('community_contacts')
           .select('id, first_name, last_name')
-          .in('id', communityIds)
+          .in('id', chunk)
         for (const c of contacts || []) {
           nameMap[c.id] = `${c.first_name || ''} ${c.last_name || ''}`.trim()
         }
@@ -166,13 +205,21 @@ export default function Inbox() {
       return
     }
     if (user) {
-      await supabase
-        .from('inbound_messages')
-        .update({ read_by: user.id, read_at: new Date().toISOString() })
-        .eq('id', msg.id)
+      const readAt = new Date().toISOString()
+      // Optimistically mark read, then revert if the write actually failed —
+      // don't leave the row showing "read" when Postgres rejected the update.
       setMessages((prev) =>
-        prev.map((m) => m.id === msg.id ? { ...m, read_by: user.id, read_at: new Date().toISOString() } : m)
+        prev.map((m) => m.id === msg.id ? { ...m, read_by: user.id, read_at: readAt } : m)
       )
+      const { error } = await supabase
+        .from('inbound_messages')
+        .update({ read_by: user.id, read_at: readAt })
+        .eq('id', msg.id)
+      if (error) {
+        setMessages((prev) =>
+          prev.map((m) => m.id === msg.id ? { ...m, read_by: msg.read_by, read_at: msg.read_at } : m)
+        )
+      }
     }
   }
 
@@ -452,6 +499,16 @@ export default function Inbox() {
                 <div className="grid grid-cols-2 gap-2">
                   {selected.media_urls.map((url, i) => {
                     const type = selected.media_types?.[i] || ''
+                    // Never render a non-http(s) URL as a link/image — a
+                    // malicious inbound webhook could otherwise smuggle a
+                    // `javascript:` href. Show it as inert text instead.
+                    if (!isSafeUrl(url)) {
+                      return (
+                        <span key={`${i}-${url}`} className="text-xs text-slate-400 truncate">
+                          Attachment {i + 1} (unsupported)
+                        </span>
+                      )
+                    }
                     if (type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
                       return (
                         <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-slate-200">

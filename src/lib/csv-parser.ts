@@ -34,12 +34,13 @@ export interface ParseResult {
   totalRows: number
 }
 
-// Normalize phone to E.164: strip non-digits, prepend +1 if 10 digits
+// Normalize a US phone to E.164. Accept exactly 10 digits (prepend +1) or 11
+// digits starting with 1 (prepend +). Anything else is invalid → null, so
+// over-long typos are rejected rather than imported as sendable numbers.
 export function normalizePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, '')
   if (digits.length === 10) return `+1${digits}`
   if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
-  if (digits.length > 10) return `+${digits}`
   return null
 }
 

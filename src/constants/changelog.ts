@@ -4,9 +4,21 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.36.1'
+export const VERSION = '0.37.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.37.0',
+    date: '2026-06-12',
+    changes: [
+      'Security & reliability hardening from a full code review. Closed three ways an outsider could have reached the stake’s contact list: a set of database functions that let anyone grant themselves admin or read every user, a leftover setup endpoint that contained a hard-coded admin password, and the incoming-text webhook accepting unsigned requests (it now verifies each request genuinely came from Twilio).',
+      'Sending is now retry-safe: if a send appears to fail but actually went through, retrying no longer texts everyone a second time — it resumes and finishes only the recipients who didn’t get the message.',
+      'STOP requests are now permanent. An opted-out number is remembered on a durable suppression list, so re-importing the directory can no longer accidentally re-enable texting to someone who unsubscribed.',
+      'Message cost and budget checks now count SMS segments correctly (including emoji/Unicode and multi-part messages) and use the live blended Twilio rate instead of a fixed estimate.',
+      'Delivery history and the “Export failed recipients” report no longer cut off at 1,000 rows on large sends; recipient phone numbers are now visible only to admins and senders.',
+      'Numerous smaller fixes: ward-restricted leaders no longer briefly see other wards’ lists, import handles large buildings without truncation, double-tap send is blocked, and several screens handle errors more gracefully.',
+    ],
+  },
   {
     version: '0.36.1',
     date: '2026-06-11',

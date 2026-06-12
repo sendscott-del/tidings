@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useDemoMode } from '../contexts/DemoModeContext'
 import { TIDINGS_DEMO_HISTORY } from '../lib/demoData'
@@ -23,12 +23,19 @@ interface MessageLog {
   sent_at: string
 }
 
+// Neutralize spreadsheet formula injection: a leading =, +, -, @, tab, or CR
+// can be interpreted as a formula by Excel/Sheets, so prefix those with a quote.
+function csvCell(v: string): string {
+  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v
+}
+
 function downloadCSV(filename: string, rows: string[][]) {
   const escape = (v: string) => {
-    if (v.includes(',') || v.includes('"') || v.includes('\n')) {
-      return `"${v.replace(/"/g, '""')}"`
+    const cell = csvCell(v)
+    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+      return `"${cell.replace(/"/g, '""')}"`
     }
-    return v
+    return cell
   }
   const csv = rows.map((r) => r.map(escape).join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
@@ -134,12 +141,14 @@ export default function History() {
       setLogsLoading(false)
       return
     }
-    const { data } = await supabase
-      .from('message_logs')
-      .select('id, phone, status, error_code, sent_at')
-      .eq('message_id', msg.id)
-      .order('sent_at')
-    setLogs(data || [])
+    const data = await fetchAll<MessageLog>(() =>
+      supabase
+        .from('message_logs')
+        .select('id, phone, status, error_code, sent_at')
+        .eq('message_id', msg.id)
+        .order('id')
+    )
+    setLogs(data)
     setLogsLoading(false)
   }
 

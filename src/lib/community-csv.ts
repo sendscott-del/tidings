@@ -13,11 +13,12 @@ export interface CommunityParseResult {
   totalRows: number
 }
 
+// Accept exactly 10 digits (prepend +1) or 11 digits starting with 1 (prepend
+// +). Anything else is invalid → null, so over-long typos are rejected.
 function normalizePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, '')
   if (digits.length === 10) return `+1${digits}`
   if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
-  if (digits.length > 10) return `+${digits}`
   return null
 }
 

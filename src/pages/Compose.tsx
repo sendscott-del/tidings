@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase, fetchAll } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
@@ -40,6 +40,25 @@ interface MediaItem {
   size: number
 }
 
+// GSM-7 / UCS-2 aware SMS segment count. Matches Twilio's segmentation so
+// the cost estimate and budget gate reflect what we'll actually be billed.
+// A message that's pure GSM-7 packs 160 septets in one segment (153 when
+// concatenated); any non-GSM character forces UCS-2 (70 chars / 67 concat).
+const GSM_BASIC = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ ÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà"
+const GSM_EXT = "^{}\\[~]|€"
+export function smsSegments(text: string): number {
+  if (!text) return 1
+  let gsm = true, septets = 0
+  for (const ch of text) {
+    if (GSM_BASIC.includes(ch)) septets += 1
+    else if (GSM_EXT.includes(ch)) septets += 2
+    else { gsm = false; break }
+  }
+  if (gsm) return septets <= 160 ? 1 : Math.ceil(septets / 153)
+  const u16 = text.length // UTF-16 units = UCS-2 units
+  return u16 <= 70 ? 1 : Math.ceil(u16 / 67)
+}
+
 export default function Compose() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -51,6 +70,7 @@ export default function Compose() {
   const signature = (appUser?.signature || '').trim()
 
   const [budget, setBudget] = useState<{ budget_cents: number; used_cents: number; remaining_cents: number; quarter_end: string } | null>(null)
+  const [budgetError, setBudgetError] = useState(false)
   const [shortening, setShortening] = useState(false)
   const [shortenError, setShortenError] = useState('')
   const [suggestion, setSuggestion] = useState<{ shortened: string; original_chars: number; shortened_chars: number; shortened_segments: number; original_segments: number } | null>(null)
@@ -76,9 +96,24 @@ export default function Compose() {
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
 
+  // Re-entrancy guard for handleSend — a synchronous gate that closes before
+  // any await, so a double-tap can't kick off two sends. Distinct from the
+  // `sending` state (which drives the disabled attribute / spinner).
+  const sendingRef = useRef(false)
+  // Idempotency token for the send-message POST. Stable across retries of the
+  // same send so an ambiguous failure + retry can't double-send; cleared on a
+  // confirmed success or whenever the message/recipients change.
+  const clientTokenRef = useRef<string | null>(null)
+  // Monotonic request id for updateRecipientCount so a slow stale response
+  // can't overwrite the count from a newer toggle.
+  const countReqRef = useRef(0)
+
   useEffect(() => {
     if (!replyTo) loadLists()
-  }, [database, demoMode])
+    // appUser.ward/role gate the ward_scope filter inside loadLists; include
+    // them so the effect re-runs once appUser arrives (otherwise a ward-
+    // restricted sender sees every ward's lists on the first render).
+  }, [database, demoMode, appUser?.ward, appUser?.role])
 
   useEffect(() => {
     if (replyTo) return
@@ -96,6 +131,13 @@ export default function Compose() {
   useEffect(() => {
     if (appUser?.ward) loadBudget(appUser.ward)
   }, [appUser?.ward])
+
+  // A change to the message body or recipient selection is a genuinely new
+  // send — drop any idempotency token so it gets a fresh one (and isn't
+  // collapsed into a prior failed send by the dedupe key).
+  useEffect(() => {
+    clientTokenRef.current = null
+  }, [body, selectedListIds, replyTo?.phone])
 
   async function handleAttach(files: FileList | null) {
     if (!files || files.length === 0) return
@@ -220,7 +262,15 @@ export default function Compose() {
   }
 
   async function loadBudget(ward: string) {
-    const { data } = await supabase.rpc('get_ward_budget_status', { p_ward: ward })
+    const { data, error: rpcError } = await supabase.rpc('get_ward_budget_status', { p_ward: ward })
+    if (rpcError) {
+      // Fail closed: a budget we can't verify must block the send rather than
+      // silently allowing an unguarded one.
+      setBudgetError(true)
+      setBudget(null)
+      return
+    }
+    setBudgetError(false)
     const row = Array.isArray(data) ? data[0] : data
     if (row) {
       setBudget({
@@ -249,20 +299,23 @@ export default function Compose() {
       .order('name')
 
     // Non-admin, non-Stake users see only stake-wide lists + their own ward's lists.
+    // Double-quote the ward value inside the or() expression so a ward name
+    // with a comma or parens (e.g. "Logan Square (Spanish)") doesn't break the
+    // PostgREST filter parse.
     if (appUser?.role !== 'admin' && appUser?.ward && appUser.ward !== 'Stake') {
-      query = query.or(`ward_scope.is.null,ward_scope.eq.${appUser.ward}`)
+      query = query.or(`ward_scope.is.null,ward_scope.eq."${appUser.ward}"`)
     }
 
     const { data: listsData } = await query
 
     if (listsData) {
-      const counts = await fetchAll<{ list_id: string }>(() =>
-        supabase.from('list_members').select('list_id')
-      )
+      // One RLS-scoped aggregate RPC instead of downloading every list_members
+      // row to count client-side (the full-table scan was the slow path).
+      const { data: countRows } = await supabase.rpc('tidings_list_member_counts')
 
       const countMap: Record<string, number> = {}
-      for (const row of counts) {
-        countMap[row.list_id] = (countMap[row.list_id] || 0) + 1
+      for (const row of (countRows || []) as { list_id: string; member_count: number }[]) {
+        countMap[row.list_id] = Number(row.member_count)
       }
 
       setLists(listsData.map((l) => ({ ...l, member_count: countMap[l.id] || 0 })))
@@ -290,55 +343,66 @@ export default function Compose() {
       return
     }
 
-    const memberLinks = await fetchAll<{ contact_id: string; contact_type: string }>(() =>
-      supabase
-        .from('list_members')
-        .select('contact_id, contact_type')
-        .in('list_id', listIds)
-    )
+    // Rapid checkbox toggles fire overlapping counts; tag each with a
+    // monotonic id and only apply the result if it's still the latest, so a
+    // slow stale response can't overwrite a newer one.
+    const myReq = ++countReqRef.current
 
-    const uniqueByType = new Map<string, string>()
-    for (const m of memberLinks) {
-      if (!uniqueByType.has(m.contact_id)) uniqueByType.set(m.contact_id, m.contact_type)
-    }
+    try {
+      const memberLinks = await fetchAll<{ contact_id: string; contact_type: string }>(() =>
+        supabase
+          .from('list_members')
+          .select('contact_id, contact_type')
+          .in('list_id', listIds)
+      )
 
-    const stakeIds = [...uniqueByType.entries()].filter(([_, t]) => t === 'stake').map(([id]) => id)
-    const communityIds = [...uniqueByType.entries()].filter(([_, t]) => t === 'community').map(([id]) => id)
+      const uniqueByType = new Map<string, string>()
+      for (const m of memberLinks) {
+        if (!uniqueByType.has(m.contact_id)) uniqueByType.set(m.contact_id, m.contact_type)
+      }
 
-    let optedOut = 0
-    const phoneSet = new Set<string>()
+      const stakeIds = [...uniqueByType.entries()].filter(([_, t]) => t === 'stake').map(([id]) => id)
+      const communityIds = [...uniqueByType.entries()].filter(([_, t]) => t === 'community').map(([id]) => id)
 
-    if (stakeIds.length > 0) {
-      for (let i = 0; i < stakeIds.length; i += 500) {
-        const chunk = stakeIds.slice(i, i + 500)
-        const data = await fetchAll<{ phone: string | null; opted_out: boolean }>(() =>
-          supabase.from('contacts').select('phone, opted_out').in('id', chunk)
-        )
-        for (const c of data) {
-          if (!c.phone) continue
-          if (phoneSet.has(c.phone)) continue
-          phoneSet.add(c.phone)
-          if (c.opted_out) optedOut++
+      let optedOut = 0
+      const phoneSet = new Set<string>()
+
+      if (stakeIds.length > 0) {
+        for (let i = 0; i < stakeIds.length; i += 500) {
+          const chunk = stakeIds.slice(i, i + 500)
+          const data = await fetchAll<{ phone: string | null; opted_out: boolean }>(() =>
+            supabase.from('contacts').select('phone, opted_out').in('id', chunk)
+          )
+          for (const c of data) {
+            if (!c.phone) continue
+            if (phoneSet.has(c.phone)) continue
+            phoneSet.add(c.phone)
+            if (c.opted_out) optedOut++
+          }
         }
       }
-    }
-    if (communityIds.length > 0) {
-      for (let i = 0; i < communityIds.length; i += 500) {
-        const chunk = communityIds.slice(i, i + 500)
-        const data = await fetchAll<{ phone: string | null; opted_out: boolean }>(() =>
-          supabase.from('community_contacts').select('phone, opted_out').in('id', chunk)
-        )
-        for (const c of data) {
-          if (!c.phone) continue
-          if (phoneSet.has(c.phone)) continue
-          phoneSet.add(c.phone)
-          if (c.opted_out) optedOut++
+      if (communityIds.length > 0) {
+        for (let i = 0; i < communityIds.length; i += 500) {
+          const chunk = communityIds.slice(i, i + 500)
+          const data = await fetchAll<{ phone: string | null; opted_out: boolean }>(() =>
+            supabase.from('community_contacts').select('phone, opted_out').in('id', chunk)
+          )
+          for (const c of data) {
+            if (!c.phone) continue
+            if (phoneSet.has(c.phone)) continue
+            phoneSet.add(c.phone)
+            if (c.opted_out) optedOut++
+          }
         }
       }
-    }
 
-    setRecipientCount(phoneSet.size)
-    setOptedOutCount(optedOut)
+      if (myReq !== countReqRef.current) return // a newer toggle superseded this one
+      setRecipientCount(phoneSet.size)
+      setOptedOutCount(optedOut)
+    } catch {
+      // Swallow — a failed count shouldn't become an unhandled rejection.
+      // Leave the prior count in place rather than zeroing a valid selection.
+    }
   }
 
   function toggleList(listId: string) {
@@ -356,8 +420,21 @@ export default function Compose() {
   }, [])
 
   async function handleSend() {
+    // Re-entrancy guard: a synchronous gate that closes before any await, so a
+    // double-tap (or a stale enabled button) can't launch two concurrent sends.
+    if (sendingRef.current) return
+    sendingRef.current = true
+
     setSending(true)
     setError('')
+
+    // First initiation of this send mints a stable idempotency token. A retry
+    // after an ambiguous failure reuses it (we only clear it on a confirmed
+    // success or when the message/recipients change), so the server can dedupe
+    // and we never double-send.
+    if (clientTokenRef.current === null) {
+      clientTokenRef.current = crypto.randomUUID()
+    }
 
     try {
       // Demo: never call the send-message edge function (Twilio-backed) in
@@ -374,6 +451,7 @@ export default function Compose() {
           demo: true,
           is_mms: media.length > 0,
         }
+        clientTokenRef.current = null // confirmed (faked) success
         setResult(fakeResult)
         toast(
           fakeResult.status === 'queued'
@@ -381,7 +459,6 @@ export default function Compose() {
             : `Demo: pretended to send to ${recipient_count} ${recipient_count === 1 ? 'recipient' : 'recipients'}`,
           'success'
         )
-        setSending(false)
         return
       }
       const { data: { session } } = await supabase.auth.getSession()
@@ -391,6 +468,7 @@ export default function Compose() {
         body,
         scheduled_at: scheduleEnabled && scheduledAt ? new Date(scheduledAt).toISOString() : null,
         media_urls: media.map((m) => m.url),
+        client_token: clientTokenRef.current,
       }
       if (replyTo) {
         payload.to_phones = [replyTo.phone]
@@ -415,6 +493,9 @@ export default function Compose() {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Send failed')
 
+      // Confirmed success — clear the token so a later, genuinely-new send
+      // mints a fresh one. On failure we leave it set so the retry reuses it.
+      clientTokenRef.current = null
       setResult(data)
       toast(
         data.status === 'queued'
@@ -422,16 +503,17 @@ export default function Compose() {
           : `Sent to ${data.recipient_count} ${data.recipient_count === 1 ? 'recipient' : 'recipients'}`,
         'success'
       )
-      setSending(false)
     } catch (err) {
       setError((err as Error).message)
       toast((err as Error).message, 'error')
+    } finally {
       setSending(false)
+      sendingRef.current = false
     }
   }
 
   const finalBody = signature && body.trim() ? `${body}\n\n${signature}` : body
-  const smsCount = Math.ceil(finalBody.length / 160) || 0
+  const smsCount = smsSegments(finalBody)
   const effectiveRecipientCount = replyTo ? 1 : recipientCount
   const willReceive = Math.max(0, effectiveRecipientCount - optedOutCount)
   const isMms = media.length > 0
@@ -450,7 +532,11 @@ export default function Compose() {
   // Demo mode: sends are mocked, so the missing-ward hard block is waived
   // for the forced-demo reviewer account.
   const noWardAssigned = !appUser?.ward && !demoMode
-  const hardBlock = noWardAssigned || wouldExceed
+  // Budget-load failure is blocking: if we couldn't verify the ward's budget we
+  // fail closed rather than allow an unguarded send. Waived in demo mode (sends
+  // are mocked and the budget RPC isn't called for the reviewer account).
+  const budgetUnverified = budgetError && !demoMode
+  const hardBlock = noWardAssigned || wouldExceed || budgetUnverified
 
   if (result) {
     return (
@@ -526,6 +612,7 @@ export default function Compose() {
     step === 'message' ? 'Review & send →' :
     sending ? 'Sending…'
       : noWardAssigned ? 'No ward'
+      : budgetUnverified ? 'Budget unverified'
       : wouldExceed ? 'Over budget'
       : scheduleEnabled ? `Schedule ${effectiveRecipientCount}`
       : `Send ${effectiveRecipientCount}`
@@ -551,6 +638,12 @@ export default function Compose() {
       {noWardAssigned && (
         <div className="bg-red-50 border border-red-200 text-red-900 text-sm px-4 py-3 rounded-lg mb-4">
           <strong>You're not assigned to a ward.</strong> Ask an admin to set your ward in Admin → Users before sending.
+        </div>
+      )}
+
+      {budgetUnverified && (
+        <div className="bg-red-50 border border-red-200 text-red-900 text-sm px-4 py-3 rounded-lg mb-4">
+          <strong>Couldn't verify your ward's budget.</strong> Sending is blocked until we can confirm there's budget left. Reload and try again.
         </div>
       )}
 
@@ -1055,6 +1148,8 @@ export default function Compose() {
                 ? 'Sending…'
                 : noWardAssigned
                 ? 'No ward assigned'
+                : budgetUnverified
+                ? "Couldn't verify budget — try again"
                 : wouldExceed
                 ? 'Budget exceeded — blocked'
                 : scheduleEnabled

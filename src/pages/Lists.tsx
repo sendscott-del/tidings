@@ -146,35 +146,40 @@ export default function Lists() {
       setLoading(false)
       return
     }
-    let query = supabase
-      .from('lists')
-      .select('*')
-      .order('name')
+    try {
+      let query = supabase
+        .from('lists')
+        .select('*')
+        .order('name')
 
-    if (!isAdmin && userWard && !isStakePool) {
-      query = query.or(`ward_scope.is.null,ward_scope.eq.${userWard}`)
-    }
-
-    const { data: listsData } = await query
-
-    if (listsData) {
-      const counts = await fetchAll<{ list_id: string }>(() =>
-        supabase.from('list_members').select('list_id')
-      )
-
-      const countMap: Record<string, number> = {}
-      for (const row of counts) {
-        countMap[row.list_id] = (countMap[row.list_id] || 0) + 1
+      if (!isAdmin && userWard && !isStakePool) {
+        query = query.or(`ward_scope.is.null,ward_scope.eq."${userWard}"`)
       }
 
-      setLists(
-        listsData.map((l) => ({
-          ...l,
-          member_count: countMap[l.id] || 0,
-        }))
-      )
+      const { data: listsData } = await query
+
+      if (listsData) {
+        const counts = await fetchAll<{ list_id: string }>(() =>
+          supabase.from('list_members').select('list_id')
+        )
+
+        const countMap: Record<string, number> = {}
+        for (const row of counts) {
+          countMap[row.list_id] = (countMap[row.list_id] || 0) + 1
+        }
+
+        setLists(
+          listsData.map((l) => ({
+            ...l,
+            member_count: countMap[l.id] || 0,
+          }))
+        )
+      }
+    } catch (err) {
+      toast(`Failed to load lists: ${(err as Error).message}`, 'error')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function viewMembers(list: List) {
@@ -183,54 +188,58 @@ export default function Lists() {
     setEditForm({ name: list.name, description: list.description || '' })
     setMembersLoading(true)
 
-    const memberLinks = await fetchAll<{ contact_id: string; contact_type: string }>(() =>
-      supabase
-        .from('list_members')
-        .select('contact_id, contact_type')
-        .eq('list_id', list.id)
-    )
+    try {
+      const memberLinks = await fetchAll<{ contact_id: string; contact_type: string }>(() =>
+        supabase
+          .from('list_members')
+          .select('contact_id, contact_type')
+          .eq('list_id', list.id)
+      )
 
-    if (memberLinks.length === 0) {
-      setMembers([])
+      if (memberLinks.length === 0) {
+        setMembers([])
+        return
+      }
+
+      const stakeIds = memberLinks.filter((m) => m.contact_type === 'stake').map((m) => m.contact_id)
+      const communityIds = memberLinks.filter((m) => m.contact_type === 'community').map((m) => m.contact_id)
+
+      const results: Member[] = []
+
+      if (stakeIds.length > 0) {
+        for (let i = 0; i < stakeIds.length; i += 500) {
+          const chunk = stakeIds.slice(i, i + 500)
+          const data = await fetchAll<any>(() =>
+            supabase
+              .from('contacts')
+              .select('id, first_name, last_name, phone, unit_name, opted_out')
+              .in('id', chunk)
+              .order('last_name')
+          )
+          results.push(...data.map((c) => ({ ...c, type: 'stake' as const })))
+        }
+      }
+
+      if (communityIds.length > 0) {
+        for (let i = 0; i < communityIds.length; i += 500) {
+          const chunk = communityIds.slice(i, i + 500)
+          const data = await fetchAll<any>(() =>
+            supabase
+              .from('community_contacts')
+              .select('id, first_name, last_name, phone, opted_out')
+              .in('id', chunk)
+              .order('last_name')
+          )
+          results.push(...data.map((c) => ({ ...c, type: 'community' as const })))
+        }
+      }
+
+      setMembers(results)
+    } catch (err) {
+      toast(`Failed to load members: ${(err as Error).message}`, 'error')
+    } finally {
       setMembersLoading(false)
-      return
     }
-
-    const stakeIds = memberLinks.filter((m) => m.contact_type === 'stake').map((m) => m.contact_id)
-    const communityIds = memberLinks.filter((m) => m.contact_type === 'community').map((m) => m.contact_id)
-
-    const results: Member[] = []
-
-    if (stakeIds.length > 0) {
-      for (let i = 0; i < stakeIds.length; i += 500) {
-        const chunk = stakeIds.slice(i, i + 500)
-        const data = await fetchAll<any>(() =>
-          supabase
-            .from('contacts')
-            .select('id, first_name, last_name, phone, unit_name, opted_out')
-            .in('id', chunk)
-            .order('last_name')
-        )
-        results.push(...data.map((c) => ({ ...c, type: 'stake' as const })))
-      }
-    }
-
-    if (communityIds.length > 0) {
-      for (let i = 0; i < communityIds.length; i += 500) {
-        const chunk = communityIds.slice(i, i + 500)
-        const data = await fetchAll<any>(() =>
-          supabase
-            .from('community_contacts')
-            .select('id, first_name, last_name, phone, opted_out')
-            .in('id', chunk)
-            .order('last_name')
-        )
-        results.push(...data.map((c) => ({ ...c, type: 'community' as const })))
-      }
-    }
-
-    setMembers(results)
-    setMembersLoading(false)
   }
 
   async function handleCreate() {
@@ -366,28 +375,33 @@ export default function Lists() {
     setPickerSelected(new Set())
     setPickerLoading(true)
     const existing = new Set(members.map((m) => m.id))
-    if (selectedList.database === 'stake') {
-      const data = await fetchAll<any>(() =>
-        supabase
-          .from('contacts')
-          .select('id, first_name, last_name, phone, unit_name, opted_out')
-          .order('last_name')
-      )
-      setPickerContacts(
-        data.filter((c) => !existing.has(c.id)).map((c) => ({ ...c, type: 'stake' as const }))
-      )
-    } else {
-      const data = await fetchAll<any>(() =>
-        supabase
-          .from('community_contacts')
-          .select('id, first_name, last_name, phone, opted_out')
-          .order('last_name')
-      )
-      setPickerContacts(
-        data.filter((c) => !existing.has(c.id)).map((c) => ({ ...c, type: 'community' as const }))
-      )
+    try {
+      if (selectedList.database === 'stake') {
+        const data = await fetchAll<any>(() =>
+          supabase
+            .from('contacts')
+            .select('id, first_name, last_name, phone, unit_name, opted_out')
+            .order('last_name')
+        )
+        setPickerContacts(
+          data.filter((c) => !existing.has(c.id)).map((c) => ({ ...c, type: 'stake' as const }))
+        )
+      } else {
+        const data = await fetchAll<any>(() =>
+          supabase
+            .from('community_contacts')
+            .select('id, first_name, last_name, phone, opted_out')
+            .order('last_name')
+        )
+        setPickerContacts(
+          data.filter((c) => !existing.has(c.id)).map((c) => ({ ...c, type: 'community' as const }))
+        )
+      }
+    } catch (err) {
+      toast(`Failed to load contacts: ${(err as Error).message}`, 'error')
+    } finally {
+      setPickerLoading(false)
     }
-    setPickerLoading(false)
   }
 
   function togglePickerContact(id: string) {
@@ -411,19 +425,34 @@ export default function Lists() {
         contact_id: c.id,
         contact_type: c.type,
       }))
+    let inserted = 0
+    const failures: string[] = []
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await supabase.from('list_members').insert(rows.slice(i, i + 500))
-      if (error) {
-        toast(`Failed to add members: ${error.message}`, 'error')
-        return
-      }
+      const chunk = rows.slice(i, i + 500)
+      const { error } = await supabase.from('list_members').insert(chunk)
+      if (error) failures.push(error.message)
+      else inserted += chunk.length
     }
-    toast(`Added ${rows.length} ${rows.length === 1 ? 'member' : 'members'}`, 'success')
+    if (failures.length > 0) {
+      // A later chunk can fail after earlier ones committed — surface the
+      // partial result instead of silently dropping the rest of the add.
+      toast(
+        `Added ${inserted} of ${rows.length}; ${failures.length} ${failures.length === 1 ? 'batch' : 'batches'} failed: ${failures[0]}`,
+        'error',
+      )
+    } else {
+      toast(`Added ${inserted} ${inserted === 1 ? 'member' : 'members'}`, 'success')
+    }
     setShowPicker(false)
     await loadLists()
-    const refreshed = lists.find((l) => l.id === selectedList.id)
-    if (refreshed) await viewMembers(refreshed)
-    else await viewMembers(selectedList)
+    // Re-read the refreshed list from a fresh fetch rather than the pre-refresh
+    // `lists` closure, which still holds the stale member_count. The DB row has
+    // no computed member_count column, so derive it from the prior count + the
+    // rows we just inserted.
+    const { data: refreshed } = await supabase.from('lists').select('*').eq('id', selectedList.id).single()
+    const nextCount = selectedList.member_count + inserted
+    if (refreshed) await viewMembers({ ...(refreshed as List), member_count: nextCount })
+    else await viewMembers({ ...selectedList, member_count: nextCount })
   }
 
   async function handleRemoveMember(member: Member) {

@@ -102,9 +102,21 @@ export default function Admin() {
   // Assignments are managed in Gather; Tidings only displays them.
   const [userRolesByUserId, setUserRolesByUserId] = useState<Record<string, Array<{ role_key: string; ward: string | null }>>>({})
 
-  useEffect(() => { loadUsers(); loadInvites(); loadUserRolesMap() }, [])
-  useEffect(() => { if (tab === 'budgets') loadBudgets() }, [tab])
-  useEffect(() => { if (tab === 'settings') loadRates() }, [tab])
+  // Only admins may load this data. The render-level gate below blocks the UI,
+  // but the queries must not fire at all for non-admins (RLS backs this server-
+  // side; the client simply shouldn't issue them).
+  useEffect(() => {
+    if (appUser?.role !== 'admin') return
+    loadUsers(); loadInvites(); loadUserRolesMap()
+  }, [appUser?.role])
+  useEffect(() => {
+    if (appUser?.role !== 'admin') return
+    if (tab === 'budgets') loadBudgets()
+  }, [tab, appUser?.role])
+  useEffect(() => {
+    if (appUser?.role !== 'admin') return
+    if (tab === 'settings') loadRates()
+  }, [tab, appUser?.role])
 
   if (appUser?.role !== 'admin') {
     return (
