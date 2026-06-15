@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.37.2'
+export const VERSION = '0.38.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.38.0',
+    date: '2026-06-14',
+    changes: [
+      'The password-reset confirmation now shows the exact email address the link was sent to, so you can catch a mistyped address right away.',
+    ],
+  },
   {
     version: '0.37.2',
     date: '2026-06-12',
