@@ -4,11 +4,18 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../i18n/LanguageContext'
 import { TidingsLogo } from '../components/icons/TidingsLogo'
 
+// Shared demo account (role=viewer) — sign-in triggers Tidings' Demo Mode
+// (isReviewDemoUser, fixture data) and RLS shows zero real contacts/messages.
+// Powers the no-credentials demo button.
+const DEMO_EMAIL = 'applereview@gatheredin.app'
+const DEMO_PASSWORD = 'MagnifyReview!2026'
+
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [demoSubmitting, setDemoSubmitting] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const { t, lang, setLang } = useLanguage()
@@ -22,6 +29,18 @@ export default function Login() {
     if (error) {
       setError(t('auth.invalidCredentials'))
       setSubmitting(false)
+    } else {
+      navigate('/', { replace: true })
+    }
+  }
+
+  async function tryDemo() {
+    setError('')
+    setDemoSubmitting(true)
+    const { error } = await signIn(DEMO_EMAIL, DEMO_PASSWORD)
+    if (error) {
+      setError(t('auth.demoError'))
+      setDemoSubmitting(false)
     } else {
       navigate('/', { replace: true })
     }
@@ -95,6 +114,18 @@ export default function Login() {
               {t('auth.forgotPassword')}
             </Link>
           </p>
+
+          <div className="pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={tryDemo}
+              disabled={demoSubmitting}
+              className="w-full py-2.5 rounded-md border border-tidings-chrome text-tidings-primary-dark font-medium hover:bg-amber-50 disabled:opacity-50 min-h-[44px]"
+            >
+              {demoSubmitting ? t('auth.signingIn') : t('auth.tryDemo')}
+            </button>
+            <p className="text-center text-xs text-slate-500 mt-2">{t('auth.tryDemoSub')}</p>
+          </div>
 
           {/* Language toggle */}
           <div className="flex justify-center gap-1 pt-4 border-t border-slate-100">

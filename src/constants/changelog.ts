@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.38.0'
+export const VERSION = '0.39.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.39.0',
+    date: '2026-06-15',
+    changes: [
+      'Added a "Try the demo" button to the sign-in screen — one tap opens a fully-functional sample stake with fictional data only (no account, no real contacts or messages). Built for app-store testers and to show the app to others.',
+    ],
+  },
   {
     version: '0.38.0',
     date: '2026-06-14',
