@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.40.0'
+export const VERSION = '0.41.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.41.0',
+    date: '2026-07-05',
+    changes: [
+      'Lists now have a "Community" visibility option alongside Stake-wide and per-ward. A Community list is visible only to Community Events Leaders and admins — not to stake or ward senders — and always draws from the community directory. Assign the Community Events Leader role to a person in the Gather hub so they can see these lists.',
+    ],
+  },
   {
     version: '0.40.0',
     date: '2026-07-05',

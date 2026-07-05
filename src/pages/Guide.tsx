@@ -137,6 +137,28 @@ export default function Guide() {
         </ul>
       </Section>
 
+      <Section title="List visibility">
+        <p>
+          When you create a custom list, choose who can see it:
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            <strong>Stake-wide</strong> — visible to all senders.
+          </li>
+          <li>
+            <strong>A specific ward</strong> — visible to that ward's senders
+            (and admins).
+          </li>
+          <li>
+            <strong>Community</strong> — visible only to{' '}
+            <strong>Community Events Leaders</strong> and admins, and drawn from
+            the community directory. Stake and ward senders won't see it. Assign
+            the Community Events Leader role to someone in the Gather hub so they
+            can see these lists.
+          </li>
+        </ul>
+      </Section>
+
       <Section title="Settings">
         <p>
           Settings (formerly "Admin") holds Users, Budgets, and the deeper

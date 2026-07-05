@@ -57,6 +57,11 @@ const SUITE_ROLE_OPTIONS: Array<{ key: string; label: string }> = [
   { key: 'ward_member',                label: 'Ward Member' },
 ]
 
+// Sentinel ward_scope value for Community-visibility lists (visible only to
+// Community Events Leaders + admins), and the suite role key that enforces it.
+const COMMUNITY_SCOPE = 'Community'
+const COMMUNITY_ROLE_KEY = 'community_events_leader'
+
 interface Member {
   id: string
   first_name: string
@@ -153,7 +158,10 @@ export default function Lists() {
         .order('name')
 
       if (!isAdmin && userWard && !isStakePool) {
-        query = query.or(`ward_scope.is.null,ward_scope.eq."${userWard}"`)
+        // Stake-wide + this ward + Community-scoped lists. RLS is the real gate:
+        // Community lists only come back for Community Events Leaders and admins,
+        // so listing the scope here just keeps them from being filtered out early.
+        query = query.or(`ward_scope.is.null,ward_scope.eq."${userWard}",ward_scope.eq."Community"`)
       }
 
       const { data: listsData } = await query
@@ -249,12 +257,17 @@ export default function Lists() {
     const wardScope = isAdmin || isStakePool
       ? (createForm.ward_scope || null)
       : (userWard || null)
+    // "Community" visibility isn't a ward — it's a role-scoped list that only
+    // Community Events Leaders (and admins) can see. It always draws from the
+    // community directory, so force that database.
+    const isCommunityVis = wardScope === COMMUNITY_SCOPE
+    const database = isCommunityVis ? 'community' : createForm.database
     const { data, error } = await supabase
       .from('lists')
       .insert({
         name,
         description: createForm.description.trim() || null,
-        database: createForm.database,
+        database,
         is_auto: false,
         ward_scope: wardScope,
         created_by: appUser?.id ?? null,
@@ -264,6 +277,20 @@ export default function Lists() {
     if (error) {
       toast(`Failed to create list: ${error.message}`, 'error')
       return
+    }
+    // Grant visibility to the Community Events Leader role. The lists RLS makes
+    // a list visible to any role the viewer holds, so this is what actually
+    // restricts a Community list to community leaders + admins.
+    if (isCommunityVis && data) {
+      const { error: shareErr } = await supabase.from('list_shares').insert({
+        list_id: data.id,
+        scope_type: 'role',
+        scope_value: COMMUNITY_ROLE_KEY,
+        granted_by: appUser?.id ?? null,
+      })
+      if (shareErr) {
+        toast(`List created, but sharing to Community leaders failed: ${shareErr.message}`, 'error')
+      }
     }
     toast(`List "${name}" created`, 'success')
     setShowCreate(false)
@@ -482,7 +509,8 @@ export default function Lists() {
   const filtered = lists
     .filter((l) => l.database === filter)
     .filter((l) => {
-      if (!wardFilter) return true
+      // Ward filtering only applies to the Stake / Ward view.
+      if (filter !== 'stake' || !wardFilter) return true
       if (wardFilter === 'stake-wide') return l.ward_scope === null
       return l.ward_scope === wardFilter
     })
@@ -580,14 +608,29 @@ export default function Lists() {
               </label>
               <select
                 value={createForm.ward_scope}
-                onChange={(e) => setCreateForm({ ...createForm, ward_scope: e.target.value })}
+                onChange={(e) => {
+                  const v = e.target.value
+                  // Community visibility always uses the community directory.
+                  setCreateForm((f) => ({
+                    ...f,
+                    ward_scope: v,
+                    database: v === COMMUNITY_SCOPE ? 'community' : f.database,
+                  }))
+                }}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
               >
                 <option value="">Stake-wide (visible to all senders)</option>
+                <option value={COMMUNITY_SCOPE}>Community (Community Events Leaders only)</option>
                 {wardOptions.map((w) => (
                   <option key={w} value={w}>{w} only</option>
                 ))}
               </select>
+              {createForm.ward_scope === COMMUNITY_SCOPE && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Only Community Events Leaders and admins will see this list. It draws from the
+                  community directory.
+                </p>
+              )}
             </div>
           ) : userWard ? (
             <p className="text-xs text-slate-500">
@@ -655,11 +698,18 @@ export default function Lists() {
                   }`}>
                     {list.database === 'stake' ? 'church' : 'community'}
                   </span>
-                  {list.ward_scope && (
+                  {list.ward_scope === COMMUNITY_SCOPE ? (
+                    <span
+                      className="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700"
+                      title="Visible only to Community Events Leaders and admins"
+                    >
+                      Community leaders only
+                    </span>
+                  ) : list.ward_scope ? (
                     <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
                       {list.ward_scope}
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 {list.description && (
                   <p className="text-sm text-slate-500 mt-0.5">{list.description}</p>
