@@ -137,6 +137,29 @@ export default function Guide() {
         </ul>
       </Section>
 
+      <Section title="Adding members to a list">
+        <p>
+          Open a list and tap <strong>Add Members</strong>. You can pick people
+          one at a time with the checkboxes, or add a whole directory at once:
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            <strong>Everyone</strong> — selects every contact in the directory
+            (all not-yet-added members).
+          </li>
+          <li>
+            A <strong>group chip</strong> — selects a whole{' '}
+            <strong>ward</strong> (church lists) or a whole{' '}
+            <strong>building</strong> (community lists). Tap it again to
+            deselect that group.
+          </li>
+        </ul>
+        <p>
+          Selected people are added when you tap <strong>Add</strong>. Anyone
+          already on the list isn't shown, so you never add duplicates.
+        </p>
+      </Section>
+
       <Section title="List visibility">
         <p>
           When you create a custom list, choose who can see it:

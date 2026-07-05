@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.41.0'
+export const VERSION = '0.42.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.42.0',
+    date: '2026-07-05',
+    changes: [
+      'When adding members to a list you can now add a whole directory at once, not just one person at a time. Tap "Everyone" to select the entire directory, or a group chip to add a whole ward (church lists) or a whole building (community lists). Tap a chip again to deselect that group.',
+    ],
+  },
   {
     version: '0.41.0',
     date: '2026-07-05',

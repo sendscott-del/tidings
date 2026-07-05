@@ -80,7 +80,12 @@ interface PickerContact {
   unit_name?: string
   opted_out: boolean
   type: 'stake' | 'community'
+  // The directory group this contact belongs to — ward (stake) or building
+  // (community) — used for one-tap "add a whole group" selection.
+  group: string
 }
+
+const NO_GROUP_LABEL = '(No group)'
 
 export default function Lists() {
   const { toast } = useToast()
@@ -411,17 +416,33 @@ export default function Lists() {
             .order('last_name')
         )
         setPickerContacts(
-          data.filter((c) => !existing.has(c.id)).map((c) => ({ ...c, type: 'stake' as const }))
+          data
+            .filter((c) => !existing.has(c.id))
+            .map((c) => ({ ...c, type: 'stake' as const, group: c.unit_name || NO_GROUP_LABEL }))
         )
       } else {
-        const data = await fetchAll<any>(() =>
-          supabase
-            .from('community_contacts')
-            .select('id, first_name, last_name, phone, opted_out')
-            .order('last_name')
+        // Community contacts group by building — fetch names so the chips read
+        // "Maple Apartments" rather than a UUID.
+        const [data, buildingRows] = await Promise.all([
+          fetchAll<any>(() =>
+            supabase
+              .from('community_contacts')
+              .select('id, first_name, last_name, phone, opted_out, building_id')
+              .order('last_name')
+          ),
+          supabase.from('buildings').select('id, name'),
+        ])
+        const buildingName = new Map<string, string>(
+          (buildingRows.data || []).map((b: { id: string; name: string }) => [b.id, b.name])
         )
         setPickerContacts(
-          data.filter((c) => !existing.has(c.id)).map((c) => ({ ...c, type: 'community' as const }))
+          data
+            .filter((c) => !existing.has(c.id))
+            .map((c) => ({
+              ...c,
+              type: 'community' as const,
+              group: (c.building_id && buildingName.get(c.building_id)) || NO_GROUP_LABEL,
+            }))
         )
       }
     } catch (err) {
@@ -499,12 +520,41 @@ export default function Lists() {
     await loadLists()
   }
 
-  const pickerFiltered = useMemo(() => {
-    const matches = pickerContacts.filter((c) =>
-      matchesAllTokens(`${c.first_name} ${c.last_name} ${c.phone} ${c.unit_name || ''}`, pickerSearch)
-    )
-    return matches.slice(0, 200)
-  }, [pickerContacts, pickerSearch])
+  // Full set matching the search (may be large); the rendered list is capped
+  // separately so "select all" can still act on everything matched.
+  const pickerMatched = useMemo(
+    () =>
+      pickerContacts.filter((c) =>
+        matchesAllTokens(`${c.first_name} ${c.last_name} ${c.phone} ${c.group}`, pickerSearch)
+      ),
+    [pickerContacts, pickerSearch]
+  )
+  const pickerFiltered = useMemo(() => pickerMatched.slice(0, 200), [pickerMatched])
+
+  // Directory groups (wards or buildings) for one-tap whole-group adds.
+  const pickerGroups = useMemo(() => {
+    const m = new Map<string, string[]>()
+    for (const c of pickerContacts) {
+      const arr = m.get(c.group)
+      if (arr) arr.push(c.id)
+      else m.set(c.group, [c.id])
+    }
+    return [...m.entries()]
+      .map(([label, ids]) => ({ label, ids }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [pickerContacts])
+
+  function toggleGroupSelection(ids: string[]) {
+    setPickerSelected((prev) => {
+      const next = new Set(prev)
+      const allIn = ids.every((id) => next.has(id))
+      for (const id of ids) {
+        if (allIn) next.delete(id)
+        else next.add(id)
+      }
+      return next
+    })
+  }
 
   const filtered = lists
     .filter((l) => l.database === filter)
@@ -874,6 +924,41 @@ export default function Lists() {
               </p>
             </div>
 
+            {!pickerLoading && pickerContacts.length > 0 && (
+              <div className="px-4 sm:px-6 pt-4">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-medium text-slate-600">
+                    Add a whole {selectedList.database === 'community' ? 'building' : 'ward'} — or the entire directory
+                  </p>
+                  {pickerSelected.size > 0 && (
+                    <button
+                      onClick={() => setPickerSelected(new Set())}
+                      className="text-xs text-slate-400 hover:text-slate-600"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <GroupChip
+                    label={`Everyone (${pickerContacts.length})`}
+                    active={pickerContacts.every((c) => pickerSelected.has(c.id))}
+                    onClick={() => toggleGroupSelection(pickerContacts.map((c) => c.id))}
+                    strong
+                  />
+                  {pickerGroups.length > 1 &&
+                    pickerGroups.map((g) => (
+                      <GroupChip
+                        key={g.label}
+                        label={`${g.label} (${g.ids.length})`}
+                        active={g.ids.every((id) => pickerSelected.has(id))}
+                        onClick={() => toggleGroupSelection(g.ids)}
+                      />
+                    ))}
+                </div>
+              </div>
+            )}
+
             <div className="px-4 sm:px-6 py-4">
               {pickerLoading ? (
                 <p className="text-slate-400 text-center py-4">Loading contacts...</p>
@@ -898,7 +983,7 @@ export default function Lists() {
                         <p className="text-sm font-medium text-slate-900 truncate">
                           {c.first_name} {c.last_name}
                         </p>
-                        <p className="text-xs text-slate-500">{c.phone}{c.unit_name ? ` · ${c.unit_name}` : ''}</p>
+                        <p className="text-xs text-slate-500">{c.phone}{c.group && c.group !== NO_GROUP_LABEL ? ` · ${c.group}` : ''}</p>
                       </div>
                       {c.opted_out && (
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Opted Out</span>
@@ -1041,5 +1126,34 @@ export default function Lists() {
         onCancel={() => setConfirmDelete(null)}
       />
     </div>
+  )
+}
+
+function GroupChip({
+  label,
+  active,
+  onClick,
+  strong,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+  strong?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+        active
+          ? 'bg-tidings-primary text-white border-tidings-primary'
+          : strong
+            ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-700'
+            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+      }`}
+    >
+      {label}
+    </button>
   )
 }
