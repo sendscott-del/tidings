@@ -162,7 +162,8 @@ export default function Guide() {
 
       <Section title="List visibility">
         <p>
-          When you create a custom list, choose who can see it:
+          When you create a custom list — or later, by editing it — choose who
+          can see it:
         </p>
         <ul className="list-disc pl-5 space-y-1">
           <li>

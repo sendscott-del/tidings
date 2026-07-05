@@ -115,7 +115,7 @@ export default function Lists() {
     ward_scope: '',
   })
   const [editing, setEditing] = useState(false)
-  const [editForm, setEditForm] = useState<{ name: string; description: string }>({ name: '', description: '' })
+  const [editForm, setEditForm] = useState<{ name: string; description: string; ward_scope: string }>({ name: '', description: '', ward_scope: '' })
   const [confirmDelete, setConfirmDelete] = useState<List | null>(null)
 
   const [showPicker, setShowPicker] = useState(false)
@@ -198,7 +198,7 @@ export default function Lists() {
   async function viewMembers(list: List) {
     setSelectedList(list)
     setEditing(false)
-    setEditForm({ name: list.name, description: list.description || '' })
+    setEditForm({ name: list.name, description: list.description || '', ward_scope: list.ward_scope || '' })
     setMembersLoading(true)
 
     try {
@@ -353,16 +353,50 @@ export default function Lists() {
     if (!selectedList) return
     const name = editForm.name.trim()
     if (!name) return
+    const description = editForm.description.trim() || null
+    // Only admins / Stake pool can change visibility (mirrors the create form);
+    // for anyone else, keep whatever scope the list already had. Editing
+    // visibility only touches who can see the list, not the contact source
+    // (database), so existing members are never stranded.
+    const canEditVisibility = isAdmin || isStakePool
+    const newWardScope = canEditVisibility ? (editForm.ward_scope || null) : selectedList.ward_scope
+
     const { error } = await supabase
       .from('lists')
-      .update({ name, description: editForm.description.trim() || null })
+      .update({ name, description, ward_scope: newWardScope })
       .eq('id', selectedList.id)
     if (error) {
       toast(`Failed to update list: ${error.message}`, 'error')
       return
     }
+
+    // Reconcile the Community Events Leader role-share that enforces Community
+    // visibility, when the scope crosses the Community boundary.
+    const wasCommunity = selectedList.ward_scope === COMMUNITY_SCOPE
+    const nowCommunity = newWardScope === COMMUNITY_SCOPE
+    if (nowCommunity && !wasCommunity) {
+      const { error: shareErr } = await supabase.from('list_shares').upsert(
+        {
+          list_id: selectedList.id,
+          scope_type: 'role',
+          scope_value: COMMUNITY_ROLE_KEY,
+          granted_by: appUser?.id ?? null,
+        },
+        { onConflict: 'list_id,scope_type,scope_value', ignoreDuplicates: true },
+      )
+      if (shareErr) toast(`Visibility saved, but sharing to Community leaders failed: ${shareErr.message}`, 'error')
+    } else if (wasCommunity && !nowCommunity) {
+      const { error: shareErr } = await supabase
+        .from('list_shares')
+        .delete()
+        .eq('list_id', selectedList.id)
+        .eq('scope_type', 'role')
+        .eq('scope_value', COMMUNITY_ROLE_KEY)
+      if (shareErr) toast(`Visibility saved, but removing the Community-leaders share failed: ${shareErr.message}`, 'error')
+    }
+
     toast('List updated', 'success')
-    setSelectedList({ ...selectedList, name, description: editForm.description.trim() || null })
+    setSelectedList({ ...selectedList, name, description, ward_scope: newWardScope })
     setEditing(false)
     await loadLists()
   }
@@ -808,6 +842,28 @@ export default function Lists() {
                       placeholder="Description"
                       className="w-full px-2 py-1 border border-slate-300 rounded text-xs"
                     />
+                    {(isAdmin || isStakePool) && (
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-500 mb-0.5">Visibility</label>
+                        <select
+                          value={editForm.ward_scope}
+                          onChange={(e) => setEditForm({ ...editForm, ward_scope: e.target.value })}
+                          className="w-full px-2 py-1 border border-slate-300 rounded text-xs text-slate-900"
+                        >
+                          <option value="">Stake-wide (visible to all senders)</option>
+                          <option value={COMMUNITY_SCOPE}>Community (Community Events Leaders only)</option>
+                          {wardOptions.map((w) => (
+                            <option key={w} value={w}>{w} only</option>
+                          ))}
+                          {/* Preserve a legacy scope that isn't in the current ward list */}
+                          {editForm.ward_scope &&
+                            editForm.ward_scope !== COMMUNITY_SCOPE &&
+                            !wardOptions.includes(editForm.ward_scope) && (
+                              <option value={editForm.ward_scope}>{editForm.ward_scope} only (legacy)</option>
+                            )}
+                        </select>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button onClick={handleSaveEdit} className="px-3 py-1 bg-tidings-chrome text-white text-xs font-medium rounded hover:bg-yellow-800">
                         Save

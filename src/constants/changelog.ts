@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.42.1'
+export const VERSION = '0.43.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.43.0',
+    date: '2026-07-05',
+    changes: [
+      'You can now change a list’s visibility when editing it, not just when creating it. Edit a list and pick Stake-wide, Community, or a specific ward. Switching to or from Community automatically adds or removes the Community Events Leader access behind the scenes.',
+    ],
+  },
   {
     version: '0.42.1',
     date: '2026-07-05',
