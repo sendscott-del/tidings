@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.42.0'
+export const VERSION = '0.42.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.42.1',
+    date: '2026-07-05',
+    changes: [
+      'Fixed community building contact counts showing 0 (e.g. Westchester 1st/2nd) once the directory grew past 1,000 contacts — the count now pages through the whole directory. The "All Buildings" contacts view is no longer capped at 1,000 either.',
+    ],
+  },
   {
     version: '0.42.0',
     date: '2026-07-05',

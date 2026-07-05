@@ -63,19 +63,26 @@ export default function Community() {
   async function loadBuildings() {
     setLoading(true)
     const { data } = await supabase.from('buildings').select('*').order('name')
-    const { data: counts } = await supabase.from('community_contacts').select('building_id')
+    // Paginate the count — a plain select() caps at 1000 rows, which silently
+    // zeroed out per-building counts once the directory grew past that.
+    const counts = await fetchAll<{ building_id: string | null }>(() =>
+      supabase.from('community_contacts').select('building_id')
+    )
     const countMap: Record<string, number> = {}
-    for (const r of counts || []) { if (r.building_id) countMap[r.building_id] = (countMap[r.building_id] || 0) + 1 }
+    for (const r of counts) { if (r.building_id) countMap[r.building_id] = (countMap[r.building_id] || 0) + 1 }
     setBuildings((data || []).map((b) => ({ ...b, contact_count: countMap[b.id] || 0 })))
     setLoading(false)
   }
 
   async function loadContacts() {
     setLoading(true)
-    let query = supabase.from('community_contacts').select('*').order('last_name')
-    if (selectedBuilding) query = query.eq('building_id', selectedBuilding)
-    const { data } = await query
-    setContacts(data || [])
+    // Paginate so the "All Buildings" view isn't silently capped at 1000 rows.
+    const data = await fetchAll<CommunityContact>(() => {
+      let query = supabase.from('community_contacts').select('*').order('last_name')
+      if (selectedBuilding) query = query.eq('building_id', selectedBuilding)
+      return query
+    })
+    setContacts(data)
     setLoading(false)
   }
 
