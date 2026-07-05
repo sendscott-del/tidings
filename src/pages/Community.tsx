@@ -34,6 +34,7 @@ export default function Community() {
   const [loading, setLoading] = useState(true)
   const [selectedBuilding, setSelectedBuilding] = useState<string>('')
   const [showBuildingForm, setShowBuildingForm] = useState(false)
+  const [editingBuilding, setEditingBuilding] = useState<Building | null>(null)
   const [showContactForm, setShowContactForm] = useState(false)
   const [editingContact, setEditingContact] = useState<CommunityContact | null>(null)
   const [form, setForm] = useState({ name: '', address: '', city: '', state: '', zip: '' })
@@ -44,9 +45,14 @@ export default function Community() {
 
   const [showImport, setShowImport] = useState(false)
   const [importStage, setImportStage] = useState<ImportStage>('upload')
+  // 'append' adds/updates by phone and leaves everything else alone.
+  // 'replace' is a full sync — contacts not in the CSV are removed.
+  const [importMode, setImportMode] = useState<'append' | 'replace'>('append')
   const [importDragOver, setImportDragOver] = useState(false)
   const [importFileName, setImportFileName] = useState('')
   const [importParse, setImportParse] = useState<CommunityParseResult | null>(null)
+  // toDelete always holds the full-sync removal count; the preview shows it
+  // only when 'replace' is selected (append never removes).
   const [importStats, setImportStats] = useState({ toAdd: 0, toUpdate: 0, toDelete: 0 })
   const [importResult, setImportResult] = useState<{ added: number; updated: number; removed: number } | null>(null)
   const [importError, setImportError] = useState('')
@@ -73,15 +79,41 @@ export default function Community() {
     setLoading(false)
   }
 
-  async function saveBuilding() {
-    const { error } = await supabase.from('buildings').insert(form)
-    if (error) {
-      toast(`Failed to save: ${error.message}`, 'error')
-      return
-    }
-    toast('Building added', 'success')
+  function openAddBuilding() {
+    setEditingBuilding(null)
     setForm({ name: '', address: '', city: '', state: '', zip: '' })
+    setShowBuildingForm(true)
+  }
+
+  function openEditBuilding(b: Building) {
+    setEditingBuilding(b)
+    setForm({ name: b.name || '', address: b.address || '', city: b.city || '', state: b.state || '', zip: b.zip || '' })
+    setShowBuildingForm(true)
+  }
+
+  function closeBuildingForm() {
     setShowBuildingForm(false)
+    setEditingBuilding(null)
+    setForm({ name: '', address: '', city: '', state: '', zip: '' })
+  }
+
+  async function saveBuilding() {
+    if (editingBuilding) {
+      const { error } = await supabase.from('buildings').update(form).eq('id', editingBuilding.id)
+      if (error) {
+        toast(`Failed to save: ${error.message}`, 'error')
+        return
+      }
+      toast('Building updated', 'success')
+    } else {
+      const { error } = await supabase.from('buildings').insert(form)
+      if (error) {
+        toast(`Failed to save: ${error.message}`, 'error')
+        return
+      }
+      toast('Building added', 'success')
+    }
+    closeBuildingForm()
     loadBuildings()
   }
 
@@ -130,6 +162,7 @@ export default function Community() {
   const startImport = () => {
     setShowImport(true)
     setImportStage('upload')
+    setImportMode('append')
     setImportParse(null)
     setImportStats({ toAdd: 0, toUpdate: 0, toDelete: 0 })
     setImportResult(null)
@@ -160,6 +193,8 @@ export default function Community() {
 
       const toAdd = result.contacts.filter((c) => !existingSet.has(c.phone)).length
       const toUpdate = result.contacts.filter((c) => existingSet.has(c.phone)).length
+      // Full-sync removal count (existing contacts whose phone isn't in the CSV).
+      // Shown in the preview only when 'replace' mode is selected.
       const toDelete = [...existingSet].filter((p) => !incomingSet.has(p)).length
 
       setImportStats({ toAdd, toUpdate, toDelete })
@@ -225,16 +260,20 @@ export default function Community() {
         updated += batch.length
       }
 
-      const removeIds: string[] = []
-      for (const [phone, id] of existingByPhone) {
-        if (!incomingByPhone.has(phone)) removeIds.push(id)
-      }
-      for (let i = 0; i < removeIds.length; i += 500) {
-        const batch = removeIds.slice(i, i + 500)
-        await supabase.from('list_members').delete().in('contact_id', batch).eq('contact_type', 'community')
-        const { error } = await supabase.from('community_contacts').delete().in('id', batch)
-        if (error) throw error
-        removed += batch.length
+      // Only a full-sync ('replace') removes contacts missing from the CSV.
+      // 'append' leaves existing contacts untouched.
+      if (importMode === 'replace') {
+        const removeIds: string[] = []
+        for (const [phone, id] of existingByPhone) {
+          if (!incomingByPhone.has(phone)) removeIds.push(id)
+        }
+        for (let i = 0; i < removeIds.length; i += 500) {
+          const batch = removeIds.slice(i, i + 500)
+          await supabase.from('list_members').delete().in('contact_id', batch).eq('contact_type', 'community')
+          const { error } = await supabase.from('community_contacts').delete().in('id', batch)
+          if (error) throw error
+          removed += batch.length
+        }
       }
 
       // Re-apply opt-out flags from the persistent suppression list so a full
@@ -274,13 +313,16 @@ export default function Community() {
 
       {tab === 'buildings' && (
         <div>
-          <button onClick={() => setShowBuildingForm(true)}
+          <button onClick={openAddBuilding}
             className="mb-4 px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-yellow-800">
             Add Building
           </button>
 
           {showBuildingForm && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 mb-4 space-y-3">
+              <h2 className="text-sm font-semibold text-slate-900">
+                {editingBuilding ? 'Edit building' : 'Add building'}
+              </h2>
               <input placeholder="Building name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900" />
               <input placeholder="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -295,8 +337,10 @@ export default function Community() {
               </div>
               <div className="flex gap-2">
                 <button onClick={saveBuilding} disabled={!form.name}
-                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-yellow-800 disabled:opacity-50">Save</button>
-                <button onClick={() => setShowBuildingForm(false)}
+                  className="px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg hover:bg-yellow-800 disabled:opacity-50">
+                  {editingBuilding ? 'Update' : 'Save'}
+                </button>
+                <button onClick={closeBuildingForm}
                   className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
               </div>
             </div>
@@ -319,7 +363,12 @@ export default function Community() {
                       <span className="text-lg font-semibold text-slate-900">{b.contact_count}</span>
                       <p className="text-xs text-slate-500">contacts</p>
                     </div>
-                    <button onClick={() => setConfirmDeleteBuilding(b)} className="text-slate-400 hover:text-red-500">
+                    <button onClick={() => openEditBuilding(b)} className="text-slate-400 hover:text-slate-700" aria-label={`Edit ${b.name}`} title="Edit building">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+                      </svg>
+                    </button>
+                    <button onClick={() => setConfirmDeleteBuilding(b)} className="text-slate-400 hover:text-red-500" aria-label={`Delete ${b.name}`} title="Delete building">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165M15.75 5.79V4.875c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916" />
                       </svg>
@@ -483,8 +532,8 @@ export default function Community() {
                       />
                     </label>
                   </div>
-                  <div className="bg-amber-50 text-amber-800 text-xs px-3 py-2 rounded">
-                    Full sync: contacts in this building whose phone isn't in the CSV will be removed.
+                  <div className="bg-slate-50 text-slate-600 text-xs px-3 py-2 rounded">
+                    After previewing the file you'll choose whether to <strong>append</strong> (add &amp; update only) or <strong>replace</strong> (full sync — remove contacts not in the CSV).
                   </div>
                 </>
               )}
@@ -492,11 +541,52 @@ export default function Community() {
               {importStage === 'preview' && importParse && (
                 <>
                   <p className="text-sm text-slate-500">File: {importFileName}</p>
-                  <div className="grid grid-cols-3 gap-3">
+
+                  <div>
+                    <p className="text-xs font-medium text-slate-600 mb-1.5">Import mode</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setImportMode('append')}
+                        className={`text-left rounded-lg border px-3 py-2 transition-colors ${
+                          importMode === 'append'
+                            ? 'border-tidings-primary bg-tidings-primary/5 ring-1 ring-tidings-primary'
+                            : 'border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="block text-sm font-semibold text-slate-900">Append</span>
+                        <span className="block text-xs text-slate-500">Add &amp; update; keep the rest</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImportMode('replace')}
+                        className={`text-left rounded-lg border px-3 py-2 transition-colors ${
+                          importMode === 'replace'
+                            ? 'border-red-400 bg-red-50 ring-1 ring-red-400'
+                            : 'border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="block text-sm font-semibold text-slate-900">Replace</span>
+                        <span className="block text-xs text-slate-500">Full sync; remove others</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={`grid gap-3 ${importMode === 'replace' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <Stat label="To Add" value={importStats.toAdd} color="green" />
                     <Stat label="To Update" value={importStats.toUpdate} color="amber" />
-                    <Stat label="To Remove" value={importStats.toDelete} color="red" />
+                    {importMode === 'replace' && (
+                      <Stat label="To Remove" value={importStats.toDelete} color="red" />
+                    )}
                   </div>
+
+                  {importMode === 'replace' && importStats.toDelete > 0 && (
+                    <div className="bg-red-50 text-red-700 text-xs px-3 py-2 rounded">
+                      {importStats.toDelete} existing {importStats.toDelete === 1 ? 'contact' : 'contacts'} in this building
+                      {importStats.toDelete === 1 ? " isn't" : " aren't"} in this CSV and will be permanently removed.
+                    </div>
+                  )}
+
                   <p className="text-sm text-slate-600">
                     Parsed {importParse.contacts.length} of {importParse.totalRows} rows
                   </p>
@@ -514,7 +604,7 @@ export default function Community() {
                   )}
                   <div className="flex gap-2 pt-2">
                     <button onClick={runImport} className="px-4 py-2 bg-tidings-primary text-white text-sm font-medium rounded-lg hover:bg-tidings-primary-dark">
-                      Confirm Import
+                      {importMode === 'replace' ? 'Confirm Replace' : 'Confirm Append'}
                     </button>
                     <button onClick={() => setImportStage('upload')} className="px-4 py-2 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">
                       Cancel

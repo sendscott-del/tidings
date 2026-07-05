@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.39.0'
+export const VERSION = '0.40.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.40.0',
+    date: '2026-07-05',
+    changes: [
+      'You can now edit a building — tap the pencil on any building card to rename it or fix its address.',
+      'CSV import now lets you choose Append or Replace. Append adds new contacts and updates matches, leaving everyone else in place. Replace does a full sync — contacts in the building that aren\'t in the CSV are removed (with a clear warning first). Append is the default so nothing gets deleted by accident.',
+    ],
+  },
   {
     version: '0.39.0',
     date: '2026-06-15',

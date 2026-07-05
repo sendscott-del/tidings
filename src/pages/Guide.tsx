@@ -108,6 +108,35 @@ export default function Guide() {
         </p>
       </Section>
 
+      <Section title="Community directory (buildings)">
+        <p>
+          The <strong>Community</strong> area groups contacts by{' '}
+          <strong>building</strong> — useful for apartment complexes and other
+          non-ward groups. Add a building, then tap the{' '}
+          <strong>pencil</strong> on any building card to rename it or correct
+          its address, or the trash icon to delete it.
+        </p>
+        <p>
+          Under <strong>Contacts</strong>, pick a building and use{' '}
+          <strong>Import CSV</strong> (columns: First Name, Last Name, Phone,
+          and optional Notes — phone is required). After the preview you choose
+          how to apply it:
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            <strong>Append</strong> (default) — adds new contacts and updates
+            any whose phone already exists, and leaves everyone else in the
+            building alone. Nothing is deleted.
+          </li>
+          <li>
+            <strong>Replace</strong> — a full sync. In addition to adding and
+            updating, it <strong>removes</strong> anyone in the building whose
+            phone isn't in the CSV. The preview shows exactly how many will be
+            removed before you confirm.
+          </li>
+        </ul>
+      </Section>
+
       <Section title="Settings">
         <p>
           Settings (formerly "Admin") holds Users, Budgets, and the deeper
