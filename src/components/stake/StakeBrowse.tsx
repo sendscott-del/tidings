@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, fetchAll } from '../../lib/supabase'
 import { matchesAllTokens } from '../../lib/search'
+import { useToast } from '../../contexts/ToastContext'
 
 interface Contact {
   id: string
@@ -151,18 +152,24 @@ function ContactDetail({
   onClose: () => void
   onUpdate: () => void
 }) {
+  const { toast } = useToast()
   const [toggling, setToggling] = useState(false)
 
   async function toggleOptOut() {
     setToggling(true)
-    await supabase
-      .from('contacts')
-      .update({
-        opted_out: !contact.opted_out,
-        opted_out_at: !contact.opted_out ? new Date().toISOString() : null,
-      })
-      .eq('id', contact.id)
+    // Route through the RPC so the durable suppression list (tidings_opt_outs)
+    // is updated alongside the contact-row flag — otherwise a later CSV
+    // re-import could silently re-subscribe a manually opted-out person.
+    const { error } = await supabase.rpc('tidings_set_opt_out', {
+      p_contact_id: contact.id,
+      p_contact_type: 'stake',
+      p_opted_out: !contact.opted_out,
+    })
     setToggling(false)
+    if (error) {
+      toast(`Couldn't update opt-out: ${error.message}`, 'error')
+      return
+    }
     onUpdate()
     onClose()
   }

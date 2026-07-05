@@ -183,6 +183,23 @@ export default function Guide() {
         </ul>
       </Section>
 
+      <Section title="Opting people out">
+        <p>
+          Anyone you text can reply <strong>STOP</strong> (or UNSUBSCRIBE,
+          CANCEL, END, QUIT) to stop receiving messages, and{' '}
+          <strong>START</strong> to opt back in. Tidings records this
+          automatically and never texts an opted-out number again — even after
+          a directory re-import.
+        </p>
+        <p>
+          You can also do it by hand. Open a <strong>Stake</strong> contact and
+          use <strong>Mark as Opted Out</strong> / <strong>Re-subscribe</strong>,
+          or on <strong>Community → Contacts</strong> use the{' '}
+          <strong>Opt out</strong> / <strong>Re-subscribe</strong> action on the
+          row. Manual opt-outs are just as permanent as a texted STOP.
+        </p>
+      </Section>
+
       <Section title="Settings">
         <p>
           Settings (formerly "Admin") holds Users, Budgets, and the deeper

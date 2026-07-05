@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.43.0'
+export const VERSION = '0.44.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.44.0',
+    date: '2026-07-05',
+    changes: [
+      'Community contacts can now be opted out (or re-subscribed) by hand, right from the Community → Contacts list — matching what was already possible for stake contacts.',
+      'Manual opt-outs are now permanent. Previously, marking someone opted-out only set a flag that a later CSV re-import could wipe; now it also records them on the durable suppression list, so a re-import can never re-subscribe someone you opted out. This matches how a texted STOP already worked.',
+    ],
+  },
   {
     version: '0.43.0',
     date: '2026-07-05',

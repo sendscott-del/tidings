@@ -42,6 +42,7 @@ export default function Community() {
 
   const [confirmDeleteBuilding, setConfirmDeleteBuilding] = useState<Building | null>(null)
   const [confirmDeleteContact, setConfirmDeleteContact] = useState<CommunityContact | null>(null)
+  const [optOutBusyId, setOptOutBusyId] = useState<string | null>(null)
 
   const [showImport, setShowImport] = useState(false)
   const [importStage, setImportStage] = useState<ImportStage>('upload')
@@ -161,6 +162,22 @@ export default function Community() {
     const { error } = await supabase.from('community_contacts').delete().eq('id', id)
     if (error) { toast(`Failed to delete: ${error.message}`, 'error'); return }
     toast('Contact deleted', 'success')
+    loadContacts()
+  }
+
+  async function toggleOptOut(contact: CommunityContact) {
+    setOptOutBusyId(contact.id)
+    // RPC updates the durable suppression list (tidings_opt_outs) alongside the
+    // contact flag, so a manual opt-out survives CSV re-imports — same path a
+    // STOP reply takes.
+    const { error } = await supabase.rpc('tidings_set_opt_out', {
+      p_contact_id: contact.id,
+      p_contact_type: 'community',
+      p_opted_out: !contact.opted_out,
+    })
+    setOptOutBusyId(null)
+    if (error) { toast(`Couldn't update opt-out: ${error.message}`, 'error'); return }
+    toast(contact.opted_out ? 'Contact re-subscribed' : 'Contact opted out', 'success')
     loadContacts()
   }
 
@@ -459,10 +476,23 @@ export default function Community() {
                 <tbody>
                   {contacts.map((c) => (
                     <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-3 text-slate-900 font-medium">{c.first_name} {c.last_name}</td>
+                      <td className="px-4 py-3 text-slate-900 font-medium">
+                        {c.first_name} {c.last_name}
+                        {c.opted_out && (
+                          <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full align-middle">Opted out</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">{c.phone}</td>
                       <td className="px-4 py-3 text-slate-500 hidden md:table-cell truncate max-w-[200px]">{c.notes}</td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => toggleOptOut(c)}
+                          disabled={optOutBusyId === c.id}
+                          className="text-slate-400 hover:text-slate-600 mr-2 disabled:opacity-40"
+                          title={c.opted_out ? 'Re-subscribe this contact to texts' : 'Stop texting this contact'}
+                        >
+                          {c.opted_out ? 'Re-subscribe' : 'Opt out'}
+                        </button>
                         <button onClick={() => {
                           setEditingContact(c)
                           setContactForm({ first_name: c.first_name, last_name: c.last_name, phone: c.phone, notes: c.notes || '', building_id: c.building_id || '' })
