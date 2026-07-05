@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const FALLBACK_CENTS_PER_SEGMENT = 0.79; // US SMS, used only if rate cache is empty
+const FALLBACK_CENTS_PER_SEGMENT = 1.5; // US SMS blended (delivery + carrier + compliance); used only if rate cache is empty
 const FALLBACK_CENTS_PER_MMS = 2.0;      // US MMS, flat per recipient
 const MAX_MEDIA = 10;                    // Twilio caps at 10 MediaUrl entries
 
@@ -239,10 +239,13 @@ Deno.serve(async (req: Request) => {
     // Budget enforcement (skipped on resume — the original send was already
     // budget-checked, and usage is derived from actual message_logs anyway).
     if (!isResume) {
+      // Community-directory sends draw from the audience-scoped "Community
+      // Events" budget; everything else from the sender's ward budget.
+      const budgetWard = resolvedDatabase === 'community' ? 'Community Events' : appUser.ward;
       const { data: budgetRow } = await supabase
-        .from("ward_budgets").select("budget_cents").eq("ward_name", appUser.ward).maybeSingle();
+        .from("ward_budgets").select("budget_cents").eq("ward_name", budgetWard).maybeSingle();
       const budgetCents = budgetRow?.budget_cents ?? 0;
-      const { data: usedRaw } = await supabase.rpc("get_ward_usage_cents", { p_ward: appUser.ward });
+      const { data: usedRaw } = await supabase.rpc("get_ward_usage_cents", { p_ward: budgetWard });
       const usedCents = Number(usedRaw ?? 0);
       const remainingCents = budgetCents - usedCents;
 
@@ -250,8 +253,8 @@ Deno.serve(async (req: Request) => {
         return new Response(
           JSON.stringify({
             error: "BUDGET_EXCEEDED",
-            message: `This send would cost about $${(projCents / 100).toFixed(2)} but only $${(Math.max(0, remainingCents) / 100).toFixed(2)} remains in the ${appUser.ward} budget this quarter.`,
-            ward: appUser.ward, budget_cents: budgetCents, used_cents: usedCents,
+            message: `This send would cost about $${(projCents / 100).toFixed(2)} but only $${(Math.max(0, remainingCents) / 100).toFixed(2)} remains in the ${budgetWard} budget this quarter.`,
+            ward: budgetWard, budget_cents: budgetCents, used_cents: usedCents,
             remaining_cents: remainingCents, projected_cost_cents: projCents,
             recipient_count: dedupedRecipients.length, segments, is_mms: hasMedia,
           }),

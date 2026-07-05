@@ -202,7 +202,8 @@ export default function Guide() {
 
       <Section title="Settings">
         <p>
-          Settings (formerly "Admin") holds Users, Budgets, and the deeper
+          Settings (formerly "Admin") holds Users, Budgets (per ward, plus a
+          Community Events budget for texts to the community directory), and the deeper
           settings tab. The Users tab is read-only — it shows who has access,
           while invites, roles, and removals happen in the Gather hub (the tab
           links there). Demo mode (a safe walkthrough that mocks all sends)

@@ -8,7 +8,10 @@ import { supabase } from '../lib/supabase'
 // SMS rate is per segment. MMS rate is per recipient (flat regardless of
 // caption length, matching how Twilio bills MMS).
 
-const FALLBACK_SMS_CENTS = 0.79
+// Blended real cost per SMS segment: base delivery + 10DLC carrier pass-through
+// fees + Compliance Toolkit (~1.48¢ from the June 2026 bill). The old 0.79¢ was
+// delivery-only and understated the true cost ~1.9x.
+const FALLBACK_SMS_CENTS = 1.5
 const FALLBACK_MMS_CENTS = 2.0
 
 export type RateInfo = {

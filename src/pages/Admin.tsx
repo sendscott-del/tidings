@@ -388,8 +388,10 @@ export default function Admin() {
       {tab === 'budgets' && (
         <div>
           <div className="bg-blue-50 border border-blue-200 text-blue-900 text-sm rounded-lg px-4 py-3 mb-4">
-            Each ward has a quarterly SMS budget in dollars. Usage is computed live from sent messages and
-            <strong> resets automatically on Jan 1, Apr 1, Jul 1, and Oct 1</strong>. Senders can't send when their ward is at 100%.
+            The stake, each ward, and <strong>Community Events</strong> each have a quarterly SMS budget in dollars.
+            Texts to the community directory count against Community Events; everything else counts against the sender's ward.
+            Usage is computed live from sent messages and
+            <strong> resets automatically on Jan 1, Apr 1, Jul 1, and Oct 1</strong>. Senders can't send when the relevant budget is at 100%.
           </div>
           {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
           {budgetsLoading ? (

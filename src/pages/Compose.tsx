@@ -129,8 +129,11 @@ export default function Compose() {
   }, [replyTo, demoMode])
 
   useEffect(() => {
-    if (appUser?.ward) loadBudget(appUser.ward)
-  }, [appUser?.ward])
+    // Community-directory sends draw from the audience-scoped "Community Events"
+    // budget; everything else from the sender's ward budget.
+    const budgetWard = database === 'community' ? 'Community Events' : appUser?.ward
+    if (budgetWard) loadBudget(budgetWard)
+  }, [appUser?.ward, database])
 
   // A change to the message body or recipient selection is a genuinely new
   // send — drop any idempotency token so it gets a fresh one (and isn't
@@ -532,6 +535,8 @@ export default function Compose() {
   // Demo mode: sends are mocked, so the missing-ward hard block is waived
   // for the forced-demo reviewer account.
   const noWardAssigned = !appUser?.ward && !demoMode
+  // Label the budget pill by the budget actually being charged.
+  const budgetLabel = database === 'community' ? 'Community Events' : (appUser?.ward ?? '')
   // Budget-load failure is blocking: if we couldn't verify the ward's budget we
   // fail closed rather than allow an unguarded send. Waived in demo mode (sends
   // are mocked and the budget RPC isn't called for the reviewer account).
@@ -651,7 +656,7 @@ export default function Compose() {
         <div className={`border rounded-lg px-4 py-3 mb-4 text-sm ${budgetPillClasses}`}>
           <div className="flex items-center justify-between">
             <div>
-              <span className="font-semibold">{appUser.ward}</span>
+              <span className="font-semibold">{budgetLabel}</span>
               <span className="ml-2">
                 ${(Math.max(0, budget.remaining_cents) / 100).toFixed(2)} of ${(budget.budget_cents / 100).toFixed(2)} left this quarter
               </span>

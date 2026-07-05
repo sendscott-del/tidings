@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.44.0'
+export const VERSION = '0.45.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.45.0',
+    date: '2026-07-05',
+    changes: [
+      'Added a Community Events budget. Texts sent to the community directory now draw from this budget instead of a ward budget; set its dollar amount in Settings → Budgets like any ward.',
+      'Cost estimates are more accurate. The per-text estimate (and the budget math) now uses a blended 1.5¢/segment that includes the 10DLC carrier fees and Compliance Toolkit charge, not just the base delivery rate — the old 0.79¢ understated real cost by roughly half. (Estimates still exclude sales tax and the fixed monthly phone-number fee.)',
+    ],
+  },
   {
     version: '0.44.0',
     date: '2026-07-05',
