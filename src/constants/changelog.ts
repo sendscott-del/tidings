@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.45.0'
+export const VERSION = '0.46.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.46.0',
+    date: '2026-07-06',
+    changes: [
+      'Community-only leaders: a Community Events Leader now sees and texts only the community directory and community lists — no ward or stake directories, lists, or budgets. They can send to community lists (charged to the Community Events budget) without needing a ward.',
+      'Set someone up as a Community Events Leader from the Gather hub: a new checkbox on each Tidings user grants the role, community access, and community-only scoping in one click (no more manual setup).',
+    ],
+  },
   {
     version: '0.45.0',
     date: '2026-07-05',

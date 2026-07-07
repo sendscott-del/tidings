@@ -106,6 +106,9 @@ export default function Lists() {
   const isAdmin = appUser?.role === 'admin'
   const isStakePool = appUser?.ward === 'Stake'
   const userWard = appUser?.ward || ''
+  // Community-only leaders (ward = 'Community') see only community lists — no
+  // stake or ward lists — and land on the Community tab.
+  const isCommunityOnly = userWard === COMMUNITY_SCOPE
 
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState<{ name: string; description: string; database: 'stake' | 'community'; ward_scope: string }>({
@@ -137,6 +140,11 @@ export default function Lists() {
     loadWardOptions()
   }, [appUser?.ward, appUser?.role, demoMode])
 
+  // Community-only leaders land on (and are locked to) the Community view.
+  useEffect(() => {
+    if (isCommunityOnly) setFilter('community')
+  }, [isCommunityOnly])
+
   async function loadWardOptions() {
     // Demo: fixture ward names — real ward names must not leak to demo users.
     if (demoMode) {
@@ -162,7 +170,10 @@ export default function Lists() {
         .select('*')
         .order('name')
 
-      if (!isAdmin && userWard && !isStakePool) {
+      if (!isAdmin && isCommunityOnly) {
+        // Community-only leaders get community lists and nothing else.
+        query = query.eq('ward_scope', COMMUNITY_SCOPE)
+      } else if (!isAdmin && userWard && !isStakePool) {
         // Stake-wide + this ward + Community-scoped lists. RLS is the real gate:
         // Community lists only come back for Community Events Leaders and admins,
         // so listing the scope here just keeps them from being filtered out early.
@@ -613,7 +624,7 @@ export default function Lists() {
             {([
               { key: 'stake' as const,     label: 'Stake / Ward' },
               { key: 'community' as const, label: 'Community' },
-            ]).map((f) => (
+            ]).filter((f) => !isCommunityOnly || f.key === 'community').map((f) => (
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}

@@ -68,6 +68,8 @@ export default function Compose() {
   const rates = useRates()
   const replyTo = (location.state as { replyTo?: ReplyTarget } | null)?.replyTo
   const signature = (appUser?.signature || '').trim()
+  // Community-only leaders only ever text the community directory.
+  const isCommunityOnly = appUser?.ward === 'Community'
 
   const [budget, setBudget] = useState<{ budget_cents: number; used_cents: number; remaining_cents: number; quarter_end: string } | null>(null)
   const [budgetError, setBudgetError] = useState(false)
@@ -134,6 +136,15 @@ export default function Compose() {
     const budgetWard = database === 'community' ? 'Community Events' : appUser?.ward
     if (budgetWard) loadBudget(budgetWard)
   }, [appUser?.ward, database])
+
+  // Community-only leaders skip the directory picker — force community and jump
+  // straight to choosing recipients.
+  useEffect(() => {
+    if (isCommunityOnly) {
+      setDatabase('community')
+      setStep((s) => (s === 'database' ? 'recipients' : s))
+    }
+  }, [isCommunityOnly])
 
   // A change to the message body or recipient selection is a genuinely new
   // send — drop any idempotency token so it gets a fresh one (and isn't
@@ -723,7 +734,7 @@ export default function Compose() {
         <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-medium text-slate-900">Choose Database</h2>
           <div className="grid grid-cols-2 gap-3">
-            {(['stake', 'community'] as const).map((db) => (
+            {(['stake', 'community'] as const).filter((db) => !isCommunityOnly || db === 'community').map((db) => (
               <button
                 key={db}
                 onClick={() => { setDatabase(db); setStep('recipients') }}

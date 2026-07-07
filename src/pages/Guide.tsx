@@ -176,9 +176,11 @@ export default function Guide() {
           <li>
             <strong>Community</strong> — visible only to{' '}
             <strong>Community Events Leaders</strong> and admins, and drawn from
-            the community directory. Stake and ward senders won't see it. Assign
-            the Community Events Leader role to someone in the Gather hub so they
-            can see these lists.
+            the community directory. Stake and ward senders won't see it. Turn on
+            the <strong>Community events → Leader</strong> checkbox for someone in
+            the Gather hub to set them up as a community-only leader (they see and
+            text only the community directory and community lists — no ward or
+            stake access).
           </li>
         </ul>
       </Section>
