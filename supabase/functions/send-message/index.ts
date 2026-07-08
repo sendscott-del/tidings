@@ -8,6 +8,10 @@ const corsHeaders = {
 const FALLBACK_CENTS_PER_SEGMENT = 1.5; // US SMS blended (delivery + carrier + compliance); used only if rate cache is empty
 const FALLBACK_CENTS_PER_MMS = 2.0;      // US MMS, flat per recipient
 const MAX_MEDIA = 10;                    // Twilio caps at 10 MediaUrl entries
+// Max ids per `.in('id', [...])` request. Every id goes in the URL, so a few
+// hundred UUIDs overflow the gateway's URL-length limit (HTTP/2 "stream error")
+// — seen on a 905-recipient community list. ~100 keeps the URL well under.
+const IN_CHUNK = 100;
 
 async function fetchAll<T>(queryFactory: () => any, pageSize = 1000): Promise<T[]> {
   const all: T[] = [];
@@ -145,8 +149,8 @@ Deno.serve(async (req: Request) => {
       const communityIds = [...uniqueContacts.entries()].filter(([_, t]) => t === 'community').map(([id]) => id);
 
       if (stakeIds.length > 0) {
-        for (let i = 0; i < stakeIds.length; i += 500) {
-          const batch = stakeIds.slice(i, i + 500);
+        for (let i = 0; i < stakeIds.length; i += IN_CHUNK) {
+          const batch = stakeIds.slice(i, i + IN_CHUNK);
           const data = await fetchAll<{ id: string; phone: string; opted_out: boolean }>(() =>
             supabase.from("contacts").select("id, phone, opted_out").in("id", batch)
           );
@@ -154,8 +158,8 @@ Deno.serve(async (req: Request) => {
         }
       }
       if (communityIds.length > 0) {
-        for (let i = 0; i < communityIds.length; i += 500) {
-          const batch = communityIds.slice(i, i + 500);
+        for (let i = 0; i < communityIds.length; i += IN_CHUNK) {
+          const batch = communityIds.slice(i, i + IN_CHUNK);
           const data = await fetchAll<{ id: string; phone: string; opted_out: boolean }>(() =>
             supabase.from("community_contacts").select("id, phone, opted_out").in("id", batch)
           );
@@ -178,8 +182,8 @@ Deno.serve(async (req: Request) => {
     if (dedupedRecipients.length > 0) {
       const phones = dedupedRecipients.map((r) => r.phone);
       const suppressed = new Set<string>();
-      for (let i = 0; i < phones.length; i += 500) {
-        const batch = phones.slice(i, i + 500);
+      for (let i = 0; i < phones.length; i += 200) {
+        const batch = phones.slice(i, i + 200);
         const { data: rows } = await supabase.from("tidings_opt_outs").select("phone").in("phone", batch);
         for (const row of rows ?? []) suppressed.add(row.phone);
       }

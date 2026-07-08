@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.46.0'
+export const VERSION = '0.47.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.47.1',
+    date: '2026-07-06',
+    changes: [
+      'Fixed sending to large community lists (e.g. the 905-recipient Pulaski list): recipient lookups are now split into smaller requests, so they no longer fail with a network/protocol error. This also stops the budget from intermittently showing $0.',
+      'Community-only leaders now see their Community Events budget correctly from the moment Compose loads, instead of briefly flashing $0.',
+    ],
+  },
   {
     version: '0.47.0',
     date: '2026-07-06',

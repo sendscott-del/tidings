@@ -132,10 +132,13 @@ export default function Compose() {
 
   useEffect(() => {
     // Community-directory sends draw from the audience-scoped "Community Events"
-    // budget; everything else from the sender's ward budget.
-    const budgetWard = database === 'community' ? 'Community Events' : appUser?.ward
+    // budget; everything else from the sender's ward budget. Community-only
+    // leaders always use Community Events — even before the directory defaults
+    // to community — so the budget doesn't flash $0 against their (nonexistent)
+    // "Community" ward budget on first render.
+    const budgetWard = (isCommunityOnly || database === 'community') ? 'Community Events' : appUser?.ward
     if (budgetWard) loadBudget(budgetWard)
-  }, [appUser?.ward, database])
+  }, [appUser?.ward, database, isCommunityOnly])
 
   // Community-only leaders skip the directory picker — force community and jump
   // straight to choosing recipients.
@@ -381,9 +384,14 @@ export default function Compose() {
       let optedOut = 0
       const phoneSet = new Set<string>()
 
+      // Keep the id list per request small: a big `.in('id', [...])` puts every
+      // UUID in the URL, and a few hundred blows past the gateway's URL-length
+      // limit (HTTP/2 "stream error"), which also poisons other requests on the
+      // connection (e.g. the budget check). ~100 ids keeps the URL well under.
+      const ID_CHUNK = 100
       if (stakeIds.length > 0) {
-        for (let i = 0; i < stakeIds.length; i += 500) {
-          const chunk = stakeIds.slice(i, i + 500)
+        for (let i = 0; i < stakeIds.length; i += ID_CHUNK) {
+          const chunk = stakeIds.slice(i, i + ID_CHUNK)
           const data = await fetchAll<{ phone: string | null; opted_out: boolean }>(() =>
             supabase.from('contacts').select('phone, opted_out').in('id', chunk)
           )
@@ -396,8 +404,8 @@ export default function Compose() {
         }
       }
       if (communityIds.length > 0) {
-        for (let i = 0; i < communityIds.length; i += 500) {
-          const chunk = communityIds.slice(i, i + 500)
+        for (let i = 0; i < communityIds.length; i += ID_CHUNK) {
+          const chunk = communityIds.slice(i, i + ID_CHUNK)
           const data = await fetchAll<{ phone: string | null; opted_out: boolean }>(() =>
             supabase.from('community_contacts').select('phone, opted_out').in('id', chunk)
           )
@@ -547,7 +555,7 @@ export default function Compose() {
   // for the forced-demo reviewer account.
   const noWardAssigned = !appUser?.ward && !demoMode
   // Label the budget pill by the budget actually being charged.
-  const budgetLabel = database === 'community' ? 'Community Events' : (appUser?.ward ?? '')
+  const budgetLabel = (isCommunityOnly || database === 'community') ? 'Community Events' : (appUser?.ward ?? '')
   // Budget-load failure is blocking: if we couldn't verify the ward's budget we
   // fail closed rather than allow an unguarded send. Waived in demo mode (sends
   // are mocked and the budget RPC isn't called for the reviewer account).
