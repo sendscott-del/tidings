@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.48.0'
+export const VERSION = '0.49.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.49.0',
+    date: '2026-07-08',
+    changes: [
+      'Community import now accepts Excel files (.xlsx/.xls) directly — no need to save as CSV first.',
+      'Spanish column headers are recognized (Nombre, Apellido, Teléfono, Celular, Notas), with or without accents, so a Spanish spreadsheet imports without renaming columns.',
+    ],
+  },
   {
     version: '0.48.0',
     date: '2026-07-08',

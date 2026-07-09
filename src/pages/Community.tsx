@@ -516,7 +516,7 @@ export default function Community() {
           <div className="relative bg-white w-full max-w-md shadow-xl overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Import Community CSV</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Import Community Contacts</h2>
                 <p className="text-xs text-slate-500">
                   Building: {buildings.find((b) => b.id === selectedBuilding)?.name || '—'}
                 </p>
@@ -536,10 +536,14 @@ export default function Community() {
               {importStage === 'upload' && (
                 <>
                   <p className="text-sm text-slate-600">
-                    CSV columns expected: <code className="bg-slate-100 px-1 rounded">First Name</code>,{' '}
+                    Upload a <strong>CSV or Excel</strong> file. Columns expected:{' '}
+                    <code className="bg-slate-100 px-1 rounded">First Name</code>,{' '}
                     <code className="bg-slate-100 px-1 rounded">Last Name</code>,{' '}
                     <code className="bg-slate-100 px-1 rounded">Phone</code>,{' '}
                     <code className="bg-slate-100 px-1 rounded">Notes</code> (optional). Phone is required.
+                    Spanish headers work too (<code className="bg-slate-100 px-1 rounded">Nombre</code>,{' '}
+                    <code className="bg-slate-100 px-1 rounded">Apellido</code>,{' '}
+                    <code className="bg-slate-100 px-1 rounded">Teléfono</code>).
                   </p>
                   <div
                     onDragOver={(e) => { e.preventDefault(); setImportDragOver(true) }}
@@ -554,13 +558,13 @@ export default function Community() {
                       importDragOver ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-slate-50'
                     }`}
                   >
-                    <p className="text-slate-700 font-medium mb-1">Drop CSV here</p>
+                    <p className="text-slate-700 font-medium mb-1">Drop CSV or Excel here</p>
                     <p className="text-slate-500 text-sm mb-3">or click to browse</p>
                     <label className="inline-block px-4 py-2 bg-tidings-chrome text-white text-sm font-medium rounded-lg cursor-pointer hover:bg-yellow-800">
                       Choose File
                       <input
                         type="file"
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls,.xlsm"
                         className="hidden"
                         onChange={(e) => {
                           const f = e.target.files?.[0]
