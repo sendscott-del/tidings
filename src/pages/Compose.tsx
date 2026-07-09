@@ -522,7 +522,9 @@ export default function Compose() {
       toast(
         data.status === 'queued'
           ? `Message scheduled for ${data.recipient_count} ${data.recipient_count === 1 ? 'recipient' : 'recipients'}`
-          : `Sent to ${data.recipient_count} ${data.recipient_count === 1 ? 'recipient' : 'recipients'}`,
+          : data.status === 'sending'
+            ? `Queued — sending to ${data.recipient_count} ${data.recipient_count === 1 ? 'recipient' : 'recipients'} in the background`
+            : `Sent to ${data.recipient_count} ${data.recipient_count === 1 ? 'recipient' : 'recipients'}`,
         'success'
       )
     } catch (err) {
@@ -567,18 +569,29 @@ export default function Compose() {
       <div className="max-w-xl">
         <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${result.status === 'sending' ? 'bg-amber-100' : 'bg-green-100'}`}>
+              {result.status === 'sending' ? (
+                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              )}
             </div>
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
-                {result.status === 'queued' ? 'Message Scheduled' : 'Message Sent'}
+                {result.status === 'queued'
+                  ? 'Message Scheduled'
+                  : result.status === 'sending'
+                    ? 'Message Queued'
+                    : 'Message Sent'}
               </h2>
               <p className="text-sm text-slate-500">
-                Sent to {result.recipient_count} {result.recipient_count === 1 ? 'recipient' : 'recipients'}
-                {result.note && ` — ${result.note}`}
+                {result.status === 'sending'
+                  ? `Sending to ${result.recipient_count} ${result.recipient_count === 1 ? 'recipient' : 'recipients'} in the background — you don't need to wait here. It keeps sending even if you close the app; check History for progress and confirmation.`
+                  : <>Sent to {result.recipient_count} {result.recipient_count === 1 ? 'recipient' : 'recipients'}{result.note && ` — ${result.note}`}</>}
               </p>
             </div>
           </div>

@@ -4,9 +4,19 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.47.1'
+export const VERSION = '0.48.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.48.0',
+    date: '2026-07-08',
+    changes: [
+      'Sending no longer makes you wait. When you send, the message is queued and delivered in the background — you get an instant "Message Queued" confirmation and can close the app. No more spinning or false "Send failed" on big lists.',
+      'Watch progress in History: a sending message shows a live "sending · X of Y" count that climbs and flips to "sent" when done — check back any time.',
+      'Large sends are now bulletproof: they deliver in rate-limited batches, survive interruptions, and automatically resume until everyone is texted (no duplicates). This is what completed the stuck 905-recipient Pulaski send.',
+      'Community Events Leaders can now add, edit, and delete community contacts and buildings themselves (previously admin-only) — fixing the "row-level security" error when adding a contact.',
+    ],
+  },
   {
     version: '0.47.1',
     date: '2026-07-06',

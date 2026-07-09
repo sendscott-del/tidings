@@ -60,6 +60,8 @@ export default function History() {
   const [dbFilter, setDbFilter] = useState<string>('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  // How many recipients have been texted so far, for messages still 'sending'.
+  const [progress, setProgress] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (demoMode) {
@@ -78,6 +80,15 @@ export default function History() {
     loadMessages()
   }, [demoMode])
 
+  // While a message is still sending in the background, refresh every 15s so
+  // the progress count climbs and flips to "sent" without a manual reload.
+  useEffect(() => {
+    if (demoMode) return
+    if (!messages.some((m) => m.status === 'sending')) return
+    const t = setInterval(() => { loadMessages() }, 15000)
+    return () => clearInterval(t)
+  }, [messages, demoMode])
+
   async function loadMessages() {
     setLoading(true)
     const { data } = await supabase
@@ -95,6 +106,25 @@ export default function History() {
         for (const u of users || []) nameMap[u.id] = u.full_name || 'Unknown'
       }
       setMessages(data.map((m) => ({ ...m, sender_name: m.sent_by ? nameMap[m.sent_by] : undefined })))
+
+      // For messages still sending in the background, show live progress so a
+      // sender can check back and watch it finish.
+      const inflight = data.filter((m) => m.status === 'sending')
+      if (inflight.length > 0) {
+        const counts: Record<string, number> = {}
+        await Promise.all(
+          inflight.map(async (m) => {
+            const { count } = await supabase
+              .from('message_logs')
+              .select('id', { count: 'exact', head: true })
+              .eq('message_id', m.id)
+            counts[m.id] = count ?? 0
+          }),
+        )
+        setProgress(counts)
+      } else {
+        setProgress({})
+      }
     }
     setLoading(false)
   }
@@ -254,7 +284,9 @@ export default function History() {
                       <p className="text-xs text-slate-500">recipients</p>
                     </div>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[msg.status] || 'bg-slate-100 text-slate-600'}`}>
-                      {msg.status}
+                      {msg.status === 'sending'
+                        ? `sending · ${progress[msg.id] ?? 0} of ${msg.recipient_count}`
+                        : msg.status}
                     </span>
                   </div>
                 </div>

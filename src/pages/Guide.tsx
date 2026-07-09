@@ -67,14 +67,18 @@ export default function Guide() {
           <li>
             <strong>Compose</strong> — write a message; pick a list or
             ad-hoc recipients; send. Budgets and per-send confirmations keep
-            you from accidentally blasting everyone.
+            you from accidentally blasting everyone. Sending happens in the
+            background — you get an instant "Message Queued" confirmation and
+            can close the app; it keeps sending on its own.
           </li>
           <li>
             <strong>Inbox</strong> — replies show here as threads. Unread
             count surfaces in the sidebar.
           </li>
           <li>
-            <strong>History</strong> — outbound log for audit and resends.
+            <strong>History</strong> — outbound log for audit and resends. A
+            message still going out shows a live <strong>sending · X of Y</strong>{' '}
+            count that updates until it's done.
           </li>
         </ol>
       </Section>
