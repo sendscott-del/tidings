@@ -4,9 +4,17 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.50.0'
+export const VERSION = '0.51.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.51.0',
+    date: '2026-07-12',
+    changes: [
+      'Community import now handles spreadsheets with NO header row (common in Google Form exports and hand-made lists). It auto-detects which column holds phone numbers by looking at the content and takes the name from the first other column, so a plain name+phone list imports without any special formatting.',
+      'Fixed the bug where every row was skipped ("Parsed 0 of N rows") when the first row was already a contact instead of column titles. Rows are only skipped now when they genuinely have no valid phone number.',
+    ],
+  },
   {
     version: '0.50.0',
     date: '2026-07-08',

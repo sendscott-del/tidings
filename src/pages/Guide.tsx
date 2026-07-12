@@ -122,9 +122,14 @@ export default function Guide() {
         </p>
         <p>
           Under <strong>Contacts</strong>, pick a building and use{' '}
-          <strong>Import CSV</strong> (columns: First Name, Last Name, Phone,
-          and optional Notes — phone is required). After the preview you choose
-          how to apply it:
+          <strong>Import CSV</strong>. It accepts CSV and Excel (
+          <code>.xlsx</code>) files, and column headers can be in English or
+          Spanish (Nombre, Apellido, Teléfono, Notas). A <strong>header row is
+          optional</strong> — if your file just has a name in one column and a
+          phone number in another (like a Google Form export), it figures out
+          which column is the phone number on its own. The only requirement is a
+          valid phone number in each row; rows without one are listed as
+          skipped. After the preview you choose how to apply it:
         </p>
         <ul className="list-disc pl-5 space-y-1">
           <li>
