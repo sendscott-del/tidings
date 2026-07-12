@@ -80,6 +80,14 @@ const SUITE_ROLES: SuiteRole[] = [
   { key: 'ward_member',                label: 'Ward Member',                              scope: 'ward'  },
 ]
 
+// Twilio returns balance as a string like "45.67" or "-12.34".
+function formatBalance(balance: string | null, currency: string): string {
+  const n = Number(balance)
+  if (balance == null || !isFinite(n)) return balance ?? '—'
+  const amt = `${n < 0 ? '-' : ''}$${Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return currency && currency !== 'USD' ? `${amt} ${currency}` : amt
+}
+
 export default function Admin() {
   const { appUser } = useAuth()
   const { toast } = useToast()
@@ -92,6 +100,10 @@ export default function Admin() {
   const [budgets, setBudgets] = useState<WardBudget[]>([])
   const [budgetsLoading, setBudgetsLoading] = useState(false)
   const [budgetEdits, setBudgetEdits] = useState<Record<string, string>>({})
+  // Live Twilio account balance (admin-only; read server-side by the
+  // twilio-balance edge function so the auth token never reaches the browser).
+  const [twilioBalance, setTwilioBalance] = useState<{ balance: string | null; currency: string } | null>(null)
+  const [twilioBalanceState, setTwilioBalanceState] = useState<'idle' | 'loading' | 'error'>('idle')
   const [rates, setRates] = useState<{ sms: RateRow | null; mms: RateRow | null }>({ sms: null, mms: null })
   const [ratesLoading, setRatesLoading] = useState(false)
   const [refreshingRates, setRefreshingRates] = useState(false)
@@ -111,7 +123,7 @@ export default function Admin() {
   }, [appUser?.role])
   useEffect(() => {
     if (appUser?.role !== 'admin') return
-    if (tab === 'budgets') loadBudgets()
+    if (tab === 'budgets') { loadBudgets(); loadTwilioBalance() }
   }, [tab, appUser?.role])
   useEffect(() => {
     if (appUser?.role !== 'admin') return
@@ -161,6 +173,24 @@ export default function Admin() {
     setBudgets(result)
     setBudgetEdits({})
     setBudgetsLoading(false)
+  }
+
+  async function loadTwilioBalance() {
+    if (demoMode) { setTwilioBalance({ balance: '0.00', currency: 'USD' }); return }
+    setTwilioBalanceState('loading')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/twilio-balance`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to load balance')
+      setTwilioBalance({ balance: data.balance, currency: data.currency || 'USD' })
+      setTwilioBalanceState('idle')
+    } catch {
+      setTwilioBalanceState('error')
+    }
   }
 
   async function loadRates() {
@@ -393,6 +423,24 @@ export default function Admin() {
             Usage is computed live from sent messages and
             <strong> resets automatically on Jan 1, Apr 1, Jul 1, and Oct 1</strong>. Senders can't send when the relevant budget is at 100%.
           </div>
+
+          {/* Live Twilio account balance — this whole page is admin-only. */}
+          <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Twilio account balance</p>
+              <p className="text-xs text-slate-400">Live funds in your Twilio account — separate from the quarterly budgets below</p>
+            </div>
+            <div className="text-right whitespace-nowrap">
+              {twilioBalanceState === 'loading' ? (
+                <span className="text-sm text-slate-400">Loading…</span>
+              ) : twilioBalanceState === 'error' ? (
+                <button onClick={loadTwilioBalance} className="text-sm text-red-600 hover:underline">Unavailable — retry</button>
+              ) : twilioBalance ? (
+                <span className="text-2xl font-bold text-slate-900">{formatBalance(twilioBalance.balance, twilioBalance.currency)}</span>
+              ) : null}
+            </div>
+          </div>
+
           {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
           {budgetsLoading ? (
             <p className="text-slate-400 text-center py-8">Loading budgets...</p>

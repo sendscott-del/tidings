@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.49.0'
+export const VERSION = '0.50.0'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.50.0',
+    date: '2026-07-08',
+    changes: [
+      'Settings → Budgets now shows the live Twilio account balance at the top (admins only) — the actual funds in your Twilio account, separate from the quarterly ward budgets. Read securely on the server so the Twilio credentials never touch the browser.',
+    ],
+  },
   {
     version: '0.49.0',
     date: '2026-07-08',
