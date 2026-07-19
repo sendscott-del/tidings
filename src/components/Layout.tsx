@@ -205,7 +205,7 @@ export default function Layout() {
         </aside>
 
         <main className="flex-1 min-w-0 p-4 sm:p-6 safe-pb-tabbar md:pb-6">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-5xl lg:max-w-3xl mx-auto">
             <Outlet />
           </div>
         </main>

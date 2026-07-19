@@ -2,6 +2,12 @@
 
 Append-only, newest first. Every working session adds one entry at the TOP: date, what changed, any infra facts touched (database, domain, auth, secrets). Infra changes also go into `CLAUDE.md` immediately, not just here.
 
+## 2026-07-19 — Desktop content width constrained (v0.51.1)
+
+- Fixed main content stretching across wide desktop windows: the Layout content wrapper (`src/components/Layout.tsx`) now gets `lg:max-w-3xl` (768px centered column) on lg+ viewports; below 1024px the existing `max-w-5xl` behavior is untouched. Banner/suite bar/scripture bar/sidebar/tab bar remain full width.
+- Verified in browser via demo mode at 1280px (content = 768px centered) and 1000px (unchanged, max-width 1024px). `tsc --noEmit` and `npm run build` clean.
+- No infra changes. State: v0.51.1, pushed to main → Vercel.
+
 ## 2026-07-15 — Doc system initialized (history reconstructed from git)
 
 - 2026-04-12: entire v0 app built in phases 1–11 in one arc — Supabase schema + auth, stake CSV import with auto-lists, Lists/Compose/Inbox/Community/History/Admin.

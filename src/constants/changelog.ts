@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.51.0'
+export const VERSION = '0.51.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.51.1',
+    date: '2026-07-19',
+    changes: [
+      'On large desktop screens, page content no longer stretches across the whole window — it now sits in a comfortable centered column, so dashboard cards and lists are easier to scan. Phone and tablet layouts are unchanged.',
+    ],
+  },
   {
     version: '0.51.0',
     date: '2026-07-12',
