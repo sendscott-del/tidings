@@ -8,6 +8,13 @@ export const VERSION = '0.51.1'
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.51.2',
+    date: '2026-08-02',
+    changes: [
+      'Fixed: on iPhones, if Tidings is your only Gathered app (no suite bar shown at the top), the screen could slide up behind the status bar / Dynamic Island — the app now always reserves that space.',
+    ],
+  },
+  {
     version: '0.51.1',
     date: '2026-07-19',
     changes: [
