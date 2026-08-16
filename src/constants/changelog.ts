@@ -4,9 +4,16 @@ export interface ChangelogEntry {
   changes: string[]
 }
 
-export const VERSION = '0.51.1'
+export const VERSION = '0.51.3'
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.51.3',
+    date: '2026-08-15',
+    changes: [
+      'The Lists page now loads its member counts in one request instead of downloading all 19,369 list memberships to the browser and counting them there. Same numbers, noticeably faster on a slow connection. Compose already worked this way; Lists now matches it.',
+    ],
+  },
   {
     version: '0.51.2',
     date: '2026-08-02',

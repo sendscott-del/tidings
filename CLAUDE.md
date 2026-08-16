@@ -31,6 +31,16 @@ Tidings is the two-way SMS/MMS app for the Chicago Illinois Stake of The Church 
 - SQL changes go in `supabase/migrations/`; edge-function changes deploy to project `jdlykebsqafcngpntxma`.
 - No secrets in committed files. Never commit real directory imports, phone numbers, or message content.
 
+## Delivery surfaces (verify EVERY one per release — see global tech-stack.md rule)
+
+| Surface | How it updates | Timeline | Verify by |
+|---|---|---|---|
+| Web (tidings.gatheredin.app) | Vercel on git push | ~2 min | load site |
+| Installed PWA | same Vercel deploy; SW refresh on next open | minutes | reload twice |
+| iOS/Android (Capacitor shells) | load the LIVE SITE via `server.url` | same Vercel deploy, next app open | open the store app after deploy |
+
+The native shells render the deployed website — **one Vercel deploy updates every surface.** A store re-submission is only needed when native shell code/plugins change. This is the OPPOSITE of Magnify (embedded Expo bundle + OTA publish, where store users can silently go stale) — never conflate the two models.
+
 ## Gotchas
 
 - **PostgREST's 1000-row default cap has bitten this app repeatedly:** truncated stake directory silently dropping SMS recipients (2026-04-22), community building counts capped (2026-07-05), and the sync RPC returns jsonb specifically to sidestep it (v0.26.1). Any query over the full directory must page or use the jsonb RPCs.

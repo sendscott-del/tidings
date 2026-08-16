@@ -183,13 +183,13 @@ export default function Lists() {
       const { data: listsData } = await query
 
       if (listsData) {
-        const counts = await fetchAll<{ list_id: string }>(() =>
-          supabase.from('list_members').select('list_id')
-        )
+        // One RLS-scoped aggregate RPC instead of downloading every list_members
+        // row to count client-side (the full-table scan was the slow path).
+        const { data: countRows } = await supabase.rpc('tidings_list_member_counts')
 
         const countMap: Record<string, number> = {}
-        for (const row of counts) {
-          countMap[row.list_id] = (countMap[row.list_id] || 0) + 1
+        for (const row of (countRows || []) as { list_id: string; member_count: number }[]) {
+          countMap[row.list_id] = Number(row.member_count)
         }
 
         setLists(
