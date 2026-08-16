@@ -2,6 +2,16 @@
 
 Append-only, newest first. Every working session adds one entry at the TOP: date, what changed, any infra facts touched (database, domain, auth, secrets). Infra changes also go into `CLAUDE.md` immediately, not just here.
 
+## 2026-08-15 — Lists member counts moved to the aggregate RPC (v0.51.3)
+
+- Portfolio-wide PostgREST 1000-row-cap audit landed here first (Tidings has 4 tables over the cap: `list_members` 19,369, `message_logs` 3,781, `contacts` 3,299, `community_contacts` 1,648).
+- Audit result: **no wrong numbers anywhere in Tidings.** The `fetchAll()` helper in `src/lib/supabase.ts` correctly pages every full-directory read (stable `ORDER BY id`, breaks on short page), and Compose additionally chunks `.in('id', …)` at 100 ids for URL length. The `gather_tidings_contacts_for_sync` RPC returns `jsonb` (confirmed in the DB) to dodge the cap that also applies to SETOF/TABLE-returning RPCs.
+- One real inefficiency fixed: `Lists.tsx` used `fetchAll` to download all 19,369 `list_members` rows and count them client-side (~20 sequential round trips per page load). `Compose.tsx` already called the `tidings_list_member_counts()` RPC for the identical computation. Pointed Lists at the same RPC.
+- Verified: RPC returns 120 rows with **0 count mismatches** against `select list_id, count(*) from list_members group by 1` (largest list = 1,689 members, i.e. genuinely past the cap). `tsc --noEmit` and `npm run build` clean. Deployed bundle confirmed to carry VERSION 0.51.3 and the RPC call, with the old `select("list_id")` pattern gone.
+- Also fixed: the `VERSION` constant in `src/constants/changelog.ts` was stale at 0.51.1 while package.json was 0.51.2.
+- Housekeeping: an overly broad `git add -A` swept in a previously-uncommitted CLAUDE.md "Delivery surfaces" section (accurate, kept) and an empty `docs/SESSIONS.md.tmp` (removed in a follow-up commit).
+- No infra changes. Surfaces: one Vercel deploy covers web, PWA, and both Capacitor shells (they load the live site). State: v0.51.3, pushed to main, live.
+
 ## 2026-08-02 — v0.51.2: safe-area spacer when the Gathered suite bar is hidden
 
 - Suite-wide follow-up to the status-bar overlap Scott reported in Magnify/Conduct: when AppSwitcher had nothing to show (single-app or signed-out users), it rendered nothing and the next element sat under the iPhone status bar / Dynamic Island.
